@@ -17,11 +17,11 @@ Select appropriate unsigned integer type based on degree `n`.
 Returns UInt8 for n < 256, UInt16 for n < 65536, UInt32 otherwise.
 """
 function _scalar_type_from_degree(n::Integer)
-    if n < 2^8
+    if n < typemax(UInt8)
         return UInt8
-    elseif n < 2^16
+    elseif n < typemax(UInt16)
         return UInt16
-    elseif n < 2^32
+    elseif n < typemax(UInt32)
         return UInt32
     else
         error("Degree $n too large (maximum supported degree is 2^32-1)")
@@ -42,6 +42,11 @@ function _transf_type_from_degree(n::Integer)
     else
         return Transf4
     end
+end
+
+function _transf_type_from_scalar_type(scalar::DataType)
+    lookup = Dict(UInt8 => Transf1, UInt16 => Transf2, UInt32 => Transf4)
+    return lookup[scalar]
 end
 
 """
@@ -95,7 +100,7 @@ t = Transf([1, 2, 1])
 Note: The constructor accepts 1-based indexing (Julia convention) but
 internally converts to 0-based indexing for the C++ library.
 """
-mutable struct Transf
+mutable struct Transf{T}
     cxx_obj::Union{Transf1,Transf2,Transf4}
 
     """
@@ -109,32 +114,41 @@ mutable struct Transf
     t = Transf([2, 1, 2, 3])  # degree 4, maps 1->2, 2->1, 3->2, 4->3
     ```
     """
-    function Transf(images::AbstractVector{<:Integer})
-        n = length(images)
-        if n == 0
-            error("Cannot create transformation of degree 0")
-        end
-
-        # Convert to 0-based indexing for C++
-        images_0based = [UInt(img - 1) for img in images]
-
-        # Select appropriate C++ type based on degree
-        CxxType = _transf_type_from_degree(n)
-        ScalarType = CxxType === Transf1 ? UInt8 : (CxxType === Transf2 ? UInt16 : UInt32)
-
-        # Convert to correct scalar type
-        images_typed = convert(Vector{ScalarType}, images_0based)
-
-        # Construct C++ object - CxxWrap needs StdVector
-        cxx_obj = CxxType(StdVector(images_typed))
-
-        return new(cxx_obj)
-    end
-
     # Internal constructor from C++ object (used by operations)
-    function Transf(cxx_obj::Union{Transf1,Transf2,Transf4})
-        return new(cxx_obj)
+    # function Transf(cxx_obj::Union{Transf1,Transf2,Transf4})
+    #   return new{typeof(cxx_obj)}(cxx_obj)
+    # end
+
+end
+
+Transf(t::Transf1) = Transf{UInt8}(t)
+Transf(t::Transf2) = Transf{UInt16}(t)
+Transf(t::Transf4) = Transf{UInt32}(t)
+
+function Transf(images::AbstractVector{<:Integer}, ::Type{T}) where T
+    n = length(images)
+    if n == 0 || n > typemax(T)
+        error("Cannot create transformation of degree $n")
     end
+
+    # Select the appropriate C++ type based on T
+    CxxType = _transf_type_from_scalar_type(T)
+
+    # Convert to 0-based indexing for C++
+    images_0based = [UInt(img - 1) for img in images]
+
+    # Convert to the desired type T
+    images_typed = convert(Vector{T}, images_0based)
+
+    # Construct the C++ object (StdVector wrapper)
+    cxx_obj = CxxType(StdVector{T}(images_typed))
+
+    # Return the Transf{T} instance
+    return Transf{T}(cxx_obj)
+end
+
+function Transf(images::AbstractVector{<:Integer})
+    return Transf(images, _scalar_type_from_degree(length(images)))
 end
 
 # Degree and rank
@@ -205,7 +219,8 @@ Base.hash(t::Transf, h::UInt) = hash(hash_value(t.cxx_obj), h)
 
 Create an independent copy of transformation `t`.
 """
-Base.copy(t::Transf) = Transf(copy(t.cxx_obj))
+
+Base.copy(t::Transf{T}) where T = Transf{T}(copy(t.cxx_obj))
 
 # Multiplication
 """
@@ -358,7 +373,7 @@ mutable struct PPerm
         end
 
         # Select appropriate C++ type based on degree
-        CxxType = _pperm_type_from_degree(n)
+    CxxType = _pperm_type_from_degree(n)
 
         # Construct C++ object - CxxWrap needs StdVector
         cxx_obj = CxxType(StdVector(images_0based))
