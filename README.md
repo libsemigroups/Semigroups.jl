@@ -41,6 +41,12 @@ With the package installed, the tests can be run with:
 Pkg.test()
 ```
 
+or
+
+```bash
+julia test/runtests.jl
+```
+
 Or as a one-liner:
 
 ```julia
@@ -48,3 +54,19 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 ```
 
 This should be expanded to a more robust test suite as the package grows.
+
+## Documentation
+
+This can be compiled by doing:
+
+```bash
+julia docs/make.jl
+```
+
+and then
+
+```bash
+julia -e "import LiveServer as LS; LS.serve(launch_browser=true)"
+```
+
+to view the resulting documentation.
