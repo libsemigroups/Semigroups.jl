@@ -70,3 +70,12 @@ jobs:
 
       # Run the tests
       - uses: julia-actions/julia-runtest@v1
+
+      # Upload coverage
+      - uses: julia-actions/julia-processcoverage@v1
+        if: ${{ matrix.system.coverage }}
+      - uses: codecov/codecov-action@v5
+        if: ${{ matrix.system.coverage }}
+        with:
+          files: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
