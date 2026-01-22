@@ -38,6 +38,7 @@ export SemigroupsError, have_error, check_error!, clear_errors!, get_and_clear_e
 # Transformation types and functions
 export Transf, PPerm, Perm
 export degree, rank, images, image_set, domain_set
+export increase_degree_by!, swap!
 export left_one, right_one
 
 end # module Semigroups

@@ -41,6 +41,12 @@ With the package installed, the tests can be run with:
 Pkg.test()
 ```
 
+or
+
+```bash
+julia test/runtests.jl
+```
+
 Or as a one-liner:
 
 ```julia
