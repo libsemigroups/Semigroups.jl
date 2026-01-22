@@ -125,7 +125,7 @@ Transf(t::Transf1) = Transf{UInt8}(t)
 Transf(t::Transf2) = Transf{UInt16}(t)
 Transf(t::Transf4) = Transf{UInt32}(t)
 
-function Transf(images::AbstractVector{<:Integer}, ::Type{T}) where T
+function Transf(images::AbstractVector{<:Integer}, ::Type{T}) where {T}
     n = length(images)
     if n == 0 || n > typemax(T)
         error("Cannot create transformation of degree $n")
@@ -219,8 +219,7 @@ Base.hash(t::Transf, h::UInt) = hash(hash_value(t.cxx_obj), h)
 
 Create an independent copy of transformation `t`.
 """
-
-Base.copy(t::Transf{T}) where T = Transf{T}(copy(t.cxx_obj))
+Base.copy(t::Transf{T}) where {T} = Transf{T}(copy(t.cxx_obj))
 
 # Multiplication
 """
@@ -373,7 +372,7 @@ mutable struct PPerm
         end
 
         # Select appropriate C++ type based on degree
-    CxxType = _pperm_type_from_degree(n)
+        CxxType = _pperm_type_from_degree(n)
 
         # Construct C++ object - CxxWrap needs StdVector
         cxx_obj = CxxType(StdVector(images_0based))
@@ -794,3 +793,53 @@ function image_set(p::Perm)
     # Convert to 1-based
     return sort([Int(x) + 1 for x in img_0based])
 end
+
+# ============================================================================
+# Generic functions for all transformation types
+# ============================================================================
+
+"""
+    increase_degree_by!(t::Union{Transf,PPerm,Perm}, n::Integer)
+
+Increase the degree of transformation `t` by `n` points.
+Modifies `t` in place and returns it for method chaining.
+
+Throws an `ArgumentError` if the resulting degree would exceed 2^32.
+
+# Example
+```julia
+t = Transf([1, 2])
+increase_degree_by!(t, 3)  # Now has degree 5
+```
+"""
+function increase_degree_by!(t::Union{Transf,PPerm,Perm}, n::Integer)
+    new_degree = n + degree(t)
+    if new_degree > 2^32
+        throw(
+            ArgumentError(
+                "the argument (n=$n) is too large, transformations of degree > 2^32 " *
+                "are not supported, expected at most $(2^32 - degree(t)) but found $n",
+            ),
+        )
+    end
+    increase_degree_by!(t.cxx_obj, n)
+    return t
+end
+
+"""
+    swap!(t1::T, t2::T) where T<:Union{Transf,PPerm,Perm}
+
+Swap the contents of transformations `t1` and `t2`. Both objects are modified.
+
+# Example
+```julia
+t1 = Transf([1, 2])
+t2 = Transf([2, 1, 3])
+swap!(t1, t2)  # t1 and t2 have exchanged contents
+```
+"""
+function swap!(t1::T, t2::T) where {T<:Union{Transf,PPerm,Perm}}
+    swap!(t1.cxx_obj, t2.cxx_obj)
+    return nothing
+end
+
