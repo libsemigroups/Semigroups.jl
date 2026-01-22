@@ -1,0 +1,71 @@
+name: Deploy documentation
+
+on:
+  push:
+    branches: [main, deploy-docs]
+    tags: ['*']
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  statuses: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    env:
+      CC: gcc
+      CXX: g++
+      CXXFLAGS: -fdiagnostics-color -O2
+      LD_LIBRARY_PATH: /usr/local/lib
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get --yes update
+          sudo apt-get install --yes \
+            git \
+            pkg-config \
+            m4 \
+            libtool \
+            automake \
+            autoconf \
+            libtool-bin
+
+      - name: Clone libsemigroups
+        run: |
+          git clone https://github.com/libsemigroups/libsemigroups.git --depth 1 --branch main
+          cd libsemigroups
+          git submodule update --init --recursive
+
+      - name: Build and install libsemigroups
+        run: |
+          cd libsemigroups
+          mkdir -p m4
+          ./autogen.sh
+          ./configure CXX="$CXX" CXXFLAGS="$CXXFLAGS" --disable-hpcombi
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
+
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+
+      - uses: julia-actions/cache@v2
+
+      - name: Build package
+        run: |
+          julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.build()'
+
+      - name: Build and deploy documentation
+        run: |
+          julia --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+          julia --project=docs docs/make.jl
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

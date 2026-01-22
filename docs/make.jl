@@ -5,7 +5,6 @@ DocMeta.setdocmeta!(Semigroups, :DocTestSetup, :(using Semigroups); recursive=tr
 
 makedocs(;
     modules=[Semigroups],
-    authors=["James W. Swent", "James D. Mitchell"],
     sitename="Semigroups.jl",
     format=Documenter.HTML(;
         canonical="https://github.com/jswent/Semigroups.jl",
@@ -37,4 +36,9 @@ makedocs(;
         "Main Algorithms" => ["Overview" => "main-algorithms/index.md"],
     ],
     warnonly=[:missing_docs],
+)
+
+deploydocs(
+    repo="github.com/libsemigroups/Semigroups.jl.git",
+    devbranch="main",
 )
