@@ -17,6 +17,3 @@ test = ["Test"]
 julia = "1.9"
 CxxWrap = "0.17"
 AbstractAlgebra = "0.43"
-
-[workspace]
-projects = ["docs"]
