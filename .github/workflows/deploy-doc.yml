@@ -2,9 +2,8 @@ name: Deploy documentation
 
 on:
   push:
-    branches: [main, deploy-docs]
+    branches: [main]
     tags: ['*']
-  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -15,7 +14,7 @@ permissions:
   statuses: write
 
 jobs:
-  docs:
+  deploy_docs:
     runs-on: ubuntu-latest
     env:
       CC: gcc
