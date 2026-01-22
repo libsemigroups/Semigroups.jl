@@ -1,6 +1,6 @@
 # Overview
 
-This section will document the main algorithms available in Semigroups.jl for computing with semigroups and monoids.
+This section will document the main algorithms available in Semigroups.jl.
 
 ## Planned Algorithms
 
@@ -16,4 +16,4 @@ The following algorithms from libsemigroups will be exposed through Semigroups.j
 
 ## Status
 
-This section is under development. Check back for updates as algorithms are implemented.
+This section is under development.

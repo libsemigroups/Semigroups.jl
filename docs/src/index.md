@@ -4,36 +4,11 @@ Julia bindings for the [libsemigroups](https://github.com/libsemigroups/libsemig
 
 ## Overview
 
-Semigroups.jl provides Julia access to algorithms for computing with finite and finitely presented semigroups and monoids. The package wraps libsemigroups using [CxxWrap.jl](https://github.com/JuliaInterop/CxxWrap.jl), offering idiomatic Julia interfaces with 1-based indexing.
+This package is currently in development.
 
-## Features
+## How to install Semigroups.jl?
 
-- **Transformations**: Full, partial, and permutation transformations
-- **Boolean Matrices**: 8-bit boolean matrix operations
-- **Constants**: Special values for algorithm bounds and undefined states
-
-## Quick Start
-
-```julia
-using Semigroups
-
-# Create a transformation (1-based indexing)
-t = Transf([2, 3, 1, 4])
-
-# Get properties
-degree(t)    # 4
-rank(t)      # 4
-images(t)    # [2, 3, 1, 4]
-
-# Create a partial permutation
-p = PPerm([1, 2], [3, 4], 5)
-```
-
-## Documentation Structure
-
-- **[Package Info](package-info/installation.md)**: Installation, authors, bibliography, and error handling
-- **[Data Structures](data-structures/constants/index.md)**: Constants, element types, and their operations
-- **[Main Algorithms](main-algorithms/index.md)**: Core algorithms for semigroup computation
+To see how to install Semigroups.jl, see the [installation page](package-info/installation.md).
 
 ## See Also
 
