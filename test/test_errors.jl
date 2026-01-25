@@ -2,7 +2,7 @@
     @testset "Error module internals" begin
         # Test extract_message
         @test Semigroups.Errors.extract_message(
-            "/path/file.cpp:42:func_name: actual message"
+            "/path/file.cpp:42:func_name: actual message",
         ) == "actual message"
         @test Semigroups.Errors.extract_message("no prefix message") == "no prefix message"
 
@@ -61,17 +61,23 @@
 
     @testset "translate_libsemigroups_error dispatch" begin
         # Bounds error
-        ex = ErrorException("/path:1:func: image value out of bounds, expected value in [0, 3), found 5 in position 2")
+        ex = ErrorException(
+            "/path:1:func: image value out of bounds, expected value in [0, 3), found 5 in position 2",
+        )
         translated = Semigroups.Errors.translate_libsemigroups_error(ex)
         @test translated isa DomainError
 
         # Duplicate error
-        ex = ErrorException("duplicate image value, found 2 in position 3, first occurrence in position 1")
+        ex = ErrorException(
+            "duplicate image value, found 2 in position 3, first occurrence in position 1",
+        )
         translated = Semigroups.Errors.translate_libsemigroups_error(ex)
         @test translated isa ArgumentError
 
         # Size mismatch error
-        ex = ErrorException("domain and image size mismatch, domain has size 5 but image has size 3")
+        ex = ErrorException(
+            "domain and image size mismatch, domain has size 5 but image has size 3",
+        )
         translated = Semigroups.Errors.translate_libsemigroups_error(ex)
         @test translated isa DimensionMismatch
 

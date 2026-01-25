@@ -20,13 +20,16 @@ export translate_libsemigroups_error, @wrap_libsemigroups_call
 const MESSAGE_PREFIX_REGEX = r"^[^:]+:\d+:[^:]+:\s*(.*)$"
 
 # Bounds: "image value out of bounds, expected value in [0, 3), found 5 in position 2"
-const BOUNDS_PATTERN = r"(\w+)\s+value\s+out\s+of\s+bounds,\s+expected\s+value\s+in\s+\[0,\s*(\d+)\),\s+found\s+(\d+)\s+in\s+position\s+(\d+)"
+const BOUNDS_PATTERN =
+    r"(\w+)\s+value\s+out\s+of\s+bounds,\s+expected\s+value\s+in\s+\[0,\s*(\d+)\),\s+found\s+(\d+)\s+in\s+position\s+(\d+)"
 
 # Duplicates: "duplicate image value, found 2 in position 3, first occurrence in position 1"
-const DUPLICATE_PATTERN = r"duplicate\s+(\w+)\s+value,\s+found\s+(\d+)\s+in\s+position\s+(\d+),\s+first\s+occurrence\s+in\s+position\s+(\d+)"
+const DUPLICATE_PATTERN =
+    r"duplicate\s+(\w+)\s+value,\s+found\s+(\d+)\s+in\s+position\s+(\d+),\s+first\s+occurrence\s+in\s+position\s+(\d+)"
 
 # Size mismatch: "domain and image size mismatch, domain has size 5 but image has size 3"
-const SIZE_MISMATCH_PATTERN = r"(\w+)\s+and\s+(\w+)\s+size\s+mismatch.*has\s+size\s+(\d+).*has\s+size\s+(\d+)"
+const SIZE_MISMATCH_PATTERN =
+    r"(\w+)\s+and\s+(\w+)\s+size\s+mismatch.*has\s+size\s+(\d+).*has\s+size\s+(\d+)"
 
 # UNDEFINED: "must not contain UNDEFINED...in position 2"
 const UNDEFINED_PATTERN = r"must\s+not\s+contain\s+UNDEFINED.*in\s+position\s+(\d+)"
@@ -87,8 +90,9 @@ function translate_bounds_error(msg::AbstractString)
     position_1based = position + 1
     lower_1based, upper_1based = adjust_bounds(0, upper_bound)
 
-    error_msg = "$value_type value out of bounds at position $position_1based, " *
-                "expected value in [$lower_1based, $upper_1based)"
+    error_msg =
+        "$value_type value out of bounds at position $position_1based, " *
+        "expected value in [$lower_1based, $upper_1based)"
 
     return DomainError(found_value_1based, error_msg)
 end
@@ -114,8 +118,9 @@ function translate_duplicate_error(msg::AbstractString)
     position_1based = position + 1
     first_pos_1based = first_pos + 1
 
-    error_msg = "duplicate $value_type value $found_value_1based at position $position_1based, " *
-                "first occurrence at position $first_pos_1based"
+    error_msg =
+        "duplicate $value_type value $found_value_1based at position $position_1based, " *
+        "first occurrence at position $first_pos_1based"
 
     return ArgumentError(error_msg)
 end
@@ -136,8 +141,9 @@ function translate_size_mismatch_error(msg::AbstractString)
     first_size = parse(Int, m.captures[3])
     second_size = parse(Int, m.captures[4])
 
-    error_msg = "$first_name and $second_name size mismatch: " *
-                "$first_name has size $first_size but $second_name has size $second_size"
+    error_msg =
+        "$first_name and $second_name size mismatch: " *
+        "$first_name has size $first_size but $second_name has size $second_size"
 
     return DimensionMismatch(error_msg)
 end
