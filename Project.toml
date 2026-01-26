@@ -16,4 +16,4 @@ test = ["Test"]
 [compat]
 julia = "1.9"
 CxxWrap = "0.17"
-AbstractAlgebra = "0.43"
+AbstractAlgebra = "0.43, 0.48"
