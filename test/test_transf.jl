@@ -380,6 +380,8 @@ end
         @test degree(x) == 288
         increase_degree_by!(x, 2^16)
         @test degree(x) == 288 + 2^16
+        # Test that increasing by 2^32 raises an error (overflow)
+        @test_throws ArgumentError increase_degree_by!(x, 2^32)
     end
 
     @testset "increase_degree_by! method" begin

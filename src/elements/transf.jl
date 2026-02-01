@@ -804,6 +804,8 @@ end
 Increase the degree of transformation `t` by `n` points.
 Modifies `t` in place and returns it for method chaining.
 
+Throws an `ArgumentError` if the resulting degree would exceed 2^32.
+
 # Example
 ```julia
 t = Transf([1, 2])
@@ -811,6 +813,15 @@ increase_degree_by!(t, 3)  # Now has degree 5
 ```
 """
 function increase_degree_by!(t::Union{Transf,PPerm,Perm}, n::Integer)
+    new_degree = n + degree(t)
+    if new_degree > 2^32
+        throw(
+            ArgumentError(
+                "the argument (n=$n) is too large, transformations of degree > 2^32 " *
+                "are not supported, expected at most $(2^32 - degree(t)) but found $n",
+            ),
+        )
+    end
     increase_degree_by!(t.cxx_obj, n)
     return t
 end
