@@ -14,14 +14,16 @@ using CxxWrap.StdLib: StdVector
     _scalar_type_from_degree(n::Integer) -> Type
 
 Select appropriate unsigned integer type based on degree `n`.
-Returns UInt8 for n < 256, UInt16 for n < 65536, UInt32 otherwise.
+Returns UInt8 for n ≤ 255, UInt16 for n ≤ 65535, UInt32 otherwise.
 """
 function _scalar_type_from_degree(n::Integer)
-    if n < typemax(UInt8)
+    # Use <= for typemax: degree n stores 0-based indices 0..n-1, so max index n-1
+    # must fit in the scalar type. For n=255, max index=254 fits in UInt8.
+    if n <= typemax(UInt8)
         return UInt8
-    elseif n < typemax(UInt16)
+    elseif n <= typemax(UInt16)
         return UInt16
-    elseif n < typemax(UInt32)
+    elseif n <= typemax(UInt32)
         return UInt32
     else
         error("Degree $n too large (maximum supported degree is 2^32-1)")
