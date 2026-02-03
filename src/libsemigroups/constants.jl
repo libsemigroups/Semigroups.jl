@@ -7,6 +7,8 @@
 # These allow us to dispatch on the constant type while providing
 # type-specific conversions to integer values.
 
+struct UndefinedType end
+
 """
     UNDEFINED
 
@@ -14,8 +16,9 @@ Represents an undefined value in libsemigroups. Can be compared with
 any integer type using `==` and `!=`. Converts to the maximum value
 of the target integer type.
 """
-struct UndefinedType end
 const UNDEFINED = UndefinedType()
+
+struct PositiveInfinityType end
 
 """
     POSITIVE_INFINITY
@@ -24,8 +27,9 @@ Represents positive infinity in libsemigroups. Can be compared with
 integers and NEGATIVE_INFINITY using `<`, `>`, `==`, `!=`. Converts
 to max-1 of the target integer type.
 """
-struct PositiveInfinityType end
 const POSITIVE_INFINITY = PositiveInfinityType()
+
+struct NegativeInfinityType end
 
 """
     NEGATIVE_INFINITY
@@ -34,8 +38,9 @@ Represents negative infinity in libsemigroups. Can be compared with
 signed integers and POSITIVE_INFINITY using `<`, `>`, `==`, `!=`.
 Converts to the minimum value of the target signed integer type.
 """
-struct NegativeInfinityType end
 const NEGATIVE_INFINITY = NegativeInfinityType()
+
+struct LimitMaxType end
 
 """
     LIMIT_MAX
@@ -43,7 +48,6 @@ const NEGATIVE_INFINITY = NegativeInfinityType()
 Represents the maximum limit value in libsemigroups. Converts to
 max-2 of the target integer type.
 """
-struct LimitMaxType end
 const LIMIT_MAX = LimitMaxType()
 
 # Conversion functions to get the underlying integer values
@@ -171,9 +175,34 @@ Base.show(io::IO, ::NegativeInfinityType) = print(io, "NEGATIVE_INFINITY")
 Base.show(io::IO, ::LimitMaxType) = print(io, "LIMIT_MAX")
 
 # tril enum re-exports from LibSemigroups
+
+"""
+    tril
+
+Ternary logic type representing true, false, or unknown values.
+Use `tril_TRUE`, `tril_FALSE`, and `tril_unknown` for the possible values.
+"""
 const tril = LibSemigroups.tril
+
+"""
+    tril_FALSE
+
+The false value of the ternary logic type [`tril`](@ref).
+"""
 const tril_FALSE = LibSemigroups.tril_FALSE
+
+"""
+    tril_TRUE
+
+The true value of the ternary logic type [`tril`](@ref).
+"""
 const tril_TRUE = LibSemigroups.tril_TRUE
+
+"""
+    tril_unknown
+
+The unknown value of the ternary logic type [`tril`](@ref).
+"""
 const tril_unknown = LibSemigroups.tril_unknown
 
 """
