@@ -1,111 +1,69 @@
 @testset "Error Handling" begin
-    @testset "Error module internals" begin
-        # Test extract_message
+    @testset "LibsemigroupsError type" begin
+        err = Semigroups.LibsemigroupsError("test message")
+        @test err isa Exception
+        @test err.msg == "test message"
+
+        # showerror formatting
+        buf = IOBuffer()
+        Base.showerror(buf, err)
+        @test String(take!(buf)) == "LibsemigroupsError: test message"
+    end
+
+    @testset "extract_message" begin
+        # Strips C++ prefix
         @test Semigroups.Errors.extract_message(
             "/path/file.cpp:42:func_name: actual message",
         ) == "actual message"
+
+        # Returns original if no prefix
         @test Semigroups.Errors.extract_message("no prefix message") == "no prefix message"
-
-        # Test adjust_index
-        @test Semigroups.Errors.adjust_index(0) == 1
-        @test Semigroups.Errors.adjust_index(5) == 6
-
-        # Test adjust_bounds
-        @test Semigroups.Errors.adjust_bounds(0, 3) == (1, 4)
     end
 
-    @testset "Bounds error translation" begin
-        # Test translate_bounds_error
-        msg = "image value out of bounds, expected value in [0, 3), found 5 in position 2"
-        err = Semigroups.Errors.translate_bounds_error(msg)
-        @test err isa DomainError
-        @test err.val == 6  # 5 + 1 (1-based)
-        @test occursin("position 3", err.msg)  # 2 + 1 (1-based)
-        @test occursin("[1, 4)", err.msg)  # [0, 3) -> [1, 4)
+    @testset "@wrap_libsemigroups_call" begin
+        # Successful call passes through
+        result = Semigroups.Errors.@wrap_libsemigroups_call begin
+            42
+        end
+        @test result == 42
 
-        # Test non-matching message
-        @test Semigroups.Errors.translate_bounds_error("unrelated message") === nothing
-    end
+        # Exception is caught and rethrown as LibsemigroupsError
+        @test_throws Semigroups.LibsemigroupsError begin
+            Semigroups.Errors.@wrap_libsemigroups_call begin
+                error("some C++ error")
+            end
+        end
 
-    @testset "Duplicate error translation" begin
-        msg = "duplicate image value, found 2 in position 3, first occurrence in position 1"
-        err = Semigroups.Errors.translate_duplicate_error(msg)
-        @test err isa ArgumentError
-        @test occursin("duplicate image value 3", err.msg)  # 2 + 1
-        @test occursin("position 4", err.msg)  # 3 + 1
-        @test occursin("position 2", err.msg)  # 1 + 1
-
-        @test Semigroups.Errors.translate_duplicate_error("unrelated") === nothing
-    end
-
-    @testset "Size mismatch error translation" begin
-        msg = "domain and image size mismatch, domain has size 5 but image has size 3"
-        err = Semigroups.Errors.translate_size_mismatch_error(msg)
-        @test err isa DimensionMismatch
-        @test occursin("domain", err.msg)
-        @test occursin("image", err.msg)
-        @test occursin("5", err.msg)
-        @test occursin("3", err.msg)
-
-        @test Semigroups.Errors.translate_size_mismatch_error("unrelated") === nothing
-    end
-
-    @testset "UNDEFINED error translation" begin
-        msg = "must not contain UNDEFINED in position 2"
-        err = Semigroups.Errors.translate_undefined_error(msg)
-        @test err isa ArgumentError
-        @test occursin("position 3", err.msg)  # 2 + 1
-
-        @test Semigroups.Errors.translate_undefined_error("unrelated") === nothing
-    end
-
-    @testset "translate_libsemigroups_error dispatch" begin
-        # Bounds error
-        ex = ErrorException(
-            "/path:1:func: image value out of bounds, expected value in [0, 3), found 5 in position 2",
-        )
-        translated = Semigroups.Errors.translate_libsemigroups_error(ex)
-        @test translated isa DomainError
-
-        # Duplicate error
-        ex = ErrorException(
-            "duplicate image value, found 2 in position 3, first occurrence in position 1",
-        )
-        translated = Semigroups.Errors.translate_libsemigroups_error(ex)
-        @test translated isa ArgumentError
-
-        # Size mismatch error
-        ex = ErrorException(
-            "domain and image size mismatch, domain has size 5 but image has size 3",
-        )
-        translated = Semigroups.Errors.translate_libsemigroups_error(ex)
-        @test translated isa DimensionMismatch
-
-        # Fallback (unknown error)
-        ex = ErrorException("some unknown error message")
-        translated = Semigroups.Errors.translate_libsemigroups_error(ex)
-        @test translated isa ArgumentError
-        @test occursin("unknown error", translated.msg)
+        # Prefix is stripped from the error message
+        try
+            Semigroups.Errors.@wrap_libsemigroups_call begin
+                error("/path/file.cpp:10:some_func: value out of bounds")
+            end
+            @test false  # should not reach here
+        catch ex
+            @test ex isa Semigroups.LibsemigroupsError
+            @test ex.msg == "value out of bounds"
+        end
     end
 
     @testset "Julia-side transformation errors" begin
         # Zero degree Transf
-        @test_throws ArgumentError Transf(Int[])
+        @test_throws ErrorException Transf(Int[])
 
         # Zero degree PPerm (from images)
-        @test_throws ArgumentError PPerm([])
+        @test_throws ErrorException PPerm([])
 
         # Zero degree Perm
-        @test_throws ArgumentError Perm(Int[])
+        @test_throws ErrorException Perm(Int[])
 
         # Invalid permutation (not a bijection)
-        @test_throws ArgumentError Perm([1, 1, 2])
+        @test_throws ErrorException Perm([1, 1, 2])
 
         # DimensionMismatch for PPerm with mismatched domain/image
-        @test_throws DimensionMismatch PPerm([1, 2], [3], 4)
+        @test_throws ErrorException PPerm([1, 2], [3], 4)
 
         # Degree too large
-        @test_throws ArgumentError Semigroups._scalar_type_from_degree(2^33)
+        @test_throws ErrorException Semigroups._scalar_type_from_degree(2^33)
     end
 
     @testset "Successful operations (no error overhead)" begin
