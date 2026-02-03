@@ -143,7 +143,7 @@ function Transf(images::AbstractVector{<:Integer}, ::Type{T}) where {T}
     images_typed = convert(Vector{T}, images_0based)
 
     # Construct the C++ object (StdVector wrapper)
-    cxx_obj = CxxType(StdVector{T}(images_typed))
+    cxx_obj = @wrap_libsemigroups_call CxxType(StdVector{T}(images_typed))
 
     # Return the Transf{T} instance
     return Transf{T}(cxx_obj)
@@ -249,7 +249,7 @@ function Base.:(*)(t1::Transf, t2::Transf)
         ScalarType = CxxType === Transf1 ? UInt8 : (CxxType === Transf2 ? UInt16 : UInt32)
         # Convert Julia Vector to CxxWrap StdVector
         std_vec1 = StdVector{ScalarType}(convert(Vector{ScalarType}, imgs1))
-        t1_cxx = CxxType(std_vec1)
+        t1_cxx = @wrap_libsemigroups_call CxxType(std_vec1)
     end
 
     if typeof(t2_cxx) !== CxxType
@@ -260,7 +260,7 @@ function Base.:(*)(t1::Transf, t2::Transf)
         ScalarType = CxxType === Transf1 ? UInt8 : (CxxType === Transf2 ? UInt16 : UInt32)
         # Convert Julia Vector to CxxWrap StdVector
         std_vec2 = StdVector{ScalarType}(convert(Vector{ScalarType}, imgs2))
-        t2_cxx = CxxType(std_vec2)
+        t2_cxx = @wrap_libsemigroups_call CxxType(std_vec2)
     end
 
     # Compute product
@@ -377,7 +377,7 @@ mutable struct PPerm
         CxxType = _pperm_type_from_degree(n)
 
         # Construct C++ object - CxxWrap needs StdVector
-        cxx_obj = CxxType(StdVector(images_0based))
+        cxx_obj = @wrap_libsemigroups_call CxxType(StdVector(images_0based))
 
         return new(cxx_obj)
     end
@@ -414,7 +414,11 @@ mutable struct PPerm
         CxxType = _pperm_type_from_degree(deg)
 
         # Construct C++ object - CxxWrap needs StdVector
-        cxx_obj = CxxType(StdVector(dom_0based), StdVector(img_0based), UInt(deg))
+        cxx_obj = @wrap_libsemigroups_call CxxType(
+            StdVector(dom_0based),
+            StdVector(img_0based),
+            UInt(deg),
+        )
 
         return new(cxx_obj)
     end
@@ -495,7 +499,7 @@ function Base.:(*)(p1::PPerm, p2::PPerm)
         end
         # Convert Julia Vector to CxxWrap StdVector
         std_vec1 = StdVector{ScalarType}(convert(Vector{ScalarType}, imgs1))
-        p1_cxx = CxxType(std_vec1)
+        p1_cxx = @wrap_libsemigroups_call CxxType(std_vec1)
     end
 
     if typeof(p2_cxx) !== CxxType
@@ -506,7 +510,7 @@ function Base.:(*)(p1::PPerm, p2::PPerm)
         end
         # Convert Julia Vector to CxxWrap StdVector
         std_vec2 = StdVector{ScalarType}(convert(Vector{ScalarType}, imgs2))
-        p2_cxx = CxxType(std_vec2)
+        p2_cxx = @wrap_libsemigroups_call CxxType(std_vec2)
     end
 
     product_inplace!(result_cxx, p1_cxx, p2_cxx)
@@ -641,7 +645,7 @@ mutable struct Perm
         images_typed = convert(Vector{ScalarType}, images_0based)
 
         # Construct C++ object - CxxWrap needs StdVector
-        cxx_obj = CxxType(StdVector(images_typed))
+        cxx_obj = @wrap_libsemigroups_call CxxType(StdVector(images_typed))
 
         return new(cxx_obj)
     end
@@ -722,7 +726,7 @@ function Base.:(*)(p1::Perm, p2::Perm)
         ScalarType = CxxType === Perm1 ? UInt8 : (CxxType === Perm2 ? UInt16 : UInt32)
         # Convert Julia Vector to CxxWrap StdVector
         std_vec1 = StdVector{ScalarType}(convert(Vector{ScalarType}, imgs1))
-        p1_cxx = CxxType(std_vec1)
+        p1_cxx = @wrap_libsemigroups_call CxxType(std_vec1)
     end
 
     if typeof(p2_cxx) !== CxxType
@@ -733,7 +737,7 @@ function Base.:(*)(p1::Perm, p2::Perm)
         ScalarType = CxxType === Perm1 ? UInt8 : (CxxType === Perm2 ? UInt16 : UInt32)
         # Convert Julia Vector to CxxWrap StdVector
         std_vec2 = StdVector{ScalarType}(convert(Vector{ScalarType}, imgs2))
-        p2_cxx = CxxType(std_vec2)
+        p2_cxx = @wrap_libsemigroups_call CxxType(std_vec2)
     end
 
     product_inplace!(result_cxx, p1_cxx, p2_cxx)
@@ -833,4 +837,3 @@ function swap!(t1::T, t2::T) where {T<:Union{Transf,PPerm,Perm}}
     swap!(t1.cxx_obj, t2.cxx_obj)
     return nothing
 end
-
