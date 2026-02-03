@@ -1,6 +1,6 @@
 <h1>
 <p align="center">
-<img src="docs/pictures/banner.png" height="128" alt="Semigroups.jl">
+<img src="docs/src/assets/logo.png" height="128" alt="Semigroups.jl">
 </p>
 </h1>
 <p align="center">

@@ -11,6 +11,7 @@ makedocs(;
         edit_link = "main",
         assets = String[],
         collapselevel = 1,
+        sidebar_sitename = false,
     ),
     pages = [
         "Home" => "index.md",
