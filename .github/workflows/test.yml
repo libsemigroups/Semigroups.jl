@@ -33,7 +33,7 @@ jobs:
               coverage: false,
             }
           - {
-              os: macOS-15-latest,
+              os: macOS-15-intel,
               arch: default,
               compiler: ccache clang++,
               coverage: false,
