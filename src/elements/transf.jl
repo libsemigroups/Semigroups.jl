@@ -61,15 +61,6 @@ function _perm_type_from_scalar_type(scalar::DataType)
     return lookup[scalar]
 end
 
-function _scalar_type_from_cxx_type(cxx_type::DataType)
-    lookup = Dict(
-        Transf1 => UInt8, Transf2 => UInt16, Transf4 => UInt32,
-        PPerm1  => UInt8, PPerm2  => UInt16, PPerm4  => UInt32,
-        Perm1   => UInt8, Perm2   => UInt16, Perm4   => UInt32,
-    )
-    return lookup[cxx_type]
-end
-
 """
     _pperm_type_from_degree(n::Integer) -> Type
 
@@ -247,42 +238,11 @@ Base.copy(t::Transf{T}) where {T} = Transf{T}(copy(t.cxx_obj))
     *(t1::Transf, t2::Transf) -> Transf
 
 Compose two transformations. Returns t1 ∘ t2, i.e., (t1*t2)[i] = t1[t2[i]].
+Both operands must have the same scalar type (use the same underlying C++ type).
 """
-function Base.:(*)(t1::Transf, t2::Transf)
-    # Promote to larger type if needed
-    max_deg = max(degree(t1), degree(t2))
-    CxxType = _transf_type_from_degree(max_deg)
-
-    # Create identity of appropriate type
-    result_cxx = LibSemigroups.one(CxxType, UInt(max_deg))
-
-    # Promote operands if needed
-    t1_cxx = t1.cxx_obj
-    t2_cxx = t2.cxx_obj
-
-    if typeof(t1_cxx) !== CxxType
-        imgs1 = [UInt(img) for img in images_vector(t1_cxx)]
-        while length(imgs1) < max_deg
-            push!(imgs1, UInt(length(imgs1)))
-        end
-        ScalarType = _scalar_type_from_cxx_type(CxxType)
-        std_vec1 = StdVector{ScalarType}(convert(Vector{ScalarType}, imgs1))
-        t1_cxx = @wrap_libsemigroups_call CxxType(std_vec1)
-    end
-
-    if typeof(t2_cxx) !== CxxType
-        imgs2 = [UInt(img) for img in images_vector(t2_cxx)]
-        while length(imgs2) < max_deg
-            push!(imgs2, UInt(length(imgs2)))
-        end
-        ScalarType = _scalar_type_from_cxx_type(CxxType)
-        std_vec2 = StdVector{ScalarType}(convert(Vector{ScalarType}, imgs2))
-        t2_cxx = @wrap_libsemigroups_call CxxType(std_vec2)
-    end
-
-    # Compute product
-    product_inplace!(result_cxx, t1_cxx, t2_cxx)
-
+function Base.:(*)(t1::Transf{T}, t2::Transf{T}) where {T}
+    result_cxx = one(t1.cxx_obj)
+    product_inplace!(result_cxx, t1.cxx_obj, t2.cxx_obj)
     return Transf(result_cxx)
 end
 
@@ -518,38 +478,15 @@ Base.hash(p::PPerm, h::UInt) = hash(hash_value(p.cxx_obj), h)
 Base.copy(p::PPerm{T}) where {T} = PPerm{T}(copy(p.cxx_obj))
 
 # Multiplication
-function Base.:(*)(p1::PPerm, p2::PPerm)
-    max_deg = max(degree(p1), degree(p2))
-    CxxType = _pperm_type_from_degree(max_deg)
+"""
+    *(p1::PPerm, p2::PPerm) -> PPerm
 
-    result_cxx = LibSemigroups.one(CxxType, UInt(max_deg))
-
-    # Type promotion logic similar to Transf
-    p1_cxx = p1.cxx_obj
-    p2_cxx = p2.cxx_obj
-
-    if typeof(p1_cxx) !== CxxType
-        imgs1 = images_vector(p1_cxx)
-        ScalarType = _scalar_type_from_cxx_type(CxxType)
-        while length(imgs1) < max_deg
-            push!(imgs1, convert(ScalarType, UNDEFINED))
-        end
-        std_vec1 = StdVector{ScalarType}(convert(Vector{ScalarType}, imgs1))
-        p1_cxx = @wrap_libsemigroups_call CxxType(std_vec1)
-    end
-
-    if typeof(p2_cxx) !== CxxType
-        imgs2 = images_vector(p2_cxx)
-        ScalarType = _scalar_type_from_cxx_type(CxxType)
-        while length(imgs2) < max_deg
-            push!(imgs2, convert(ScalarType, UNDEFINED))
-        end
-        std_vec2 = StdVector{ScalarType}(convert(Vector{ScalarType}, imgs2))
-        p2_cxx = @wrap_libsemigroups_call CxxType(std_vec2)
-    end
-
-    product_inplace!(result_cxx, p1_cxx, p2_cxx)
-
+Compose two partial permutations.
+Both operands must have the same scalar type (use the same underlying C++ type).
+"""
+function Base.:(*)(p1::PPerm{T}, p2::PPerm{T}) where {T}
+    result_cxx = one(p1.cxx_obj)
+    product_inplace!(result_cxx, p1.cxx_obj, p2.cxx_obj)
     return PPerm(result_cxx)
 end
 
@@ -749,38 +686,15 @@ Base.hash(p::Perm, h::UInt) = hash(hash_value(p.cxx_obj), h)
 Base.copy(p::Perm{T}) where {T} = Perm{T}(copy(p.cxx_obj))
 
 # Multiplication
-function Base.:(*)(p1::Perm, p2::Perm)
-    max_deg = max(degree(p1), degree(p2))
-    CxxType = _perm_type_from_degree(max_deg)
+"""
+    *(p1::Perm, p2::Perm) -> Perm
 
-    result_cxx = LibSemigroups.one(CxxType, UInt(max_deg))
-
-    # Type promotion
-    p1_cxx = p1.cxx_obj
-    p2_cxx = p2.cxx_obj
-
-    if typeof(p1_cxx) !== CxxType
-        imgs1 = [UInt(img) for img in images_vector(p1_cxx)]
-        while length(imgs1) < max_deg
-            push!(imgs1, UInt(length(imgs1)))
-        end
-        ScalarType = _scalar_type_from_cxx_type(CxxType)
-        std_vec1 = StdVector{ScalarType}(convert(Vector{ScalarType}, imgs1))
-        p1_cxx = @wrap_libsemigroups_call CxxType(std_vec1)
-    end
-
-    if typeof(p2_cxx) !== CxxType
-        imgs2 = [UInt(img) for img in images_vector(p2_cxx)]
-        while length(imgs2) < max_deg
-            push!(imgs2, UInt(length(imgs2)))
-        end
-        ScalarType = _scalar_type_from_cxx_type(CxxType)
-        std_vec2 = StdVector{ScalarType}(convert(Vector{ScalarType}, imgs2))
-        p2_cxx = @wrap_libsemigroups_call CxxType(std_vec2)
-    end
-
-    product_inplace!(result_cxx, p1_cxx, p2_cxx)
-
+Compose two permutations.
+Both operands must have the same scalar type (use the same underlying C++ type).
+"""
+function Base.:(*)(p1::Perm{T}, p2::Perm{T}) where {T}
+    result_cxx = one(p1.cxx_obj)
+    product_inplace!(result_cxx, p1.cxx_obj, p2.cxx_obj)
     return Perm(result_cxx)
 end
 
