@@ -1,6 +1,11 @@
-# Semigroups.jl
-
-Julia bindings for the [libsemigroups](https://libsemigroups.readthedocs.io/) C++ library.
+<h1>
+<p align="center">
+<img src="docs/src/assets/logo.png" height="128" alt="Semigroups.jl">
+</p>
+</h1>
+<p align="center">
+Julia bindings for the <a href="https://libsemigroups.readthedocs.io/">libsemigroups</a> C++ library.
+<br />
 
 ## Installation
 
