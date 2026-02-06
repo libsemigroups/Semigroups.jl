@@ -1,4 +1,4 @@
-# Copyright (c) 2026, James W. Swent
+# Copyright (c) 2026, James W. Swent, J. D. Mitchell
 #
 # Distributed under the terms of the GPL license version 3.
 #
