@@ -78,6 +78,7 @@ run_for!(r, Millisecond(500))
 """
 function run_for!(r::Runner, t::TimePeriod)
     ns = convert(Nanosecond, t)
+    Dates.value(ns) >= 0 || throw(ArgumentError("run_for! requires a non-negative duration, got $t"))
     LibSemigroups.run_for!(r, Int64(Dates.value(ns)))
 end
 
