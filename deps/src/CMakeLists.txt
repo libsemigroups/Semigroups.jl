@@ -34,6 +34,7 @@ add_library(libsemigroups_julia SHARED
     libsemigroups_julia.cpp
     constants.cpp
     runner.cpp
+    word-graph.cpp
     transf.cpp
 )
 
