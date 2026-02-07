@@ -42,14 +42,14 @@ Enum type for the state of a [`Runner`](@ref). Possible values:
 """
 const RunnerState = LibSemigroups.state
 
-const STATE_NEVER_RUN           = LibSemigroups.state_never_run
-const STATE_RUNNING_TO_FINISH   = LibSemigroups.state_running_to_finish
-const STATE_RUNNING_FOR         = LibSemigroups.state_running_for
-const STATE_RUNNING_UNTIL       = LibSemigroups.state_running_until
-const STATE_TIMED_OUT           = LibSemigroups.state_timed_out
+const STATE_NEVER_RUN = LibSemigroups.state_never_run
+const STATE_RUNNING_TO_FINISH = LibSemigroups.state_running_to_finish
+const STATE_RUNNING_FOR = LibSemigroups.state_running_for
+const STATE_RUNNING_UNTIL = LibSemigroups.state_running_until
+const STATE_TIMED_OUT = LibSemigroups.state_timed_out
 const STATE_STOPPED_BY_PREDICATE = LibSemigroups.state_stopped_by_predicate
-const STATE_NOT_RUNNING         = LibSemigroups.state_not_running
-const STATE_DEAD                = LibSemigroups.state_dead
+const STATE_NOT_RUNNING = LibSemigroups.state_not_running
+const STATE_DEAD = LibSemigroups.state_dead
 
 # ============================================================================
 # Core algorithm control
