@@ -8,6 +8,7 @@ module Semigroups
 
 using CxxWrap
 using AbstractAlgebra
+using Dates: TimePeriod, Nanosecond
 
 # ============================================================================
 # Debug mode
@@ -82,6 +83,11 @@ export Runner, RunnerState
 export STATE_NEVER_RUN, STATE_RUNNING_TO_FINISH, STATE_RUNNING_FOR
 export STATE_RUNNING_UNTIL, STATE_TIMED_OUT, STATE_STOPPED_BY_PREDICATE
 export STATE_NOT_RUNNING, STATE_DEAD
+export run!, run_for!, run_until!, init!, kill!
+export finished, started, running, timed_out, stopped, dead
+export stopped_by_predicate, running_for, running_until
+export current_state, running_for_how_long
+export report_why_we_stopped, string_why_we_stopped
 export tril, tril_FALSE, tril_TRUE, tril_unknown, tril_to_bool
 export is_undefined, is_positive_infinity, is_negative_infinity, is_limit_max
 
