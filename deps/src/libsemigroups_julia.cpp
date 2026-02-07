@@ -28,10 +28,11 @@ JLCXX_MODULE define_julia_module(jl::Module & mod)
   // Define constants first (UNDEFINED, POSITIVE_INFINITY, etc.)
   define_constants(mod);
 
+  // Define base types (must be registered before derived types)
+  define_runner(mod);
+
   // Define element types
   define_transf(mod);
-
-  // Add more definitions here (FroidurePin, etc.)
 }
 
 }    // namespace libsemigroups_julia
