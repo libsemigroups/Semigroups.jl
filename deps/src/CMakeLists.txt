@@ -33,6 +33,7 @@ message(STATUS "libsemigroups libraries: ${LIBSEMIGROUPS_LIBRARIES}")
 add_library(libsemigroups_julia SHARED
     libsemigroups_julia.cpp
     constants.cpp
+    word-graph.cpp
     transf.cpp
 )
 

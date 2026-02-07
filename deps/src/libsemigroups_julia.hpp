@@ -29,6 +29,7 @@
 // libsemigroups headers
 #include <libsemigroups/constants.hpp>
 #include <libsemigroups/types.hpp>
+#include <libsemigroups/word-graph.hpp>
 
 // Standard library
 #include <sstream>
@@ -44,6 +45,7 @@ namespace libsemigroups = ::libsemigroups;
 
 // Forward declarations of binding functions
 void define_constants(jl::Module & mod);
+void define_word_graph(jl::Module & mod);
 void define_transf(jl::Module & mod);
 
 }    // namespace libsemigroups_julia

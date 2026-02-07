@@ -60,6 +60,7 @@ using .Errors: LibsemigroupsError, @wrap_libsemigroups_call
 
 # Julia-side wrapper files
 include("libsemigroups/constants.jl")
+include("libsemigroups/word-graph.jl")
 include("libsemigroups/transf.jl")
 
 # High-level element types
@@ -79,6 +80,10 @@ export enable_debug, is_debug, LibsemigroupsError
 export UNDEFINED, POSITIVE_INFINITY, NEGATIVE_INFINITY, LIMIT_MAX
 export tril, tril_FALSE, tril_TRUE, tril_unknown, tril_to_bool
 export is_undefined, is_positive_infinity, is_negative_infinity, is_limit_max
+
+# WordGraph
+export WordGraph
+export number_of_nodes, out_degree, number_of_edges
 
 # Transformation types and functions
 export Transf, PPerm, Perm
