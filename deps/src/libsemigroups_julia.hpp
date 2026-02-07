@@ -22,35 +22,30 @@
 #ifndef LIBSEMIGROUPS_JULIA_HPP_
 #define LIBSEMIGROUPS_JULIA_HPP_
 
-// JlCxx requires C++20 (via INTERFACE_COMPILE_FEATURES cxx_std_20), but
-// libsemigroups bundles fmt which enables consteval format string validation
-// in C++20 mode. This causes compile errors when inline functions in
-// libsemigroups headers (e.g. Reporter::emit_divider, Runner::run_until)
-// pass runtime std::string_view to fmt::format.
-//
-// fmt/base.h unconditionally defines FMT_USE_CONSTEVAL via an #if/#elif
-// chain (no #ifndef guard), so pre-defining it has no effect. Instead we
-// include <type_traits> (which defines __cpp_lib_is_constant_evaluated),
-// then #undef that macro. When fmt/base.h later includes <type_traits>,
-// include guards prevent re-parsing, so the macro stays undefined and fmt
-// takes the !defined(__cpp_lib_is_constant_evaluated) branch, setting
-// FMT_USE_CONSTEVAL=0.
-#include <type_traits>
-#undef __cpp_lib_is_constant_evaluated
-
-// JlCxx headers
+// JlCxx headers FIRST — these pull in standard library headers (<string>,
+// <memory>, etc.) that on libstdc++ use __cpp_lib_is_constant_evaluated to
+// decide constexpr-ness. They must be included while the macro is intact.
 #include "jlcxx/jlcxx.hpp"
 #include "jlcxx/stl.hpp"
 
-// libsemigroups headers
+// FIX for fmt consteval issue:
+// JlCxx requires C++20, but libsemigroups bundles fmt which enables
+// consteval format string validation in C++20 mode, causing compile errors
+// when inline functions pass runtime std::string_view to fmt::format.
+//
+// fmt/base.h unconditionally defines FMT_USE_CONSTEVAL via an #if/#elif
+// chain (no #ifndef guard), so pre-defining it has no effect. Instead we
+// #undef __cpp_lib_is_constant_evaluated AFTER all standard library headers
+// are included (so their constexpr declarations are correct) but BEFORE any
+// libsemigroups/fmt headers. When fmt/base.h later includes <type_traits>,
+// include guards prevent re-parsing, so the macro stays undefined and fmt
+// takes the !defined(__cpp_lib_is_constant_evaluated) branch, setting
+// FMT_USE_CONSTEVAL=0.
+#undef __cpp_lib_is_constant_evaluated
+
+// libsemigroups headers (these transitively include fmt)
 #include <libsemigroups/constants.hpp>
 #include <libsemigroups/types.hpp>
-
-// Standard library
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <vector>
 
 namespace libsemigroups_julia {
 
