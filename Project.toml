@@ -1,19 +1,21 @@
 name = "Semigroups"
 uuid = "f8a5e1c0-7b2d-4a3e-9c6f-1d2e3f4a5b6c"
-authors = ["James Swent"]
 version = "0.1.0"
+authors = ["James Swent"]
 
 [deps]
-CxxWrap = "1f15a43c-97ca-5a2a-ae31-89f07a497df4"
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
+CxxWrap = "1f15a43c-97ca-5a2a-ae31-89f07a497df4"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+
+[compat]
+AbstractAlgebra = "0.43, 0.48"
+CxxWrap = "0.17"
+Dates = "1.11.0"
+julia = "1.9"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Test"]
-
-[compat]
-julia = "1.9"
-CxxWrap = "0.17"
-AbstractAlgebra = "0.43, 0.48"
