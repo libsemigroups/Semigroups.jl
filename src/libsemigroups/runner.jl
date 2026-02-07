@@ -83,6 +83,25 @@ end
 
 
 """
+    run_until!(f::Function, r::Runner)
+    run_until!(r::Runner, f::Function)
+
+Run the algorithm until the nullary predicate `f` returns `true` or the
+algorithm [`finished`](@ref). Supports do-block syntax:
+
+```julia
+run_until!(r) do
+    some_condition(r)
+end
+```
+"""
+function run_until!(f::Function, r::Runner)
+    sf = @safe_cfunction($f, Cuchar, ())
+    GC.@preserve sf LibSemigroups.run_until!(r, sf)
+end
+run_until!(r::Runner, f::Function) = run_until!(f, r)
+
+"""
     init!(r::Runner) -> Runner
 
 Re-initialize the runner to its default-constructed state, discarding all

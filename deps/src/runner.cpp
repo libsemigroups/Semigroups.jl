@@ -24,6 +24,8 @@
 
 #include <libsemigroups/runner.hpp>
 
+#include <jlcxx/functions.hpp>
+
 #include <chrono>
 #include <cstdint>
 #include <functional>
@@ -68,6 +70,19 @@ void define_runner(jl::Module & m)
   // Dates.TimePeriod to nanoseconds before calling this binding).
   type.method("run_for!", [](Runner & self, int64_t ns) {
     self.run_for(std::chrono::nanoseconds(ns));
+  });
+
+  // run_until / run_until! - Run until a nullary predicate returns true.
+  // CxxWrap does not support std::function<bool()> as a parameter type, so we
+  // accept a SafeCFunction and convert it to a function pointer via
+  // make_function_pointer. The Julia side uses @safe_cfunction to create the
+  // SafeCFunction from a closure. A uint8_t is used instead of bool to
+  // avoid C++ bool ABI issues across platforms.
+  type.method("run_until!", [](Runner & self, jlcxx::SafeCFunction func) {
+    auto fp = jlcxx::make_function_pointer<uint8_t()>(func);
+    self.run_until([fp]() -> bool {
+      return fp() != 0;
+    });
   });
 
   // init - Re-initialize the runner to its default-constructed state
