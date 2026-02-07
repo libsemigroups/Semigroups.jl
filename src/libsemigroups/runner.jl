@@ -64,13 +64,23 @@ until the algorithm has finished, timed out, or been killed.
 run!(r::Runner) = LibSemigroups.run!(r)
 
 """
-    run_for!(r::Runner, ms::Integer)
+    run_for!(r::Runner, t::TimePeriod)
 
-Run the algorithm for at most `ms` milliseconds. The algorithm may finish
+Run the algorithm for at most the duration `t`. The algorithm may finish
 before the time limit, in which case [`finished`](@ref) will return `true`.
 If the time limit is reached, [`timed_out`](@ref) will return `true`.
+
+# Examples
+```julia
+run_for!(r, Second(1))
+run_for!(r, Millisecond(500))
+```
 """
-run_for!(r::Runner, ms::Integer) = LibSemigroups.run_for!(r, Int64(ms))
+function run_for!(r::Runner, t::TimePeriod)
+    ns = convert(Nanosecond, t)
+    LibSemigroups.run_for!(r, Int64(Dates.value(ns)))
+end
+
 
 """
     init!(r::Runner) -> Runner
@@ -92,11 +102,15 @@ Return `true` if the algorithm has run to completion.
 finished(r::Runner) = LibSemigroups.finished(r)
 
 """
-    success(r::Runner) -> Bool
+    Base.success(r::Runner) -> Bool
 
-Return `true` if the algorithm has completed successfully.
+Return `true` if the algorithm has completed successfully. This extends
+`Base.success` (which checks process exit status) to work with libsemigroups
+[`Runner`](@ref) types. By default, this returns the same value as
+[`finished`](@ref), but derived classes may override this to distinguish
+between completion and successful completion.
 """
-success(r::Runner) = LibSemigroups.success(r)
+Base.success(r::Runner) = LibSemigroups.success(r)
 
 """
     started(r::Runner) -> Bool
@@ -152,12 +166,12 @@ Return `true` if the runner is currently executing a [`run_for!`](@ref) call.
 running_for(r::Runner) = LibSemigroups.running_for(r)
 
 """
-    running_for_how_long(r::Runner) -> Int64
+    running_for_how_long(r::Runner) -> Nanosecond
 
-Return the duration (in nanoseconds) of the most recent [`run_for!`](@ref)
-call.
+Return the duration of the most recent [`run_for!`](@ref) call as a
+`Dates.Nanosecond` period.
 """
-running_for_how_long(r::Runner) = LibSemigroups.running_for_how_long(r)
+running_for_how_long(r::Runner) = Nanosecond(LibSemigroups.running_for_how_long(r))
 
 """
     running_until(r::Runner) -> Bool

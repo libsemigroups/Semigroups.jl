@@ -26,6 +26,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <functional>
 
 namespace libsemigroups_julia {
 
@@ -62,12 +63,11 @@ void define_runner(jl::Module & m)
     self.run();
   });
 
-  // run_for / run_for! - Run for a specified number of milliseconds.
-  // We accept Int64 milliseconds from Julia and convert to
-  // std::chrono::nanoseconds internally. Using milliseconds as the Julia
-  // interface is natural and avoids chrono complexity in the binding.
-  type.method("run_for!", [](Runner & self, int64_t ms) {
-    self.run_for(std::chrono::milliseconds(ms));
+  // run_for / run_for! - Run for a specified duration.
+  // We accept Int64 nanoseconds from Julia (the Julia layer converts
+  // Dates.TimePeriod to nanoseconds before calling this binding).
+  type.method("run_for!", [](Runner & self, int64_t ns) {
+    self.run_for(std::chrono::nanoseconds(ns));
   });
 
   // init - Re-initialize the runner to its default-constructed state
