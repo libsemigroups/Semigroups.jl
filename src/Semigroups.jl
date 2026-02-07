@@ -55,15 +55,14 @@ include("LibSemigroups.jl")
 # Re-export the low-level module for advanced users
 using .LibSemigroups
 
+# Julia-side wrapper files
+include("libsemigroups/constants.jl")
+include("libsemigroups/runner.jl")
+include("libsemigroups/transf.jl")
+
 # Import error handling utilities
 include("libsemigroups/errors.jl")
 using .Errors: LibsemigroupsError, @wrap_libsemigroups_call
-
-# Julia-side wrapper files
-include("libsemigroups/constants.jl")
-include("libsemigroups/errors.jl")
-include("libsemigroups/runner.jl")
-include("libsemigroups/transf.jl")
 
 # High-level element types
 include("elements/transf.jl")
