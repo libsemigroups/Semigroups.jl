@@ -107,6 +107,7 @@ export FroidurePinBase
 
 # Transformation types and functions
 export FroidurePin
+export number_of_generators, generator, generators, current_size
 export Transf, PPerm, Perm
 export degree, rank, images, image_set, domain_set
 export increase_degree_by!, swap!

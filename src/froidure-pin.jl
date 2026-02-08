@@ -133,3 +133,95 @@ S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
 """
 FroidurePin(g1::E, gs::E...) where {E<:Union{Transf,PPerm,Perm}} =
     FroidurePin(collect(E, (g1, gs...)))
+
+# ============================================================================
+# Runner delegation
+# ============================================================================
+
+"""
+    run!(S::FroidurePin) -> FroidurePin
+
+Run the Froidure-Pin algorithm to completion. Returns `S` for method chaining.
+"""
+run!(S::FroidurePin) = (LibSemigroups.run!(S.cxx_obj); S)
+
+"""
+    run_for!(S::FroidurePin, t::TimePeriod) -> FroidurePin
+
+Run the algorithm for at most duration `t`. Returns `S` for method chaining.
+"""
+run_for!(S::FroidurePin, t::TimePeriod) = (run_for!(S.cxx_obj, t); S)
+
+"""
+    finished(S::FroidurePin) -> Bool
+
+Return `true` if the semigroup has been fully enumerated.
+"""
+finished(S::FroidurePin) = LibSemigroups.finished(S.cxx_obj)
+
+"""
+    started(S::FroidurePin) -> Bool
+
+Return `true` if enumeration has been started.
+"""
+started(S::FroidurePin) = LibSemigroups.started(S.cxx_obj)
+
+"""
+    timed_out(S::FroidurePin) -> Bool
+
+Return `true` if the last `run_for!` call timed out.
+"""
+timed_out(S::FroidurePin) = LibSemigroups.timed_out(S.cxx_obj)
+
+# ============================================================================
+# Size and degree
+# ============================================================================
+
+"""
+    length(S::FroidurePin) -> Int
+
+Return the number of elements in the semigroup. Triggers full enumeration.
+"""
+Base.length(S::FroidurePin) = Int(LibSemigroups.size(S.cxx_obj))
+
+"""
+    current_size(S::FroidurePin) -> Int
+
+Return the number of elements enumerated so far (no further enumeration).
+"""
+current_size(S::FroidurePin) = Int(LibSemigroups.current_size(S.cxx_obj))
+
+"""
+    degree(S::FroidurePin) -> Int
+
+Return the degree of the elements in the semigroup.
+"""
+degree(S::FroidurePin) = Int(LibSemigroups.degree(S.cxx_obj))
+
+# ============================================================================
+# Generators
+# ============================================================================
+
+"""
+    number_of_generators(S::FroidurePin) -> Int
+
+Return the number of generators of the semigroup.
+"""
+number_of_generators(S::FroidurePin) = Int(LibSemigroups.number_of_generators(S.cxx_obj))
+
+"""
+    generator(S::FroidurePin{E}, i::Integer) where E -> E
+
+Return the `i`-th generator (1-based indexing).
+"""
+function generator(S::FroidurePin{E}, i::Integer) where {E}
+    (i < 1 || i > number_of_generators(S)) && throw(BoundsError(S, i))
+    return _wrap_element(E, LibSemigroups.generator(S.cxx_obj, UInt32(i - 1)))
+end
+
+"""
+    generators(S::FroidurePin) -> Vector
+
+Return a vector of all generators.
+"""
+generators(S::FroidurePin) = [generator(S, i) for i in 1:number_of_generators(S)]
