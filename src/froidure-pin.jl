@@ -63,10 +63,13 @@ function _construct_cxx_fp(Constructor, cxx_gens::Vector)
     end
 end
 
-# Wrap C++ element back to high-level Julia type
-_wrap_element(::Type{Transf{T}}, cxx_elem) where {T} = Transf{T}(cxx_elem)
-_wrap_element(::Type{PPerm{T}}, cxx_elem) where {T} = PPerm{T}(cxx_elem)
-_wrap_element(::Type{Perm{T}}, cxx_elem) where {T} = Perm{T}(cxx_elem)
+# Wrap C++ element back to high-level Julia type.
+# Uses Transf()/PPerm()/Perm() constructors which accept any CxxWrap variant
+# (Allocated or Dereferenced). For Dereferenced elements (from C++ vectors),
+# these constructors create owned copies via CxxWrap's implicit conversion.
+_wrap_element(::Type{Transf{T}}, cxx_elem) where {T} = Transf(LibSemigroups.copy(cxx_elem))
+_wrap_element(::Type{PPerm{T}}, cxx_elem) where {T} = PPerm(LibSemigroups.copy(cxx_elem))
+_wrap_element(::Type{Perm{T}}, cxx_elem) where {T} = Perm(LibSemigroups.copy(cxx_elem))
 
 # Word conversion (0-based C++ <-> 1-based Julia)
 _to_word_1based(cxx_word) = [Int(w) + 1 for w in cxx_word]
@@ -225,3 +228,166 @@ end
 Return a vector of all generators.
 """
 generators(S::FroidurePin) = [generator(S, i) for i in 1:number_of_generators(S)]
+
+# ============================================================================
+# Collection protocol
+# ============================================================================
+
+"""
+    getindex(S::FroidurePin{E}, i::Integer) where E -> E
+
+Return the `i`-th element (1-based). Triggers full enumeration.
+"""
+function Base.getindex(S::FroidurePin{E}, i::Integer) where {E}
+    (i < 1 || i > length(S)) && throw(BoundsError(S, i))
+    return _wrap_element(E, LibSemigroups.at(S.cxx_obj, UInt32(i - 1)))
+end
+
+"""
+    iterate(S::FroidurePin[, state]) -> Union{Tuple, Nothing}
+
+Iterate over elements of the semigroup. Triggers full enumeration.
+"""
+function Base.iterate(S::FroidurePin, state = 1)
+    state > length(S) && return nothing
+    return (S[state], state + 1)
+end
+
+"""
+    in(x::E, S::FroidurePin{E}) -> Bool
+
+Return `true` if element `x` is in the semigroup `S`.
+"""
+Base.in(x::E, S::FroidurePin{E}) where {E<:Union{Transf,PPerm,Perm}} =
+    LibSemigroups.contains_element(S.cxx_obj, x.cxx_obj)
+
+"""
+    eltype(::Type{FroidurePin{E}}) -> Type
+
+Return the element type of the semigroup.
+"""
+Base.eltype(::Type{FroidurePin{E}}) where {E} = E
+
+"""
+    copy(S::FroidurePin{E}) -> FroidurePin{E}
+
+Return an independent copy of the semigroup.
+"""
+Base.copy(S::FroidurePin{E}) where {E} = FroidurePin{E}(LibSemigroups.copy(S.cxx_obj))
+
+# ============================================================================
+# Display
+# ============================================================================
+
+function Base.show(io::IO, S::FroidurePin{E}) where {E}
+    n = number_of_generators(S)
+    if finished(S)
+        print(io, "<FroidurePin with ", n, " generators, ", length(S), " elements>")
+    elseif started(S)
+        print(io, "<FroidurePin with ", n, " generators, ", current_size(S), "+ elements>")
+    else
+        print(io, "<FroidurePin with ", n, " generators, not yet enumerated>")
+    end
+end
+
+# ============================================================================
+# Position / membership
+# ============================================================================
+
+"""
+    position(S::FroidurePin{E}, x::E) -> Union{Int, Nothing}
+
+Return the 1-based position of `x` in `S`, or `nothing` if not found.
+Triggers full enumeration.
+"""
+function position(S::FroidurePin{E}, x::E) where {E}
+    pos = LibSemigroups.position_element(S.cxx_obj, x.cxx_obj)
+    return _maybe_undefined(pos)
+end
+
+"""
+    current_position(S::FroidurePin{E}, x::E) -> Union{Int, Nothing}
+
+Return the 1-based position of `x` among elements enumerated so far,
+or `nothing` if not yet found. Does not trigger further enumeration.
+"""
+function current_position(S::FroidurePin{E}, x::E) where {E}
+    pos = LibSemigroups.current_position_element(S.cxx_obj, x.cxx_obj)
+    return _maybe_undefined(pos)
+end
+
+"""
+    sorted_position(S::FroidurePin{E}, x::E) -> Union{Int, Nothing}
+
+Return the 1-based position of `x` in the sorted enumeration order,
+or `nothing` if not found. Triggers full enumeration.
+"""
+function sorted_position(S::FroidurePin{E}, x::E) where {E}
+    pos = LibSemigroups.sorted_position_element(S.cxx_obj, x.cxx_obj)
+    return _maybe_undefined(pos)
+end
+
+"""
+    sorted_at(S::FroidurePin{E}, i::Integer) -> E
+
+Return the `i`-th element in sorted order (1-based). Triggers full enumeration.
+"""
+function sorted_at(S::FroidurePin{E}, i::Integer) where {E}
+    (i < 1 || i > length(S)) && throw(BoundsError(S, i))
+    return _wrap_element(E, LibSemigroups.sorted_at(S.cxx_obj, UInt32(i - 1)))
+end
+
+"""
+    to_sorted_position(S::FroidurePin, i::Integer) -> Int
+
+Convert a 1-based enumeration-order position to a 1-based sorted-order position.
+"""
+function to_sorted_position(S::FroidurePin, i::Integer)
+    (i < 1 || i > length(S)) && throw(BoundsError(S, i))
+    return Int(LibSemigroups.to_sorted_position(S.cxx_obj, UInt32(i - 1))) + 1
+end
+
+# ============================================================================
+# Products
+# ============================================================================
+
+"""
+    fast_product(S::FroidurePin, i::Integer, j::Integer) -> Int
+
+Return the 1-based position of S[i] * S[j]. Both `i` and `j` are 1-based.
+The semigroup must be fully enumerated.
+"""
+function fast_product(S::FroidurePin, i::Integer, j::Integer)
+    return Int(LibSemigroups.fast_product(S.cxx_obj, UInt32(i - 1), UInt32(j - 1))) + 1
+end
+
+# ============================================================================
+# Idempotents
+# ============================================================================
+
+"""
+    number_of_idempotents(S::FroidurePin) -> Int
+
+Return the number of idempotent elements. Triggers full enumeration.
+"""
+number_of_idempotents(S::FroidurePin) = Int(LibSemigroups.number_of_idempotents(S.cxx_obj))
+
+"""
+    is_idempotent(S::FroidurePin, i::Integer) -> Bool
+
+Return `true` if the element at 1-based position `i` is idempotent.
+"""
+function is_idempotent(S::FroidurePin, i::Integer)
+    (i < 1 || i > length(S)) && throw(BoundsError(S, i))
+    return LibSemigroups.is_idempotent(S.cxx_obj, UInt32(i - 1))
+end
+
+"""
+    idempotents(S::FroidurePin{E}) -> Vector{E}
+
+Return a vector of all idempotent elements.
+"""
+function idempotents(S::FroidurePin{E}) where {E}
+    cxx_vec = LibSemigroups.idempotents_vector(S.cxx_obj)
+    return [_wrap_element(E, e) for e in cxx_vec]
+end

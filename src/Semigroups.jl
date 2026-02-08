@@ -108,6 +108,8 @@ export FroidurePinBase
 # Transformation types and functions
 export FroidurePin
 export number_of_generators, generator, generators, current_size
+export sorted_position, sorted_at, to_sorted_position
+export fast_product, number_of_idempotents, is_idempotent, idempotents
 export Transf, PPerm, Perm
 export degree, rank, images, image_set, domain_set
 export increase_degree_by!, swap!
