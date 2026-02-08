@@ -71,6 +71,9 @@ const FroidurePinBase = LibSemigroups.FroidurePinBase
 # High-level element types
 include("elements/transf.jl")
 
+# High-level FroidurePin API
+include("froidure-pin.jl")
+
 # Module initialization
 function __init__()
     # Initialize the CxxWrap module
@@ -103,6 +106,7 @@ export number_of_nodes, out_degree, number_of_edges
 export FroidurePinBase
 
 # Transformation types and functions
+export FroidurePin
 export Transf, PPerm, Perm
 export degree, rank, images, image_set, domain_set
 export increase_degree_by!, swap!
