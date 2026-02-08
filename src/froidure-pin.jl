@@ -12,6 +12,9 @@ the C++ FroidurePin<Element> template instantiations. All indices are 1-based
 following Julia conventions.
 """
 
+using CxxWrap.StdLib: StdVector
+using CxxWrap.CxxWrapCore: CxxULong
+
 # ============================================================================
 # Helper functions (private)
 # ============================================================================
@@ -73,7 +76,7 @@ _wrap_element(::Type{Perm{T}}, cxx_elem) where {T} = Perm(LibSemigroups.copy(cxx
 
 # Word conversion (0-based C++ <-> 1-based Julia)
 _to_word_1based(cxx_word) = [Int(w) + 1 for w in cxx_word]
-_to_word_0based(word) = [UInt(w - 1) for w in word]
+_to_word_0based(word) = StdVector{CxxULong}(CxxULong[w - 1 for w in word])
 
 # Check if C++ returned UNDEFINED and convert to nothing (with +1 shift)
 _maybe_undefined(val::UInt32) = is_undefined(val, UInt32) ? nothing : Int(val) + 1
@@ -390,4 +393,158 @@ Return a vector of all idempotent elements.
 function idempotents(S::FroidurePin{E}) where {E}
     cxx_vec = LibSemigroups.idempotents_vector(S.cxx_obj)
     return [_wrap_element(E, e) for e in cxx_vec]
+end
+
+# ============================================================================
+# Factorisation
+# ============================================================================
+
+"""
+    factorisation(S::FroidurePin, i::Integer) -> Vector{Int}
+
+Return the factorisation of the element at 1-based position `i` as a
+1-based word over generator indices. Triggers full enumeration.
+"""
+function factorisation(S::FroidurePin, i::Integer)
+    (i < 1 || i > length(S)) && throw(BoundsError(S, i))
+    return _to_word_1based(LibSemigroups.factorisation(S.cxx_obj, UInt32(i - 1)))
+end
+
+"""
+    factorisation(S::FroidurePin{E}, x::E) -> Vector{Int}
+
+Return the factorisation of element `x` as a 1-based word over generator indices.
+"""
+function factorisation(S::FroidurePin{E}, x::E) where {E}
+    return _to_word_1based(LibSemigroups.factorisation_element(S.cxx_obj, x.cxx_obj))
+end
+
+"""
+    minimal_factorisation(S::FroidurePin, i::Integer) -> Vector{Int}
+
+Return the minimal (short-lex least) factorisation of the element at 1-based
+position `i` as a 1-based word over generator indices.
+"""
+function minimal_factorisation(S::FroidurePin, i::Integer)
+    (i < 1 || i > length(S)) && throw(BoundsError(S, i))
+    return _to_word_1based(LibSemigroups.minimal_factorisation(S.cxx_obj, UInt32(i - 1)))
+end
+
+"""
+    minimal_factorisation(S::FroidurePin{E}, x::E) -> Vector{Int}
+
+Return the minimal factorisation of element `x` as a 1-based word.
+"""
+function minimal_factorisation(S::FroidurePin{E}, x::E) where {E}
+    return _to_word_1based(LibSemigroups.minimal_factorisation_element(S.cxx_obj, x.cxx_obj))
+end
+
+# ============================================================================
+# Word operations
+# ============================================================================
+
+"""
+    to_element(S::FroidurePin{E}, word::AbstractVector{<:Integer}) -> E
+
+Convert a 1-based word (vector of generator indices) to the corresponding element.
+"""
+function to_element(S::FroidurePin{E}, word::AbstractVector{<:Integer}) where {E}
+    cxx_word = _to_word_0based(word)
+    return _wrap_element(E, LibSemigroups.to_element(S.cxx_obj, cxx_word))
+end
+
+"""
+    equal_to(S::FroidurePin, w1, w2) -> Bool
+
+Return `true` if 1-based words `w1` and `w2` represent the same element.
+"""
+function equal_to(S::FroidurePin, w1::AbstractVector{<:Integer}, w2::AbstractVector{<:Integer})
+    return LibSemigroups.equal_to_words(S.cxx_obj, _to_word_0based(w1), _to_word_0based(w2))
+end
+
+# ============================================================================
+# Structure (prefix, suffix, first/final letter, word length)
+# ============================================================================
+
+"""
+    prefix(S::FroidurePin, i::Integer) -> Union{Int, Nothing}
+
+Return the 1-based position of the prefix of the element at position `i`,
+or `nothing` for generators (which have no proper prefix).
+"""
+function prefix(S::FroidurePin, i::Integer)
+    (i < 1 || i > length(S)) && throw(BoundsError(S, i))
+    return _maybe_undefined(LibSemigroups.prefix(S.cxx_obj, UInt32(i - 1)))
+end
+
+"""
+    suffix(S::FroidurePin, i::Integer) -> Union{Int, Nothing}
+
+Return the 1-based position of the suffix of the element at position `i`,
+or `nothing` for generators.
+"""
+function suffix(S::FroidurePin, i::Integer)
+    (i < 1 || i > length(S)) && throw(BoundsError(S, i))
+    return _maybe_undefined(LibSemigroups.suffix(S.cxx_obj, UInt32(i - 1)))
+end
+
+"""
+    first_letter(S::FroidurePin, i::Integer) -> Int
+
+Return the 1-based index of the first generator in the factorisation
+of the element at position `i`.
+"""
+function first_letter(S::FroidurePin, i::Integer)
+    (i < 1 || i > length(S)) && throw(BoundsError(S, i))
+    return Int(LibSemigroups.first_letter(S.cxx_obj, UInt32(i - 1))) + 1
+end
+
+"""
+    final_letter(S::FroidurePin, i::Integer) -> Int
+
+Return the 1-based index of the last generator in the factorisation
+of the element at position `i`.
+"""
+function final_letter(S::FroidurePin, i::Integer)
+    (i < 1 || i > length(S)) && throw(BoundsError(S, i))
+    return Int(LibSemigroups.final_letter(S.cxx_obj, UInt32(i - 1))) + 1
+end
+
+"""
+    word_length(S::FroidurePin, i::Integer) -> Int
+
+Return the length of the factorisation of the element at 1-based position `i`.
+"""
+function word_length(S::FroidurePin, i::Integer)
+    (i < 1 || i > length(S)) && throw(BoundsError(S, i))
+    return Int(LibSemigroups.length(S.cxx_obj, UInt32(i - 1)))
+end
+
+"""
+    current_max_word_length(S::FroidurePin) -> Int
+
+Return the maximum word length among elements enumerated so far.
+"""
+current_max_word_length(S::FroidurePin) = Int(LibSemigroups.current_max_word_length(S.cxx_obj))
+
+# ============================================================================
+# Bulk element access
+# ============================================================================
+
+"""
+    elements(S::FroidurePin{E}) -> Vector{E}
+
+Return a vector of all elements. Triggers full enumeration.
+"""
+function elements(S::FroidurePin{E}) where {E}
+    return [_wrap_element(E, e) for e in LibSemigroups.elements_vector(S.cxx_obj)]
+end
+
+"""
+    sorted_elements(S::FroidurePin{E}) -> Vector{E}
+
+Return a vector of all elements in sorted order.
+"""
+function sorted_elements(S::FroidurePin{E}) where {E}
+    return [_wrap_element(E, e) for e in LibSemigroups.sorted_elements_vector(S.cxx_obj)]
 end
