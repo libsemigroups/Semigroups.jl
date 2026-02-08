@@ -110,6 +110,12 @@ export FroidurePin
 export number_of_generators, generator, generators, current_size
 export sorted_position, sorted_at, to_sorted_position
 export fast_product, number_of_idempotents, is_idempotent, idempotents
+export factorisation, minimal_factorisation, to_element, equal_to
+export prefix, suffix, first_letter, final_letter, word_length, current_max_word_length
+export elements, sorted_elements
+export number_of_rules, contains_one
+export right_cayley_graph, left_cayley_graph
+export batch_size, set_batch_size!, reserve!, add_generator!
 export Transf, PPerm, Perm
 export degree, rank, images, image_set, domain_set
 export increase_degree_by!, swap!

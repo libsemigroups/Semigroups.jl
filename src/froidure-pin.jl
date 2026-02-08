@@ -548,3 +548,89 @@ Return a vector of all elements in sorted order.
 function sorted_elements(S::FroidurePin{E}) where {E}
     return [_wrap_element(E, e) for e in LibSemigroups.sorted_elements_vector(S.cxx_obj)]
 end
+
+# ============================================================================
+# Rules
+# ============================================================================
+
+"""
+    number_of_rules(S::FroidurePin) -> Int
+
+Return the total number of rules (relations) in the semigroup.
+Triggers full enumeration.
+"""
+number_of_rules(S::FroidurePin) = Int(LibSemigroups.number_of_rules(S.cxx_obj))
+
+"""
+    contains_one(S::FroidurePin) -> Bool
+
+Return `true` if the semigroup contains the identity element.
+Triggers full enumeration.
+"""
+contains_one(S::FroidurePin) = LibSemigroups.contains_one(S.cxx_obj)
+
+# ============================================================================
+# Cayley graphs
+# ============================================================================
+
+"""
+    right_cayley_graph(S::FroidurePin) -> WordGraph
+
+Return the right Cayley graph of the semigroup. Triggers full enumeration.
+"""
+right_cayley_graph(S::FroidurePin) = LibSemigroups.right_cayley_graph(S.cxx_obj)
+
+"""
+    left_cayley_graph(S::FroidurePin) -> WordGraph
+
+Return the left Cayley graph of the semigroup. Triggers full enumeration.
+"""
+left_cayley_graph(S::FroidurePin) = LibSemigroups.left_cayley_graph(S.cxx_obj)
+
+# ============================================================================
+# Settings
+# ============================================================================
+
+"""
+    batch_size(S::FroidurePin) -> Int
+
+Return the current batch size used during enumeration.
+"""
+batch_size(S::FroidurePin) = Int(LibSemigroups.batch_size(S.cxx_obj))
+
+"""
+    set_batch_size!(S::FroidurePin, n::Integer) -> FroidurePin
+
+Set the batch size for enumeration. Returns `S` for method chaining.
+"""
+function set_batch_size!(S::FroidurePin, n::Integer)
+    n < 1 && throw(ArgumentError("batch_size must be positive, got $n"))
+    LibSemigroups.set_batch_size!(S.cxx_obj, n)
+    return S
+end
+
+"""
+    reserve!(S::FroidurePin, n::Integer) -> FroidurePin
+
+Reserve capacity for `n` elements. Returns `S` for method chaining.
+"""
+function reserve!(S::FroidurePin, n::Integer)
+    n < 0 && throw(ArgumentError("reserve size must be non-negative, got $n"))
+    LibSemigroups.reserve!(S.cxx_obj, n)
+    return S
+end
+
+# ============================================================================
+# Mutating operations
+# ============================================================================
+
+"""
+    add_generator!(S::FroidurePin{E}, x::E) -> FroidurePin{E}
+
+Add a generator to the semigroup. Returns `S` for method chaining.
+The semigroup must not have been fully enumerated yet.
+"""
+function add_generator!(S::FroidurePin{E}, x::E) where {E}
+    LibSemigroups.add_generator!(S.cxx_obj, x.cxx_obj)
+    return S
+end
