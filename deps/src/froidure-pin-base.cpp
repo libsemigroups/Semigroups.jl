@@ -27,9 +27,7 @@
 // Enables CxxBaseRef<FroidurePinBase> to upcast to Runner when calling
 // inherited Runner methods (finished, run!, etc.) on FroidurePinBase instances.
 namespace jlcxx {
-template <>
-struct SuperType<libsemigroups::FroidurePinBase>
-{
+template <> struct SuperType<libsemigroups::FroidurePinBase> {
   typedef libsemigroups::Runner type;
 };
 }    // namespace jlcxx
