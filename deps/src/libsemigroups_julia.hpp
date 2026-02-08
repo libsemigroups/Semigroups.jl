@@ -61,6 +61,7 @@ void define_runner(jl::Module & mod);
 void define_word_graph(jl::Module & mod);
 void define_froidure_pin_base(jl::Module & mod);
 void define_transf(jl::Module & mod);
+void define_froidure_pin(jl::Module & mod);
 
 }    // namespace libsemigroups_julia
 

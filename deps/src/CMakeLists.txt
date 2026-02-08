@@ -37,6 +37,7 @@ add_library(libsemigroups_julia SHARED
     word-graph.cpp
     froidure-pin-base.cpp
     transf.cpp
+    froidure-pin.cpp
 )
 
 # Include directories

@@ -39,6 +39,10 @@ JLCXX_MODULE define_julia_module(jl::Module & mod)
 
   // Define element types
   define_transf(mod);
+
+  // Define FroidurePin<E> template instantiations
+  // Must be AFTER transf (element types) AND froidure_pin_base
+  define_froidure_pin(mod);
 }
 
 }    // namespace libsemigroups_julia
