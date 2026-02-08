@@ -65,6 +65,9 @@ include("libsemigroups/runner.jl")
 include("libsemigroups/word-graph.jl")
 include("libsemigroups/transf.jl")
 
+# Type alias for FroidurePinBase (abstract base; full API comes with FroidurePin{E})
+const FroidurePinBase = LibSemigroups.FroidurePinBase
+
 # High-level element types
 include("elements/transf.jl")
 
@@ -95,6 +98,9 @@ export is_undefined, is_positive_infinity, is_negative_infinity, is_limit_max
 # WordGraph
 export WordGraph
 export number_of_nodes, out_degree, number_of_edges
+
+# FroidurePinBase
+export FroidurePinBase
 
 # Transformation types and functions
 export Transf, PPerm, Perm

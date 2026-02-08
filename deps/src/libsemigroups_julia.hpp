@@ -45,6 +45,7 @@
 
 // libsemigroups headers (these transitively include fmt)
 #include <libsemigroups/constants.hpp>
+#include <libsemigroups/froidure-pin-base.hpp>
 #include <libsemigroups/types.hpp>
 #include <libsemigroups/word-graph.hpp>
 
@@ -58,6 +59,7 @@ namespace libsemigroups = ::libsemigroups;
 void define_constants(jl::Module & mod);
 void define_runner(jl::Module & mod);
 void define_word_graph(jl::Module & mod);
+void define_froidure_pin_base(jl::Module & mod);
 void define_transf(jl::Module & mod);
 
 }    // namespace libsemigroups_julia

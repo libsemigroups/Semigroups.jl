@@ -35,6 +35,7 @@ add_library(libsemigroups_julia SHARED
     constants.cpp
     runner.cpp
     word-graph.cpp
+    froidure-pin-base.cpp
     transf.cpp
 )
 

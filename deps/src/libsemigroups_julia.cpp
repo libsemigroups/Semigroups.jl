@@ -31,8 +31,11 @@ JLCXX_MODULE define_julia_module(jl::Module & mod)
   // Define base types (must be registered before derived types)
   define_runner(mod);
 
-  // Define WordGraph (must be before FroidurePinBase later)
+  // Define WordGraph (must be before FroidurePinBase)
   define_word_graph(mod);
+
+  // Define FroidurePinBase (inherits Runner, uses WordGraph)
+  define_froidure_pin_base(mod);
 
   // Define element types
   define_transf(mod);
