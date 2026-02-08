@@ -22,19 +22,32 @@
 #ifndef LIBSEMIGROUPS_JULIA_HPP_
 #define LIBSEMIGROUPS_JULIA_HPP_
 
-// JlCxx headers
+// JlCxx headers FIRST — these pull in standard library headers (<string>,
+// <memory>, etc.) that on libstdc++ use __cpp_lib_is_constant_evaluated to
+// decide constexpr-ness. They must be included while the macro is intact.
 #include "jlcxx/jlcxx.hpp"
 #include "jlcxx/stl.hpp"
 
-// libsemigroups headers
-#include <libsemigroups/constants.hpp>
-#include <libsemigroups/types.hpp>
+// FIX for fmt consteval issue:
+// JlCxx requires C++20, but libsemigroups bundles fmt which enables
+// consteval format string validation in C++20 mode, causing compile errors
+// when inline functions pass runtime std::string_view to fmt::format.
+//
+// fmt/base.h unconditionally defines FMT_USE_CONSTEVAL via an #if/#elif
+// chain (no #ifndef guard), so pre-defining it has no effect. Instead we
+// #undef __cpp_lib_is_constant_evaluated AFTER all standard library headers
+// are included (so their constexpr declarations are correct) but BEFORE any
+// libsemigroups/fmt headers. When fmt/base.h later includes <type_traits>,
+// include guards prevent re-parsing, so the macro stays undefined and fmt
+// takes the !defined(__cpp_lib_is_constant_evaluated) branch, setting
+// FMT_USE_CONSTEVAL=0.
+#undef __cpp_lib_is_constant_evaluated
 
-// Standard library
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <vector>
+// libsemigroups headers (these transitively include fmt)
+#include <libsemigroups/constants.hpp>
+#include <libsemigroups/froidure-pin-base.hpp>
+#include <libsemigroups/types.hpp>
+#include <libsemigroups/word-graph.hpp>
 
 namespace libsemigroups_julia {
 
@@ -44,7 +57,11 @@ namespace libsemigroups = ::libsemigroups;
 
 // Forward declarations of binding functions
 void define_constants(jl::Module & mod);
+void define_runner(jl::Module & mod);
+void define_word_graph(jl::Module & mod);
+void define_froidure_pin_base(jl::Module & mod);
 void define_transf(jl::Module & mod);
+void define_froidure_pin(jl::Module & mod);
 
 }    // namespace libsemigroups_julia
 

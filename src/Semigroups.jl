@@ -8,6 +8,7 @@ module Semigroups
 
 using CxxWrap
 using AbstractAlgebra
+using Dates: TimePeriod, Nanosecond
 
 # ============================================================================
 # Debug mode
@@ -60,10 +61,18 @@ using .Errors: LibsemigroupsError, @wrap_libsemigroups_call
 
 # Julia-side wrapper files
 include("libsemigroups/constants.jl")
+include("libsemigroups/runner.jl")
+include("libsemigroups/word-graph.jl")
 include("libsemigroups/transf.jl")
+
+# Type alias for FroidurePinBase (abstract base; full API comes with FroidurePin{E})
+const FroidurePinBase = LibSemigroups.FroidurePinBase
 
 # High-level element types
 include("elements/transf.jl")
+
+# High-level FroidurePin API
+include("froidure-pin.jl")
 
 # Module initialization
 function __init__()
@@ -77,10 +86,36 @@ end
 
 export enable_debug, is_debug, LibsemigroupsError
 export UNDEFINED, POSITIVE_INFINITY, NEGATIVE_INFINITY, LIMIT_MAX
+export Runner, RunnerState
+export STATE_NEVER_RUN, STATE_RUNNING_TO_FINISH, STATE_RUNNING_FOR
+export STATE_RUNNING_UNTIL, STATE_TIMED_OUT, STATE_STOPPED_BY_PREDICATE
+export STATE_NOT_RUNNING, STATE_DEAD
+export run!, run_for!, run_until!, init!, kill!
+export finished, started, running, timed_out, stopped, dead
+export stopped_by_predicate, running_for, running_until
+export current_state, running_for_how_long
+export report_why_we_stopped, string_why_we_stopped
 export tril, tril_FALSE, tril_TRUE, tril_unknown, tril_to_bool
 export is_undefined, is_positive_infinity, is_negative_infinity, is_limit_max
 
+# WordGraph
+export WordGraph
+export number_of_nodes, out_degree, number_of_edges
+
+# FroidurePinBase
+export FroidurePinBase
+
 # Transformation types and functions
+export FroidurePin
+export number_of_generators, generator, generators, current_size
+export sorted_position, sorted_at, to_sorted_position
+export fast_product, number_of_idempotents, is_idempotent, idempotents
+export factorisation, minimal_factorisation, to_element, equal_to
+export prefix, suffix, first_letter, final_letter, word_length, current_max_word_length
+export elements, sorted_elements
+export number_of_rules, contains_one
+export right_cayley_graph, left_cayley_graph
+export batch_size, set_batch_size!, reserve!, add_generator!
 export Transf, PPerm, Perm
 export degree, rank, images, image_set, domain_set
 export increase_degree_by!, swap!

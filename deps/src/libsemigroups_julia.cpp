@@ -28,10 +28,21 @@ JLCXX_MODULE define_julia_module(jl::Module & mod)
   // Define constants first (UNDEFINED, POSITIVE_INFINITY, etc.)
   define_constants(mod);
 
+  // Define base types (must be registered before derived types)
+  define_runner(mod);
+
+  // Define WordGraph (must be before FroidurePinBase)
+  define_word_graph(mod);
+
+  // Define FroidurePinBase (inherits Runner, uses WordGraph)
+  define_froidure_pin_base(mod);
+
   // Define element types
   define_transf(mod);
 
-  // Add more definitions here (FroidurePin, etc.)
+  // Define FroidurePin<E> template instantiations
+  // Must be AFTER transf (element types) AND froidure_pin_base
+  define_froidure_pin(mod);
 }
 
 }    // namespace libsemigroups_julia

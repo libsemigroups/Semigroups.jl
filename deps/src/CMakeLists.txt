@@ -33,7 +33,11 @@ message(STATUS "libsemigroups libraries: ${LIBSEMIGROUPS_LIBRARIES}")
 add_library(libsemigroups_julia SHARED
     libsemigroups_julia.cpp
     constants.cpp
+    runner.cpp
+    word-graph.cpp
+    froidure-pin-base.cpp
     transf.cpp
+    froidure-pin.cpp
 )
 
 # Include directories
