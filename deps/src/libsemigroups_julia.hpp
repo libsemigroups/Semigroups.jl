@@ -47,6 +47,9 @@
 #include <libsemigroups/constants.hpp>
 #include <libsemigroups/types.hpp>
 
+// Index conversion utilities (1-based ↔ 0-based)
+#include "index_utils.hpp"
+
 namespace libsemigroups_julia {
 
 // Namespace aliases for convenience
