@@ -14,6 +14,7 @@ using Semigroups
 @testset "Semigroups.jl" begin
     include("test_constants.jl")
     include("test_errors.jl")
+    include("test_runner.jl")
     include("test_word_graph.jl")
     include("test_transf.jl")
 end

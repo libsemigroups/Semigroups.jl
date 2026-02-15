@@ -28,6 +28,9 @@ JLCXX_MODULE define_julia_module(jl::Module & mod)
   // Define constants first (UNDEFINED, POSITIVE_INFINITY, etc.)
   define_constants(mod);
 
+  // Define base types (must be registered before derived types)
+  define_runner(mod);
+
   // Define WordGraph (must be before FroidurePinBase later)
   define_word_graph(mod);
 

@@ -35,8 +35,9 @@ void bind_ptransf_common(jl::Module &                      m,
   ////////////////////////////////////////////////////////////////////////
 
   // Safe constructor using make<> which validates inputs
+  // Julia passes 1-based indices (0 = UNDEFINED for PPerm)
   m.method(type_name, [](std::vector<Scalar> const & imgs) -> PTransfType {
-    return libsemigroups::make<PTransfType>(imgs);
+    return libsemigroups::make<PTransfType>(vec_to_0_based_undef(imgs));
   });
 
   ////////////////////////////////////////////////////////////////////////
@@ -49,8 +50,9 @@ void bind_ptransf_common(jl::Module &                      m,
   });
 
   // __getitem__ equivalent - element access with bounds checking
+  // Julia passes 1-based index, returns 1-based result (0 = UNDEFINED)
   type.method("getindex", [](PTransfType const & self, size_t i) -> Scalar {
-    return self.at(i);
+    return to_1_based_undef(self.at(to_0_based(i)));
   });
 
   // __hash__ equivalent
@@ -73,13 +75,13 @@ void bind_ptransf_common(jl::Module &                      m,
     self.increase_degree_by(m);
   });
 
-  // images - return a Julia-compatible iterator (we use a vector)
+  // images - return a Julia-compatible vector with 1-based indices
   type.method("images_vector", [](PTransfType const & self) {
     std::vector<Scalar> result;
     result.reserve(self.degree());
     for (auto val : self)
     {
-      result.push_back(val);
+      result.push_back(to_1_based_undef(val));
     }
     return result;
   });
@@ -122,8 +124,8 @@ void bind_ptransf_common(jl::Module &                      m,
 
   type.method("is_greater_equal",
               [](PTransfType const & a, PTransfType const & b) -> bool {
-                return a >= b;
-              });
+    return a >= b;
+  });
 
   type.method("multiply", [](PTransfType const & a, PTransfType const & b) {
     return a * b;
@@ -151,11 +153,12 @@ void bind_pperm_type(jl::Module & m, std::string const & name)
   bind_ptransf_common(m, type, name);
 
   // Constructor from domain, image, and degree using make<>
+  // Julia passes 1-based domain/image vectors, degree is a count (no conversion)
   m.method(name,
            [](std::vector<Scalar> const & dom, std::vector<Scalar> const & img,
               size_t deg) -> PPermType {
-             return libsemigroups::make<PPermType>(dom, img, deg);
-           });
+    return libsemigroups::make<PPermType>(vec_to_0_based(dom), vec_to_0_based(img), deg);
+  });
 }
 
 template <typename PermType> void bind_perm_type(jl::Module & m, std::string const & name)
@@ -234,70 +237,70 @@ void define_transf(jl::Module & m)
   // Module-level helper functions: image
   ////////////////////////////////////////////////////////////////////////
 
-  // image(f) - returns sorted vector of image points (excluding UNDEFINED)
+  // image(f) - returns sorted vector of image points (1-based, excluding UNDEFINED)
   m.method("image", [](Transf<0, uint8_t> const & f) {
-    return libsemigroups::image(f);
+    return vec_to_1_based(libsemigroups::image(f));
   });
   m.method("image", [](Transf<0, uint16_t> const & f) {
-    return libsemigroups::image(f);
+    return vec_to_1_based(libsemigroups::image(f));
   });
   m.method("image", [](Transf<0, uint32_t> const & f) {
-    return libsemigroups::image(f);
+    return vec_to_1_based(libsemigroups::image(f));
   });
 
   m.method("image", [](PPerm<0, uint8_t> const & f) {
-    return libsemigroups::image(f);
+    return vec_to_1_based(libsemigroups::image(f));
   });
   m.method("image", [](PPerm<0, uint16_t> const & f) {
-    return libsemigroups::image(f);
+    return vec_to_1_based(libsemigroups::image(f));
   });
   m.method("image", [](PPerm<0, uint32_t> const & f) {
-    return libsemigroups::image(f);
+    return vec_to_1_based(libsemigroups::image(f));
   });
 
   m.method("image", [](Perm<0, uint8_t> const & f) {
-    return libsemigroups::image(f);
+    return vec_to_1_based(libsemigroups::image(f));
   });
   m.method("image", [](Perm<0, uint16_t> const & f) {
-    return libsemigroups::image(f);
+    return vec_to_1_based(libsemigroups::image(f));
   });
   m.method("image", [](Perm<0, uint32_t> const & f) {
-    return libsemigroups::image(f);
+    return vec_to_1_based(libsemigroups::image(f));
   });
 
   ////////////////////////////////////////////////////////////////////////
   // Module-level helper functions: domain
   ////////////////////////////////////////////////////////////////////////
 
-  // domain(f) - returns sorted vector of domain points (where f is defined)
+  // domain(f) - returns sorted vector of domain points (1-based)
   m.method("domain", [](Transf<0, uint8_t> const & f) {
-    return libsemigroups::domain(f);
+    return vec_to_1_based(libsemigroups::domain(f));
   });
   m.method("domain", [](Transf<0, uint16_t> const & f) {
-    return libsemigroups::domain(f);
+    return vec_to_1_based(libsemigroups::domain(f));
   });
   m.method("domain", [](Transf<0, uint32_t> const & f) {
-    return libsemigroups::domain(f);
+    return vec_to_1_based(libsemigroups::domain(f));
   });
 
   m.method("domain", [](PPerm<0, uint8_t> const & f) {
-    return libsemigroups::domain(f);
+    return vec_to_1_based(libsemigroups::domain(f));
   });
   m.method("domain", [](PPerm<0, uint16_t> const & f) {
-    return libsemigroups::domain(f);
+    return vec_to_1_based(libsemigroups::domain(f));
   });
   m.method("domain", [](PPerm<0, uint32_t> const & f) {
-    return libsemigroups::domain(f);
+    return vec_to_1_based(libsemigroups::domain(f));
   });
 
   m.method("domain", [](Perm<0, uint8_t> const & f) {
-    return libsemigroups::domain(f);
+    return vec_to_1_based(libsemigroups::domain(f));
   });
   m.method("domain", [](Perm<0, uint16_t> const & f) {
-    return libsemigroups::domain(f);
+    return vec_to_1_based(libsemigroups::domain(f));
   });
   m.method("domain", [](Perm<0, uint32_t> const & f) {
-    return libsemigroups::domain(f);
+    return vec_to_1_based(libsemigroups::domain(f));
   });
 
   ////////////////////////////////////////////////////////////////////////
