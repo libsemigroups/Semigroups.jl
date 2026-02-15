@@ -234,7 +234,7 @@ image(t::_PTransfTypes) = LibSemigroups.image(t)
     domain(t) -> Vector
 
 Return a sorted vector of all points in the domain of the transformation.
-For full transformations (Transf, Perm), this is `[0, 1, ..., degree(t)-1]`.
+For full transformations (Transf, Perm), this is `[1, 2, ..., degree(t)]`.
 For partial transformations (PPerm), only defined domain points are included.
 """
 domain(t::_PTransfTypes) = LibSemigroups.domain(t)

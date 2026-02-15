@@ -117,8 +117,8 @@ The transformation is represented by a vector of images.
 t = Transf([1, 2, 1])
 ```
 
-Note: The constructor accepts 1-based indexing (Julia convention) but
-internally converts to 0-based indexing for the C++ library.
+Note: The constructor accepts 1-based indexing (Julia convention).
+The C++ binding layer handles conversion to 0-based indexing internally.
 """
 mutable struct Transf{T}
     cxx_obj::Union{Transf1,Transf2,Transf4}
@@ -151,19 +151,9 @@ function Transf(images::AbstractVector{<:Integer}, ::Type{T}) where {T}
         error("Cannot create transformation of degree $n")
     end
 
-    # Select the appropriate C++ type based on T
     CxxType = _transf_type_from_scalar_type(T)
-
-    # Convert to 0-based indexing for C++
-    images_0based = [UInt(img - 1) for img in images]
-
-    # Convert to the desired type T
-    images_typed = convert(Vector{T}, images_0based)
-
-    # Construct the C++ object (StdVector wrapper)
+    images_typed = convert(Vector{T}, images)
     cxx_obj = @wrap_libsemigroups_call CxxType(StdVector{T}(images_typed))
-
-    # Return the Transf{T} instance
     return Transf{T}(cxx_obj)
 end
 
@@ -203,8 +193,7 @@ function Base.getindex(t::Transf, i::Integer)
     if i < 1 || i > degree(t)
         throw(BoundsError(t, i))
     end
-    # Convert to 0-based, call C++, convert back to 1-based
-    return Int(LibSemigroups.getindex(t.cxx_obj, UInt(i - 1))) + 1
+    return Int(LibSemigroups.getindex(t.cxx_obj, UInt(i)))
 end
 
 # Iteration
@@ -279,10 +268,7 @@ Return a sorted vector of all distinct values in the image of `t`.
 Uses 1-based indexing.
 """
 function image_set(t::Transf)
-    # Get image from C++ (0-based)
-    img_0based = image(t.cxx_obj)
-    # Convert to 1-based
-    return sort([Int(x) + 1 for x in img_0based])
+    return sort([Int(x) for x in image(t.cxx_obj)])
 end
 
 """
@@ -352,16 +338,16 @@ function PPerm(images::AbstractVector, ::Type{T}) where {T}
 
     CxxType = _pperm_type_from_scalar_type(T)
 
-    images_0based = Vector{T}(undef, n)
+    images_typed = Vector{T}(undef, n)
     for (i, img) in enumerate(images)
         if img === UNDEFINED
-            images_0based[i] = convert(T, UNDEFINED)
+            images_typed[i] = T(0)    # 0 = UNDEFINED in 1-based convention
         else
-            images_0based[i] = T(img - 1)
+            images_typed[i] = T(img)  # 1-based, C++ handles conversion
         end
     end
 
-    cxx_obj = @wrap_libsemigroups_call CxxType(StdVector{T}(images_0based))
+    cxx_obj = @wrap_libsemigroups_call CxxType(StdVector{T}(images_typed))
     return PPerm{T}(cxx_obj)
 end
 
@@ -404,12 +390,12 @@ function PPerm(
 
     CxxType = _pperm_type_from_scalar_type(T)
 
-    dom_0based = convert(Vector{T}, [T(d - 1) for d in domain])
-    img_0based = convert(Vector{T}, [T(i - 1) for i in image])
+    dom_typed = convert(Vector{T}, domain)
+    img_typed = convert(Vector{T}, image)
 
     cxx_obj = @wrap_libsemigroups_call CxxType(
-        StdVector{T}(dom_0based),
-        StdVector{T}(img_0based),
+        StdVector{T}(dom_typed),
+        StdVector{T}(img_typed),
         UInt(deg),
     )
     return PPerm{T}(cxx_obj)
@@ -450,16 +436,8 @@ function Base.getindex(p::PPerm, i::Integer)
     if i < 1 || i > degree(p)
         throw(BoundsError(p, i))
     end
-    # Convert to 0-based, call C++
-    result_0based = LibSemigroups.getindex(p.cxx_obj, UInt(i - 1))
-
-    # Check if UNDEFINED
-    ScalarType = typeof(result_0based)
-    if result_0based == convert(ScalarType, UNDEFINED)
-        return UNDEFINED
-    else
-        return Int(result_0based) + 1
-    end
+    result = LibSemigroups.getindex(p.cxx_obj, UInt(i))
+    return result == 0 ? UNDEFINED : Int(result)
 end
 
 # Iteration
@@ -517,8 +495,7 @@ Return a sorted vector of all points in the domain of `p` (where p is defined).
 Uses 1-based indexing.
 """
 function domain_set(p::PPerm)
-    dom_0based = domain(p.cxx_obj)
-    return sort([Int(x) + 1 for x in dom_0based])
+    return sort([Int(x) for x in domain(p.cxx_obj)])
 end
 
 """
@@ -528,8 +505,7 @@ Return a sorted vector of all points in the image of `p`.
 Uses 1-based indexing.
 """
 function image_set(p::PPerm)
-    img_0based = image(p.cxx_obj)
-    return sort([Int(x) + 1 for x in img_0based])
+    return sort([Int(x) for x in image(p.cxx_obj)])
 end
 
 """
@@ -618,10 +594,7 @@ function Perm(images::AbstractVector{<:Integer}, ::Type{T}) where {T}
     end
 
     CxxType = _perm_type_from_scalar_type(T)
-
-    images_0based = [UInt(img - 1) for img in images]
-    images_typed = convert(Vector{T}, images_0based)
-
+    images_typed = convert(Vector{T}, images)
     cxx_obj = @wrap_libsemigroups_call CxxType(StdVector{T}(images_typed))
     return Perm{T}(cxx_obj)
 end
@@ -667,7 +640,7 @@ function Base.getindex(p::Perm, i::Integer)
     if i < 1 || i > degree(p)
         throw(BoundsError(p, i))
     end
-    return Int(LibSemigroups.getindex(p.cxx_obj, UInt(i - 1))) + 1
+    return Int(LibSemigroups.getindex(p.cxx_obj, UInt(i)))
 end
 
 # Iteration
@@ -755,10 +728,7 @@ For permutations, this is always [1, 2, ..., degree(p)].
 Uses 1-based indexing.
 """
 function image_set(p::Perm)
-    # Get image from C++ (0-based)
-    img_0based = image(p.cxx_obj)
-    # Convert to 1-based
-    return sort([Int(x) + 1 for x in img_0based])
+    return sort([Int(x) for x in image(p.cxx_obj)])
 end
 
 # ============================================================================
