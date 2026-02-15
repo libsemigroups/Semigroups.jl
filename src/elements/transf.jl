@@ -295,18 +295,28 @@ end
 # ============================================================================
 
 """
-    PPerm
+    PPerm{T}
 
-A partial permutation is an injective partial function from {1, 2, ..., n} to itself.
-Undefined points are represented by the special value UNDEFINED.
+Partial permutations with dynamic degree.
+
+A *partial permutation* ``f`` is just an injective partial transformation,
+which is stored as a vector of the images of ``\\{1, 2, \\ldots, n\\}``,
+i.e. ``((1)f, (2)f, \\ldots, (n)f)`` where the value [`UNDEFINED`](@ref)
+is used to indicate that ``(i)f`` is undefined (i.e. not among the
+points where ``f`` is defined).
 
 # Construction
+
 ```julia
-# From images with UNDEFINED
-p = PPerm([2, UNDEFINED, 1])  # maps 1->2, 2->undefined, 3->1
+using Semigroups
+
+# From an image list (use UNDEFINED for undefined points)
+p = PPerm([2, UNDEFINED, 1])
+p[1]  # 2
+p[2]  # UNDEFINED
 
 # From domain, image, and degree
-p = PPerm([1, 3], [2, 1], 3)  # maps 1->2, 3->1, degree 3
+p = PPerm([1, 3], [2, 1], 3)  # 1 -> 2, 3 -> 1, degree 3
 ```
 """
 mutable struct PPerm{T}
@@ -320,15 +330,24 @@ PPerm(p::PPerm4) = PPerm{UInt32}(p)
 """
     PPerm(images::AbstractVector, ::Type{T}) where {T}
 
-Create a partial permutation from a vector of images using 1-based indexing
-with explicit scalar type `T`.
-Use UNDEFINED for undefined points.
+Construct a [`PPerm`](@ref) from a container of images with explicit
+scalar type `T`.
+
+The image of the point `i` under the partial permutation is the value
+in position `i` of `images`. Use [`UNDEFINED`](@ref) to indicate that
+a point is undefined.
 
 # Example
 ```julia
-using Semigroups: UNDEFINED
+using Semigroups
+
 p = PPerm([2, UNDEFINED, 1, 4], UInt8)
+p[2]  # UNDEFINED
 ```
+
+# Throws
+- `LibsemigroupsError` if any value in `images` exceeds
+  `length(images)` and is not equal to [`UNDEFINED`](@ref).
 """
 function PPerm(images::AbstractVector, ::Type{T}) where {T}
     n = length(images)
@@ -350,14 +369,24 @@ end
 """
     PPerm(images::AbstractVector)
 
-Create a partial permutation from a vector of images using 1-based indexing.
-Use UNDEFINED for undefined points. Automatically selects the scalar type.
+Construct a [`PPerm`](@ref) from a container of images.
+
+The image of the point `i` under the partial permutation is the value
+in position `i` of `images`. Use [`UNDEFINED`](@ref) to indicate that
+a point is undefined. The scalar type is selected automatically based
+on the degree.
 
 # Example
 ```julia
-using Semigroups: UNDEFINED
-p = PPerm([2, UNDEFINED, 1, 4])  # 2 is not in the domain
+using Semigroups
+
+p = PPerm([2, UNDEFINED, 1, 4])
+p[2]  # UNDEFINED
 ```
+
+# Throws
+- `LibsemigroupsError` if any value in `images` exceeds
+  `length(images)` and is not equal to [`UNDEFINED`](@ref).
 """
 function PPerm(images::AbstractVector)
     return PPerm(images, _scalar_type_from_degree(length(images)))
@@ -366,13 +395,24 @@ end
 """
     PPerm(domain::AbstractVector{<:Integer}, image::AbstractVector{<:Integer}, deg::Integer, ::Type{T}) where {T}
 
-Create a partial permutation from domain and image vectors with specified degree
-and explicit scalar type `T`. Uses 1-based indexing.
+Construct a [`PPerm`](@ref) from domain, range, and degree with explicit
+scalar type `T`.
+
+Constructs a partial permutation of degree `deg` such that `p[domain[i]] =
+image[i]` for all `i` and which is [`UNDEFINED`](@ref) on every other value
+in the range ``[1, deg]``.
 
 # Example
 ```julia
-p = PPerm([1, 3], [2, 4], 5, UInt8)  # maps 1->2, 3->4, degree 5
+using Semigroups
+
+p = PPerm([1, 3], [2, 4], 5, UInt8)  # 1 -> 2, 3 -> 4, degree 5
 ```
+
+# Throws
+- `LibsemigroupsError` if `domain` and `image` do not have the same
+  size, any value in `domain` or `image` is greater than `deg`, or there
+  are repeated entries in `domain` or `image`.
 """
 function PPerm(
     domain::AbstractVector{<:Integer},
@@ -400,13 +440,24 @@ end
 """
     PPerm(domain::AbstractVector{<:Integer}, image::AbstractVector{<:Integer}, deg::Integer)
 
-Create a partial permutation from domain and image vectors with specified degree.
-Automatically selects the scalar type. Uses 1-based indexing.
+Construct a [`PPerm`](@ref) from domain, range, and degree.
+
+Constructs a partial permutation of degree `deg` such that `p[domain[i]] =
+image[i]` for all `i` and which is [`UNDEFINED`](@ref) on every other value
+in the range ``[1, deg]``. The scalar type is selected automatically based
+on `deg`.
 
 # Example
 ```julia
-p = PPerm([1, 3], [2, 4], 5)  # maps 1->2, 3->4, degree 5
+using Semigroups
+
+p = PPerm([1, 3], [2, 4], 5)  # 1 -> 2, 3 -> 4, degree 5
 ```
+
+# Throws
+- `LibsemigroupsError` if `domain` and `image` do not have the same
+  size, any value in `domain` or `image` is greater than `deg`, or there
+  are repeated entries in `domain` or `image`.
 """
 function PPerm(
     domain::AbstractVector{<:Integer},
@@ -425,8 +476,10 @@ rank(p::PPerm) = rank(p.cxx_obj)
     getindex(p::PPerm, i::Integer) -> Union{Int, UndefinedType}
 
 Get the image of point `i` under partial permutation `p`.
-Returns UNDEFINED if `i` is not in the domain.
-Uses 1-based indexing.
+Returns [`UNDEFINED`](@ref) if `i` is not in the domain.
+
+# Throws
+- `BoundsError` if `i` is out of range.
 """
 function Base.getindex(p::PPerm, i::Integer)
     if i < 1 || i > degree(p)
@@ -458,6 +511,11 @@ Base.:(>=)(p1::PPerm, p2::PPerm) = LibSemigroups.is_greater_equal(p1.cxx_obj, p2
 Base.hash(p::PPerm, h::UInt) = hash(hash_value(p.cxx_obj), h)
 
 # Copy
+"""
+    Base.copy(p::PPerm) -> PPerm
+
+Create an independent copy of partial permutation `p`.
+"""
 Base.copy(p::PPerm{T}) where {T} = PPerm{T}(copy(p.cxx_obj))
 
 # Multiplication

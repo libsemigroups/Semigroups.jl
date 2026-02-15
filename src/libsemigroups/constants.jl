@@ -20,11 +20,21 @@ struct UndefinedType end
 """
     UNDEFINED
 
-Represents an undefined value. Used as the sentinel for undefined points
-in partial permutations (`PPerm`). Compare using `===` or `==`.
+Value for something undefined.
 
-`UNDEFINED` is a distinct singleton type — it is never equal to any integer.
-`convert(T, UNDEFINED)` returns `T(0)` (the internal sentinel for 1-based indexing).
+This variable is used to indicate that a value is undefined. `UNDEFINED`
+is comparable with any value via `==` and `!=` but not via `<` or `>`.
+
+# Examples
+
+```julia
+using Semigroups
+
+p = PPerm([2, UNDEFINED, 1])
+p[2]  # UNDEFINED
+p[2] == UNDEFINED  # true
+p[1] == UNDEFINED  # false
+```
 """
 const UNDEFINED = UndefinedType()
 
@@ -143,9 +153,19 @@ Base.:(<)(x::Integer, ::LimitMaxType) = x < convert(typeof(x), LIMIT_MAX)
 # Helper functions to check if a value is a special constant
 
 """
-    is_undefined(x)
+    is_undefined(x) -> Bool
 
-Check if `x` is UNDEFINED.
+Return `true` if `x` is [`UNDEFINED`](@ref), `false` otherwise.
+
+# Examples
+
+```julia
+using Semigroups
+
+p = PPerm([2, UNDEFINED, 1])
+is_undefined(p[2])  # true
+is_undefined(p[1])  # false
+```
 """
 is_undefined(x) = x === UNDEFINED
 

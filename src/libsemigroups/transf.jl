@@ -124,7 +124,8 @@ hash_value(t::_PTransfTypes) = LibSemigroups.hash(t)
     images_vector(t) -> Vector
 
 Return a vector containing all image values of the transformation.
-For PPerm, undefined points are represented by UNDEFINED.
+For [`PPerm`](@ref), undefined points are represented by
+[`UNDEFINED`](@ref).
 """
 images_vector(t::_PTransfTypes) = LibSemigroups.images_vector(t)
 
