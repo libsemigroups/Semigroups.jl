@@ -30,6 +30,7 @@
 #define LIBSEMIGROUPS_JULIA_INDEX_UTILS_HPP_
 
 #include <limits>
+#include <type_traits>
 #include <vector>
 
 namespace libsemigroups_julia {
@@ -41,12 +42,14 @@ namespace libsemigroups_julia {
 // 1-based → 0-based (for passing indices into libsemigroups)
 template <typename T> inline T to_0_based(T val)
 {
+  static_assert(std::is_unsigned_v<T>, "Index conversion requires unsigned types");
   return val - 1;
 }
 
 // 0-based → 1-based (for returning indices from libsemigroups)
 template <typename T> inline T to_1_based(T val)
 {
+  static_assert(std::is_unsigned_v<T>, "Index conversion requires unsigned types");
   return val + 1;
 }
 
@@ -55,6 +58,7 @@ template <typename T> inline T to_1_based(T val)
 // Julia sends 1-based index → subtract 1
 template <typename T> inline T to_0_based_undef(T val)
 {
+  static_assert(std::is_unsigned_v<T>, "Index conversion requires unsigned types");
   return val == T(0) ? std::numeric_limits<T>::max() : val - 1;
 }
 
@@ -63,6 +67,7 @@ template <typename T> inline T to_0_based_undef(T val)
 // C++ has 0-based index → add 1
 template <typename T> inline T to_1_based_undef(T val)
 {
+  static_assert(std::is_unsigned_v<T>, "Index conversion requires unsigned types");
   return val == std::numeric_limits<T>::max() ? T(0) : val + 1;
 }
 
