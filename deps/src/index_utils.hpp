@@ -23,6 +23,8 @@
 //   - Julia side: 0 represents UNDEFINED (since 0 is never a valid 1-based index)
 //   - C++ side: std::numeric_limits<T>::max() represents UNDEFINED
 //   - The _undef variants handle this conversion automatically
+// This is the simplest implementation if we assume 0 is never a valid input index, as
+// trying to use typemax results in edge cases (e.g. Transf Scalar boundary)
 
 #ifndef LIBSEMIGROUPS_JULIA_INDEX_UTILS_HPP_
 #define LIBSEMIGROUPS_JULIA_INDEX_UTILS_HPP_
