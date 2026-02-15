@@ -95,6 +95,7 @@ export is_undefined, is_positive_infinity, is_negative_infinity, is_limit_max
 # WordGraph
 export WordGraph
 export number_of_nodes, out_degree, number_of_edges
+export target, next_label_and_target, targets
 
 # Transformation types and functions
 export Transf, PPerm, Perm

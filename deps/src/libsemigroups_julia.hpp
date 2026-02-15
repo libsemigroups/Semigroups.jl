@@ -51,6 +51,12 @@
 // Index conversion utilities (1-based ↔ 0-based)
 #include "index_utils.hpp"
 
+// CxxWrap type traits — non-Julia C++ types must opt out of mirroring
+namespace jlcxx {
+template <>
+struct IsMirroredType<libsemigroups::WordGraph<uint32_t>> : std::false_type {};
+}    // namespace jlcxx
+
 namespace libsemigroups_julia {
 
 // Namespace aliases for convenience

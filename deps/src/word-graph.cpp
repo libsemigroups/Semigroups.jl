@@ -19,7 +19,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <utility>
 #include <vector>
 
 namespace libsemigroups_julia {
@@ -54,8 +53,9 @@ void define_word_graph(jl::Module & m)
   });
 
   // number_of_edges_node - number of defined edges from a specific node
+  // Julia passes 1-based node index
   type.method("number_of_edges_node", [](WG const & self, uint32_t s) -> size_t {
-    return self.number_of_edges(s);
+    return self.number_of_edges(to_0_based(s));
   });
 
   //////////////////////////////////////////////////////////////////////////
@@ -63,35 +63,34 @@ void define_word_graph(jl::Module & m)
   //////////////////////////////////////////////////////////////////////////
 
   // target - get the target of edge (source, label).
-  // Returns UNDEFINED (as uint32_t max) if no such edge is defined.
+  // Julia passes 1-based source and label, returns 1-based target (0 = UNDEFINED)
   type.method("target", [](WG const & self, uint32_t source, uint32_t label) -> uint32_t {
-    return self.target(source, label);
+    return to_1_based_undef(self.target(to_0_based(source), to_0_based(label)));
   });
 
   // next_label_and_target - find next defined edge from node s with label >= a.
-  // Split into two methods to avoid std::pair which CxxWrap can't return.
-  // next_label: returns the label of the next defined edge (UNDEFINED if none)
-  // next_target: returns the target of the next defined edge (UNDEFINED if none)
-  type.method("next_label", [](WG const & self, uint32_t s, uint32_t a) -> uint32_t {
-    return self.next_label_and_target(s, a).first;
-  });
-  type.method("next_target", [](WG const & self, uint32_t s, uint32_t a) -> uint32_t {
-    return self.next_label_and_target(s, a).second;
-  });
+  // Returns a 2-element vector [label, target] since CxxWrap can't return std::pair.
+  // Julia passes 1-based s and a, returns 1-based label/target (0 = UNDEFINED)
+  type.method("next_label_and_target_vec",
+      [](WG const & self, uint32_t s, uint32_t a) -> std::vector<uint32_t> {
+        auto [label, target] = self.next_label_and_target(to_0_based(s), to_0_based(a));
+        return {to_1_based_undef(label), to_1_based_undef(target)};
+      });
 
   //////////////////////////////////////////////////////////////////////////
   // Iteration helpers (collect to vector for CxxWrap)
   //////////////////////////////////////////////////////////////////////////
 
   // targets_vector - all targets from a given source node as a vector.
-  // Includes UNDEFINED entries for labels with no defined edge.
+  // Julia passes 1-based source, returns 1-based targets (0 = UNDEFINED)
   type.method(
       "targets_vector", [](WG const & self, uint32_t source) -> std::vector<uint32_t> {
+        auto src = to_0_based(source);
         std::vector<uint32_t> result;
         result.reserve(self.out_degree());
-        for (auto it = self.cbegin_targets(source); it != self.cend_targets(source); ++it)
+        for (auto it = self.cbegin_targets(src); it != self.cend_targets(src); ++it)
         {
-          result.push_back(*it);
+          result.push_back(to_1_based_undef(*it));
         }
         return result;
       });
