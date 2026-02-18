@@ -124,8 +124,8 @@ void bind_ptransf_common(jl::Module &                      m,
 
   type.method("is_greater_equal",
               [](PTransfType const & a, PTransfType const & b) -> bool {
-    return a >= b;
-  });
+                return a >= b;
+              });
 
   type.method("multiply", [](PTransfType const & a, PTransfType const & b) {
     return a * b;
@@ -157,8 +157,9 @@ void bind_pperm_type(jl::Module & m, std::string const & name)
   m.method(name,
            [](std::vector<Scalar> const & dom, std::vector<Scalar> const & img,
               size_t deg) -> PPermType {
-    return libsemigroups::make<PPermType>(vec_to_0_based(dom), vec_to_0_based(img), deg);
-  });
+             return libsemigroups::make<PPermType>(vec_to_0_based(dom),
+                                                   vec_to_0_based(img), deg);
+           });
 }
 
 template <typename PermType> void bind_perm_type(jl::Module & m, std::string const & name)

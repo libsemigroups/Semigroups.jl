@@ -43,4 +43,4 @@ format-julia:
 	$(JULIA) -e 'using JuliaFormatter; format("src"); format("test"); format("docs")'
 
 format-cpp:
-	find deps/src -name "*.cpp" -o -name "*.hpp" | xargs clang-format -i
+	find deps/src -name "*.cpp" -o -name "*.hpp" | xargs clang-format-15 -i

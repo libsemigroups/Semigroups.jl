@@ -40,3 +40,8 @@ jobs:
           else
               echo "All files are properly formatted"
           fi
+      - name: Run clang-format style check for C/C++ programs.
+        uses: jidicula/clang-format-action@v4.16.0
+        with:
+          clang-format-version: 15
+          check-path: deps/src
