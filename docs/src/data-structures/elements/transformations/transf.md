@@ -1,42 +1,47 @@
 # The Transf Type
 
-A transformation is a function from ``\{1, 2, \ldots, n\}`` to itself.
+A _transformation_ $f$ is just a function defined on the whole of
+$\{1, 2, \ldots, n\}$ for some integer $n$ called the _degree_ of
+$f$. A transformation is stored as a vector of the images of
+$\{1, 2, \ldots, n\}$, i.e. $((1)f, (2)f, \ldots, (n)f)$.
 
 ## Contents
 
-| Function | Description |
-|----------|-------------|
-| [`Transf`](@ref Semigroups.Transf) | Construct a transformation |
-| [`degree`](@ref Semigroups.degree) | The degree of the transformation |
-| [`rank`](@ref Semigroups.rank) | The number of distinct image points |
-| [`images`](@ref Semigroups.images) | The images as a vector |
-| `one` | The identity transformation |
+| Function                                                 | Description                         |
+| -------------------------------------------------------- | ----------------------------------- |
+| [`Transf`](@ref Semigroups.Transf)                       | Construct a transformation          |
+| `t[i]`                                                   | Get the image of a point            |
+| [`degree`](@ref Semigroups.degree(::Semigroups.Transf))  | The degree of the transformation    |
+| [`rank`](@ref Semigroups.rank(::Semigroups.Transf))      | The number of distinct image values |
+| [`image`](@ref Semigroups.image)                         | The sorted set of image values      |
+| [`domain`](@ref Semigroups.domain)                       | The sorted set of defined points    |
+| [`one`](@ref Base.one(::Type{Semigroups.Transf}, ::Int)) | The identity transformation         |
+| [`copy`](@ref Base.copy(::Semigroups.Transf))            | Copy a transformation               |
+| [`t * s`](#Composition)                                  | Compose two transformations         |
+| [`==`, `<`, `<=`, `>`, `>=`](#Comparison)                | Comparison operators                |
 
 ## Full API
 
 ```@docs
 Semigroups.Transf
+Semigroups.degree(::Semigroups.Transf)
+Semigroups.domain(::Semigroups.Transf)
+Semigroups.image(::Semigroups.Transf)
+Base.one(::Type{Semigroups.Transf}, ::Int)
+Semigroups.rank(::Semigroups.Transf)
 ```
 
 ### Construction
 
 ```julia
-# Create a transformation from images (1-based indexing)
-t = Transf([2, 3, 1, 4])  # maps 1→2, 2→3, 3→1, 4→4
+using Semigroups
+
+# From a vector of images
+t = Transf([2, 3, 1, 4])  # maps 1->2, 2->3, 3->1, 4->4
+t[1]  # 2
 
 # The degree is inferred from the length
 degree(t)  # 4
-```
-
-### Indexing
-
-Transformations support indexing to get individual images:
-
-```julia
-t = Transf([2, 3, 1])
-t[1]  # 2
-t[2]  # 3
-t[3]  # 1
 ```
 
 ### Composition
@@ -47,4 +52,15 @@ Transformations can be composed using `*`:
 s = Transf([2, 1, 3])
 t = Transf([3, 2, 1])
 s * t  # apply s first, then t
+```
+
+### Comparison
+
+Transformations support equality and lexicographic ordering:
+
+```julia
+t = Transf([2, 3, 1])
+s = copy(t)
+t == s  # true
+t < Transf([3, 2, 1])  # true
 ```

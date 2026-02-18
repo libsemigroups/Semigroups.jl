@@ -93,7 +93,7 @@ export is_undefined, is_positive_infinity, is_negative_infinity, is_limit_max
 
 # Transformation types and functions
 export Transf, PPerm, Perm
-export degree, rank, images, image_set, domain_set
+export degree, rank, image, domain, inverse
 export increase_degree_by!, swap!
 export left_one, right_one
 

@@ -1,47 +1,76 @@
 # The Perm Type
 
-A permutation is a bijective function from ``\{1, 2, \ldots, n\}`` to itself.
+A _permutation_ $f$ is an injective transformation defined on the whole
+of $\{1, 2, \ldots, n\}$ for some integer $n$ called the _degree_ of
+$f$. A permutation is stored as a vector of the images of
+$\{1, 2, \ldots, n\}$, i.e. $((1)f, (2)f, \ldots, (n)f)$.
 
 ## Contents
 
-| Function | Description |
-|----------|-------------|
-| [`Perm`](@ref Semigroups.Perm) | Construct a permutation |
-| [`degree`](@ref Semigroups.degree) | The degree of the permutation |
-| [`images`](@ref Semigroups.images) | The images as a vector |
-| `one` | The identity permutation |
-| `inv` | The inverse permutation |
+| Function                                               | Description                         |
+| ------------------------------------------------------ | ----------------------------------- |
+| [`Perm`](@ref Semigroups.Perm)                         | Construct a permutation             |
+| `p[i]`                                                 | Get the image of a point            |
+| [`degree`](@ref Semigroups.degree(::Semigroups.Perm))  | The degree of the permutation       |
+| [`rank`](@ref Semigroups.rank(::Semigroups.Perm))      | The number of distinct image values |
+| [`image`](@ref Semigroups.image)                       | The sorted set of image values      |
+| [`domain`](@ref Semigroups.domain)                     | The sorted set of defined points    |
+| [`inverse`](@ref Semigroups.inverse)                   | The inverse permutation             |
+| [`one`](@ref Base.one(::Type{Semigroups.Perm}, ::Int)) | The identity permutation            |
+| [`copy`](@ref Base.copy(::Semigroups.Perm))            | Copy a permutation                  |
+| [`p * q`](#Composition)                                | Compose two permutations            |
+| [`==`, `<`, `<=`, `>`, `>=`](#Comparison)              | Comparison operators                |
 
 ## Full API
 
 ```@docs
 Semigroups.Perm
+Semigroups.degree(::Semigroups.Perm)
+Semigroups.domain(::Semigroups.Perm)
+Semigroups.image(::Semigroups.Perm)
+Semigroups.inverse(::Semigroups.Perm)
+Base.one(::Type{Semigroups.Perm}, ::Int)
+Semigroups.rank(::Semigroups.Perm)
 ```
 
 ### Construction
 
 ```julia
-# Create from images (must be a bijection)
-p = Perm([2, 3, 1])  # cycle (1 2 3)
+using Semigroups
 
-# All points must be mapped
+# From a vector of images (must be a bijection)
+p = Perm([2, 3, 1])  # maps 1->2, 2->3, 3->1
+p[1]  # 2
+
+# The degree is inferred from the length
 degree(p)  # 3
 ```
 
 ### Inverse
 
-Permutations can be inverted:
+```julia
+p = Perm([2, 3, 1])
+q = inverse(p)       # Perm([3, 1, 2])
+p * inverse(p) == one(Perm, 3)  # true
+```
+
+### Composition
+
+Permutations can be composed using `*`:
 
 ```julia
 p = Perm([2, 3, 1])
-inv(p)  # Perm([3, 1, 2])
-
-p * inv(p)  # identity
+q = Perm([3, 1, 2])
+r = p * q  # Perm([1, 2, 3]) — the identity
 ```
 
-### Cycle Notation
+### Comparison
 
-The permutation `Perm([2, 3, 1])` represents the cycle ``(1\ 2\ 3)``, meaning:
-- 1 maps to 2
-- 2 maps to 3
-- 3 maps to 1
+Permutations support equality and lexicographic ordering:
+
+```julia
+p = Perm([2, 3, 1])
+q = copy(p)
+p == q  # true
+p < Perm([3, 1, 2])  # true
+```

@@ -1,34 +1,42 @@
 # The PPerm Type
 
-A *partial permutation* ``f`` is just an injective partial transformation,
-which is stored as a vector of the images of ``\{1, 2, \ldots, n\}``,
-i.e. ``((1)f, (2)f, \ldots, (n)f)`` where the value [`UNDEFINED`](@ref
-Semigroups.UNDEFINED) is used to indicate that ``(i)f`` is undefined
-(i.e. not among the points where ``f`` is defined).
+A _partial permutation_ $f$ is an injective partial transformation,
+which is stored as the vector of images of $\{1,2,\ldots,n\}$,
+i.e. $((1)f,(2)f,\ldots,(n)f)$ where the value
+[`UNDEFINED`](@ref Semigroups.UNDEFINED) is used to indicate that
+$(i)f$ is undefined (i.e. not among the points where $f$ is defined).
 
 ## Contents
 
-| Function | Description |
-|----------|-------------|
-| [`PPerm`](@ref Semigroups.PPerm) | Construct a partial permutation |
-| `p[i]` | Get the image of a point (returns [`UNDEFINED`](@ref Semigroups.UNDEFINED) if not in the domain) |
-| [`degree`](@ref Semigroups.degree) | The degree of the partial permutation |
-| [`rank`](@ref Semigroups.rank) | The number of distinct image values, not including `UNDEFINED` |
-| [`domain_set`](@ref Semigroups.domain_set) | The domain as a sorted vector |
-| [`image_set`](@ref Semigroups.image_set) | The image as a sorted vector |
-| [`inv`](@ref Base.inv(::Semigroups.PPerm)) | The inverse partial permutation |
-| [`left_one`](@ref Semigroups.left_one) | The identity on the domain |
-| [`right_one`](@ref Semigroups.right_one) | The identity on the image |
-| [`one`](@ref Base.one(::Semigroups.PPerm)) | The identity partial permutation of the same degree |
-| [`copy`](@ref Base.copy(::Semigroups.PPerm)) | Copy a partial permutation |
+| Function                                               | Description                                                                                      |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| [`PPerm`](@ref Semigroups.PPerm)                       | Construct a partial permutation                                                                  |
+| `p[i]`                                                 | Get the image of a point (returns [`UNDEFINED`](@ref Semigroups.UNDEFINED) if not in the domain) |
+| [`degree`](@ref Semigroups.degree(::Semigroups.PPerm)) | The degree of the partial permutation                                                            |
+| [`rank`](@ref Semigroups.rank)                         | The number of distinct image values, not including `UNDEFINED`                                   |
+| [`image`](@ref Semigroups.image)                       | The sorted set of image values                                                                   |
+| [`domain`](@ref Semigroups.domain)                     | The sorted set of points where `f` is defined                                                    |
+| [`inverse`](@ref inverse(::Semigroups.PPerm))          | The inverse partial permutation                                                                  |
+| [`left_one`](@ref Semigroups.left_one)                 | The identity on the domain                                                                       |
+| [`one`](@ref Base.one(::Semigroups.PPerm, ::Int))      | The identity partial permutation of the same degree                                              |
+| [`right_one`](@ref Semigroups.right_one)               | The identity on the image                                                                        |
+| [`copy`](@ref Base.copy(::Semigroups.PPerm))           | Copy a partial permutation                                                                       |
+| [`p * q`](#Composition)                                | Compose two partial permutations                                                                 |
+| [`==`, `<`, `<=`, `>`, `>=`](#Comparison)              | Comparison operators                                                                             |
 
 ## Full API
 
 ```@docs
 Semigroups.PPerm
-Base.inv(::Semigroups.PPerm)
+Semigroups.degree(::Semigroups.PPerm)
+Semigroups.domain(::Semigroups.PPerm)
+Semigroups.image(::Semigroups.PPerm)
+Semigroups.inverse(::Semigroups.PPerm)
+Semigroups.left_one(::Semigroups.PPerm)
 Base.one(::Semigroups.PPerm)
-Base.copy(::Semigroups.PPerm)
+Base.one(::Type{Semigroups.PPerm}, ::Int)
+Semigroups.right_one(::Semigroups.PPerm)
+Semigroups.rank(::Semigroups.PPerm)
 ```
 
 ### Construction
@@ -43,14 +51,6 @@ p[3]  # UNDEFINED
 
 # From domain, range, and degree
 p = PPerm([1, 2], [3, 4], 5)  # 1 -> 3, 2 -> 4, degree 5
-```
-
-### Domain and Image
-
-```julia
-p = PPerm([1, 3], [2, 4], 4)
-domain_set(p)  # [1, 3]
-image_set(p)   # [2, 4]
 ```
 
 ### Inverse
@@ -68,4 +68,25 @@ inv(p) * p == right_one(p)  # true
 p = PPerm([1, 3], [2, 4], 4)
 left_one(p) * p == p   # true
 p * right_one(p) == p  # true
+```
+
+### Composition
+
+Partial permutations can be composed using `*`:
+
+```julia
+p = PPerm([1, 2], [3, 4], 5)
+q = PPerm([3, 4], [5, 1], 5)
+r = p * q  # 1 -> 5, 2 -> 1
+```
+
+### Comparison
+
+Partial permutations support equality and lexicographic ordering:
+
+```julia
+p = PPerm([1, 2], [3, 4], 5)
+q = copy(p)
+p == q  # true
+p < PPerm([1, 2], [4, 3], 5)  # true
 ```

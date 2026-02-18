@@ -7,7 +7,6 @@ This section describes the functionality for various partial transformations in 
 - [Transf](transf.md) - Full transformations
 - [PPerm](pperm.md) - Partial permutations
 - [Perm](perm.md) - Permutations
-- [Helpers](helpers.md) - Helper functions for transformations
 
 ## See Also
 

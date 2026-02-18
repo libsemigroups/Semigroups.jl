@@ -106,45 +106,55 @@ end
 # ============================================================================
 
 """
-    Transf
+    Transf{T}
 
-A transformation is a function from {1, 2, ..., n} to itself.
-The transformation is represented by a vector of images.
+Transformations with dynamic degree.
+
+A *transformation* ``f`` is just a function defined on the whole of
+``\\{1, 2, \\ldots, n\\}`` for some integer ``n`` called the *degree*
+of ``f``. A transformation is stored as a vector of the images of
+``\\{1, 2, \\ldots, n\\}``, i.e. ``((1)f, (2)f, \\ldots, (n)f)``.
 
 # Construction
-```julia
-# Create transformation [1, 2, 1] (maps 1->1, 2->2, 3->1)
-t = Transf([1, 2, 1])
-```
 
-Note: The constructor accepts 1-based indexing (Julia convention).
-The C++ binding layer handles conversion to 0-based indexing internally.
+```julia
+using Semigroups
+
+# From an image list
+t = Transf([2, 1, 2, 3])  # maps 1->2, 2->1, 3->2, 4->3
+t[1]  # 2
+t[3]  # 2
+```
 """
 mutable struct Transf{T}
     cxx_obj::Union{Transf1,Transf2,Transf4}
-
-    """
-        Transf(images::AbstractVector{<:Integer})
-
-    Create a transformation from a vector of images using 1-based indexing.
-    The degree is the length of the vector.
-
-    # Example
-    ```julia
-    t = Transf([2, 1, 2, 3])  # degree 4, maps 1->2, 2->1, 3->2, 4->3
-    ```
-    """
-    # Internal constructor from C++ object (used by operations)
-    # function Transf(cxx_obj::Union{Transf1,Transf2,Transf4})
-    #   return new{typeof(cxx_obj)}(cxx_obj)
-    # end
-
 end
 
 Transf(t::Transf1) = Transf{UInt8}(t)
 Transf(t::Transf2) = Transf{UInt16}(t)
 Transf(t::Transf4) = Transf{UInt32}(t)
 
+"""
+    Transf(images::AbstractVector{<:Integer}, ::Type{T}) where {T}
+
+Construct a [`Transf`](@ref) from a container of images with explicit
+scalar type `T`.
+
+The image of the point `i` under the transformation is the value
+in position `i` of `images`.
+
+# Example
+```julia
+using Semigroups
+
+t = Transf([2, 1, 2, 3], UInt8)
+t[1]  # 2
+```
+
+# Throws
+- `LibsemigroupsError` if any value in `images` exceeds
+  `length(images)`.
+"""
 function Transf(images::AbstractVector{<:Integer}, ::Type{T}) where {T}
     n = length(images)
     if n == 0 || n > typemax(T)
@@ -157,6 +167,27 @@ function Transf(images::AbstractVector{<:Integer}, ::Type{T}) where {T}
     return Transf{T}(cxx_obj)
 end
 
+"""
+    Transf(images::AbstractVector{<:Integer})
+
+Construct a [`Transf`](@ref) from a container of images.
+
+The image of the point `i` under the transformation is the value
+in position `i` of `images`. The scalar type is selected automatically
+based on the degree.
+
+# Example
+```julia
+using Semigroups
+
+t = Transf([2, 1, 2, 3])
+t[1]  # 2
+```
+
+# Throws
+- `LibsemigroupsError` if any value in `images` exceeds
+  `length(images)`.
+"""
 function Transf(images::AbstractVector{<:Integer})
     return Transf(images, _scalar_type_from_degree(length(images)))
 end
@@ -165,14 +196,44 @@ end
 """
     degree(t::Transf) -> Int
 
-Return the degree of transformation `t` (the size of its domain).
+Returns the degree of a transformation.
+
+The _degree_ of a transformation is the number of points used in its
+definition, which is equal to the size of its underlying container.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> t = Transf([2, 3, 1, 4]);
+
+julia> degree(t)
+4
+```
 """
 degree(t::Transf) = degree(t.cxx_obj)
 
 """
     rank(t::Transf) -> Int
 
-Return the rank of transformation `t` (the size of its image).
+Returns the number of distinct image values of a transformation.
+
+The _rank_ of a transformation is the number of its distinct image
+values.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> rank(Transf([1, 1, 1]))
+1
+
+julia> rank(Transf([2, 3, 1]))
+3
+```
+
+# Complexity
+Linear in [`degree()`](@ref Semigroups.degree(::Transf))
 """
 rank(t::Transf) = rank(t.cxx_obj)
 
@@ -180,14 +241,26 @@ rank(t::Transf) = rank(t.cxx_obj)
 """
     getindex(t::Transf, i::Integer) -> Int
 
-Get the image of point `i` under transformation `t`. Uses 1-based indexing.
+Returns the image of the point `i` under transformation `t`.
 
 # Example
-```julia
-t = Transf([2, 1, 2])
-t[1]  # Returns 2
-t[3]  # Returns 2
+```jldoctest
+julia> using Semigroups
+
+julia> t = Transf([2, 3, 1]);
+
+julia> t[1]
+2
+
+julia> t[3]
+1
 ```
+
+# Throws
+- `BoundsError` if `i` is out of range.
+
+# Complexity
+Constant.
 """
 function Base.getindex(t::Transf, i::Integer)
     if i < 1 || i > degree(t)
@@ -224,9 +297,21 @@ Base.hash(t::Transf, h::UInt) = hash(hash_value(t.cxx_obj), h)
 
 # Copy
 """
-    copy(t::Transf) -> Transf
+    Base.copy(t::Transf) -> Transf
 
 Create an independent copy of transformation `t`.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> t = Transf([2, 3, 1]);
+
+julia> s = copy(t);
+
+julia> t == s
+true
+```
 """
 Base.copy(t::Transf{T}) where {T} = Transf{T}(copy(t.cxx_obj))
 
@@ -236,6 +321,18 @@ Base.copy(t::Transf{T}) where {T} = Transf{T}(copy(t.cxx_obj))
 
 Compose two transformations. Returns t1 ∘ t2, i.e., (t1*t2)[i] = t1[t2[i]].
 Both operands must have the same scalar type (use the same underlying C++ type).
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> s = Transf([2, 1, 3]);
+
+julia> t = Transf([3, 2, 1]);
+
+julia> s * t
+Transf([2, 3, 1])
+```
 """
 function Base.:(*)(t1::Transf{T}, t2::Transf{T}) where {T}
     result_cxx = one(t1.cxx_obj)
@@ -253,37 +350,21 @@ function Base.show(io::IO, t::Transf)
     end
 end
 
-# Additional methods
-"""
-    images(t::Transf) -> Vector{Int}
-
-Return the vector of all images of `t` using 1-based indexing.
-"""
-images(t::Transf) = [t[i] for i = 1:degree(t)]
-
-"""
-    image_set(t::Transf) -> Vector{Int}
-
-Return a sorted vector of all distinct values in the image of `t`.
-Uses 1-based indexing.
-"""
-function image_set(t::Transf)
-    return sort([Int(x) for x in image(t.cxx_obj)])
-end
-
-"""
-    Base.one(t::Transf) -> Transf
-
-Return the identity transformation with the same degree as `t`.
-"""
-function Base.one(t::Transf)
-    return Transf(one(t.cxx_obj))
-end
-
 """
     Base.one(::Type{Transf}, n::Integer) -> Transf
 
-Return the identity transformation of degree `n`.
+Returns the identity transformation on _n_ points.
+
+This function returns a newly constructed transformation with degree equal to _n_
+that fixes every value from `1` to _n_.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> one(Transf, 3)
+Transf([1, 2, 3])
+```
 """
 function Base.one(::Type{Transf}, n::Integer)
     CxxType = _transf_type_from_degree(n)
@@ -467,8 +548,43 @@ function PPerm(
     return PPerm(domain, image, deg, _scalar_type_from_degree(deg))
 end
 
-# Degree and rank
+"""
+    degree(p::PPerm) -> Int
+
+Returns the degree of a partial permutation.
+
+The _degree_ of a partial permutation is the number of points used in its
+definition, which is equal to the size of its underlying container.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> degree(PPerm([1, 3], [2, 4], 5))
+5
+```
+"""
 degree(p::PPerm) = degree(p.cxx_obj)
+
+"""
+    rank(p::PPerm) -> Int
+
+Returns the number of distinct image values in a partial permutation.
+
+The _rank_ of a partial permutation is the number of its distinct image
+values, not including [`UNDEFINED`](@ref).
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> rank(PPerm([1, 3], [2, 4], 5))
+2
+```
+
+# Complexity
+Linear in [`degree()`](@ref Semigroups.degree(::PPerm))
+"""
 rank(p::PPerm) = rank(p.cxx_obj)
 
 # Indexing (1-based, returns UNDEFINED if not defined)
@@ -477,6 +593,19 @@ rank(p::PPerm) = rank(p.cxx_obj)
 
 Get the image of point `i` under partial permutation `p`.
 Returns [`UNDEFINED`](@ref) if `i` is not in the domain.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> p = PPerm([1, 3], [2, 4], 5);
+
+julia> p[1]
+2
+
+julia> p[2]
+UNDEFINED
+```
 
 # Throws
 - `BoundsError` if `i` is out of range.
@@ -515,6 +644,18 @@ Base.hash(p::PPerm, h::UInt) = hash(hash_value(p.cxx_obj), h)
     Base.copy(p::PPerm) -> PPerm
 
 Create an independent copy of partial permutation `p`.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> p = PPerm([1, 3], [2, 4], 5);
+
+julia> q = copy(p);
+
+julia> p == q
+true
+```
 """
 Base.copy(p::PPerm{T}) where {T} = PPerm{T}(copy(p.cxx_obj))
 
@@ -524,6 +665,18 @@ Base.copy(p::PPerm{T}) where {T} = PPerm{T}(copy(p.cxx_obj))
 
 Compose two partial permutations.
 Both operands must have the same scalar type (use the same underlying C++ type).
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> p = PPerm([1, 2], [3, 4], 5);
+
+julia> q = PPerm([3, 4], [5, 1], 5);
+
+julia> p * q
+PPerm([1, 2], [5, 1], 5)
+```
 """
 function Base.:(*)(p1::PPerm{T}, p2::PPerm{T}) where {T}
     result_cxx = one(p1.cxx_obj)
@@ -533,7 +686,7 @@ end
 
 # Display
 function Base.show(io::IO, p::PPerm)
-    dom = domain_set(p)
+    dom = domain(p)
     if degree(p) <= 10
         imgs = [p[i] for i in dom]
         print(io, "PPerm(", dom, ", ", imgs, ", ", degree(p), ")")
@@ -542,31 +695,25 @@ function Base.show(io::IO, p::PPerm)
     end
 end
 
-# PPerm-specific methods
-"""
-    domain_set(p::PPerm) -> Vector{Int}
-
-Return a sorted vector of all points in the domain of `p` (where p is defined).
-Uses 1-based indexing.
-"""
-function domain_set(p::PPerm)
-    return sort([Int(x) for x in domain(p.cxx_obj)])
-end
-
-"""
-    image_set(p::PPerm) -> Vector{Int}
-
-Return a sorted vector of all points in the image of `p`.
-Uses 1-based indexing.
-"""
-function image_set(p::PPerm)
-    return sort([Int(x) for x in image(p.cxx_obj)])
-end
-
 """
     Base.inv(p::PPerm) -> PPerm
 
 Return the inverse of partial permutation `p`.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> p = PPerm([1, 2], [3, 4], 5);
+
+julia> q = inv(p);
+
+julia> p * q == left_one(p)
+true
+
+julia> q * p == right_one(p)
+true
+```
 """
 function Base.inv(p::PPerm)
     return PPerm(inverse(p.cxx_obj))
@@ -575,26 +722,61 @@ end
 """
     left_one(p::PPerm) -> PPerm
 
-Return the partial permutation that acts as identity on the domain of `p`.
+Returns the left one of a partial permutation.
+
+This function returns a newly constructed partial permutation with degree
+equal to that of _p_ that fixes every value in the domain of _p_,
+and is [`UNDEFINED`](@ref) on any other values.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> p = PPerm([1, 3], [2, 4], 4);
+
+julia> left_one(p) * p == p
+true
+```
 """
 left_one(p::PPerm) = PPerm(left_one(p.cxx_obj))
 
 """
     right_one(p::PPerm) -> PPerm
 
-Return the partial permutation that acts as identity on the image of `p`.
+Returns the right one of a partial permutation.
+
+This function returns a newly constructed partial permutation with degree
+equal to that of _p_ that fixes every value in the image of _p_, and is
+[`UNDEFINED`](@ref) on any other values.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> p = PPerm([1, 3], [2, 4], 4);
+
+julia> p * right_one(p) == p
+true
+```
 """
 right_one(p::PPerm) = PPerm(right_one(p.cxx_obj))
 
 """
-    Base.one(p::PPerm) -> PPerm
+    Base.one(::Type{PPerm}, n::Integer) -> PPerm
 
-Return the identity partial permutation with the same degree as `p`.
+Returns the identity partial permutation on _n_ points.
+
+This function returns a newly constructed partial permutation with degree
+equal to _n_ that fixes every value from `1` to _n_.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> one(PPerm, 3)
+PPerm([1, 2, 3], [1, 2, 3], 3)
+```
 """
-function Base.one(p::PPerm)
-    return PPerm(one(p.cxx_obj))
-end
-
 function Base.one(::Type{PPerm}, n::Integer)
     CxxType = _pperm_type_from_degree(n)
     return PPerm(LibSemigroups.one(CxxType, UInt(n)))
@@ -605,17 +787,26 @@ end
 # ============================================================================
 
 """
-    Perm
+    Perm{T}
 
-A permutation is a bijective function from {1, 2, ..., n} to itself.
+Permutations with dynamic degree.
+
+A *permutation* ``f`` is an injective transformation defined on the
+whole of ``\\{1, 2, \\ldots, n\\}`` for some integer ``n`` called
+the *degree* of ``f``. A permutation is stored as a vector of the
+images of ``\\{1, 2, \\ldots, n\\}``, i.e.
+``((1)f, (2)f, \\ldots, (n)f)``.
 
 # Construction
-```julia
-# Create permutation [2, 3, 1] (maps 1->2, 2->3, 3->1)
-p = Perm([2, 3, 1])
-```
 
-The constructor validates that the input is a valid permutation.
+```julia
+using Semigroups
+
+# From an image list
+p = Perm([2, 3, 1])  # maps 1->2, 2->3, 3->1
+p[1]  # 2
+p[2]  # 3
+```
 """
 mutable struct Perm{T}
     cxx_obj::Union{Perm1,Perm2,Perm4}
@@ -628,13 +819,23 @@ Perm(p::Perm4) = Perm{UInt32}(p)
 """
     Perm(images::AbstractVector{<:Integer}, ::Type{T}) where {T}
 
-Create a permutation from a vector of images using 1-based indexing
-with explicit scalar type `T`. Validates that the input is a bijection.
+Construct a [`Perm`](@ref) from a container of images with explicit
+scalar type `T`.
+
+The image of the point `i` under the permutation is the value in
+position `i` of `images`.
 
 # Example
 ```julia
+using Semigroups
+
 p = Perm([2, 3, 1], UInt8)
+p[1]  # 2
 ```
+
+# Throws
+- `ErrorException` if any value in `images` exceeds `length(images)`
+  or there are repeated values in `images`.
 """
 function Perm(images::AbstractVector{<:Integer}, ::Type{T}) where {T}
     n = length(images)
@@ -657,14 +858,23 @@ end
 """
     Perm(images::AbstractVector{<:Integer})
 
-Create a permutation from a vector of images using 1-based indexing.
-Validates that the input is a bijection. Automatically selects the scalar type.
+Construct a [`Perm`](@ref) from a container of images.
+
+The image of the point `i` under the permutation is the value in
+position `i` of `images`. The scalar type is selected automatically
+based on the degree.
 
 # Example
 ```julia
-p = Perm([2, 3, 1])  # Valid: bijection from {1,2,3} to {1,2,3}
-p = Perm([1, 1, 2])  # Error: not a bijection
+using Semigroups
+
+p = Perm([2, 3, 1])
+p[1]  # 2
 ```
+
+# Throws
+- `ErrorException` if any value in `images` exceeds `length(images)`
+  or there are repeated values in `images`.
 """
 function Perm(images::AbstractVector{<:Integer})
     return Perm(images, _scalar_type_from_degree(length(images)))
@@ -687,10 +897,70 @@ function isperm(v::AbstractVector{<:Integer})
 end
 
 # Degree and rank
+"""
+    degree(p::Perm) -> Int
+
+Returns the degree of a permutation.
+
+The _degree_ of a permutation is the number of points used in its
+definition, which is equal to the size of its underlying container.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> degree(Perm([2, 3, 1]))
+3
+```
+"""
 degree(p::Perm) = degree(p.cxx_obj)
-rank(p::Perm) = rank(p.cxx_obj)  # Always equals degree for permutations
+
+"""
+    rank(p::Perm) -> Int
+
+Returns the number of distinct image values of a permutation.
+
+The _rank_ of a permutation is the number of its distinct image
+values, not including [`UNDEFINED`](@ref).
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> rank(Perm([2, 3, 1]))
+3
+```
+
+# Complexity
+Linear in [`degree()`](@ref Semigroups.degree(::Perm))
+"""
+rank(p::Perm) = rank(p.cxx_obj)
 
 # Indexing (1-based)
+"""
+    getindex(p::Perm, i::Integer) -> Int
+
+Returns the image of the point `i` under permutation `p`.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> p = Perm([2, 3, 1]);
+
+julia> p[1]
+2
+
+julia> p[3]
+1
+```
+
+# Throws
+- `BoundsError` if `i` is out of range.
+
+# Complexity
+Constant.
+"""
 function Base.getindex(p::Perm, i::Integer)
     if i < 1 || i > degree(p)
         throw(BoundsError(p, i))
@@ -719,6 +989,23 @@ Base.:(>=)(p1::Perm, p2::Perm) = LibSemigroups.is_greater_equal(p1.cxx_obj, p2.c
 Base.hash(p::Perm, h::UInt) = hash(hash_value(p.cxx_obj), h)
 
 # Copy
+"""
+    Base.copy(p::Perm) -> Perm
+
+Create an independent copy of permutation `p`.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> p = Perm([2, 3, 1]);
+
+julia> q = copy(p);
+
+julia> p == q
+true
+```
+"""
 Base.copy(p::Perm{T}) where {T} = Perm{T}(copy(p.cxx_obj))
 
 # Multiplication
@@ -727,6 +1014,18 @@ Base.copy(p::Perm{T}) where {T} = Perm{T}(copy(p.cxx_obj))
 
 Compose two permutations.
 Both operands must have the same scalar type (use the same underlying C++ type).
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> p = Perm([2, 3, 1]);
+
+julia> q = Perm([3, 1, 2]);
+
+julia> p * q
+Perm([1, 2, 3])
+```
 """
 function Base.:(*)(p1::Perm{T}, p2::Perm{T}) where {T}
     result_cxx = one(p1.cxx_obj)
@@ -745,66 +1044,167 @@ function Base.show(io::IO, p::Perm)
 end
 
 # Perm-specific methods
-"""
-    Base.inv(p::Perm) -> Perm
-
-Return the inverse of permutation `p`.
-"""
-function Base.inv(p::Perm)
-    return Perm(inverse(p.cxx_obj))
-end
 
 """
-    Base.one(p::Perm) -> Perm
+    Base.one(::Type{Perm}, n::Integer) -> Perm
 
-Return the identity permutation with the same degree as `p`.
+Returns the identity permutation on _n_ points.
+
+This function returns a newly constructed permutation with degree
+equal to _n_ that fixes every value from `1` to _n_.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> one(Perm, 3)
+Perm([1, 2, 3])
+```
 """
-function Base.one(p::Perm)
-    return Perm(one(p.cxx_obj))
-end
-
 function Base.one(::Type{Perm}, n::Integer)
     CxxType = _perm_type_from_degree(n)
     return Perm(LibSemigroups.one(CxxType, UInt(n)))
 end
 
-"""
-    images(p::Perm) -> Vector{Int}
-
-Return the vector of all images of `p` using 1-based indexing.
-"""
-images(p::Perm) = [p[i] for i = 1:degree(p)]
-
-"""
-    image_set(p::Perm) -> Vector{Int}
-
-Return a sorted vector of all distinct values in the image of `p`.
-For permutations, this is always [1, 2, ..., degree(p)].
-Uses 1-based indexing.
-"""
-function image_set(p::Perm)
-    return sort([Int(x) for x in image(p.cxx_obj)])
-end
-
 # ============================================================================
-# Generic functions for all transformation types
+# Generic functions for multiple types
 # ============================================================================
+
+"""
+    image(f::Union{Transf, PPerm, Perm}) -> Vector{Int}
+
+Return the sorted set of image values of a partial transformation.
+
+Returns a vector containing those values `f[i]` such that
+``i \\in \\{1, \\ldots, n\\}`` where ``n`` is the [`degree`](@ref) of
+`f`, and `f[i] != UNDEFINED`.
+
+# Complexity
+``O(n \\log n)`` where ``n`` is the [`degree`](@ref) of `f`.
+
+See also [`domain`](@ref).
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> image(Transf([2, 2, 1]))
+2-element Vector{Int64}:
+ 1
+ 2
+
+julia> image(PPerm([1, 3], [2, 4], 5))
+2-element Vector{Int64}:
+ 2
+ 4
+```
+"""
+image(f::Union{Transf,PPerm,Perm}) = sort([Int(x) for x in image(f.cxx_obj)])
+
+"""
+    domain(f::Union{Transf, PPerm, Perm}) -> Vector{Int}
+
+Return the sorted set of points where a partial transformation is defined.
+
+Returns a vector containing those values ``i`` such that
+``i \\in \\{1, \\ldots, n\\}`` where ``n`` is the [`degree`](@ref) of
+`f`, and `f[i] != UNDEFINED`.
+
+# Complexity
+``O(n)`` where ``n`` is the [`degree`](@ref) of `f`.
+
+See also [`image`](@ref).
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> domain(Transf([2, 2, 1]))
+3-element Vector{Int64}:
+ 1
+ 2
+ 3
+
+julia> domain(PPerm([1, 3], [2, 4], 5))
+2-element Vector{Int64}:
+ 1
+ 3
+```
+"""
+domain(f::Union{Transf,PPerm,Perm}) = sort([Int(x) for x in domain(f.cxx_obj)])
 
 """
     increase_degree_by!(t::Union{Transf,PPerm,Perm}, n::Integer)
 
 Increase the degree of transformation `t` by `n` points.
-Modifies `t` in place and returns it for method chaining.
+Modifies `t` in place, leaving existing values unaltered.
 
 # Example
-```julia
-t = Transf([1, 2])
-increase_degree_by!(t, 3)  # Now has degree 5
+```jldoctest
+julia> using Semigroups
+
+julia> t = Transf([1, 2]);
+
+julia> increase_degree_by!(t, 3);
+
+julia> degree(t)
+5
 ```
 """
 function increase_degree_by!(t::Union{Transf,PPerm,Perm}, n::Integer)
     increase_degree_by!(t.cxx_obj, n)
     return t
+end
+
+"""
+    inverse(p::T) where T<:Union{PPerm,Perm} -> T
+
+Returns the inverse of a partial permutation or permutation.
+
+This function returns a newly constructed inverse of _p_. The _inverse_
+of a partial permutation _p_ is the partial term `g` such that
+`fgf = f` and `gfg =g`.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> p = Perm([2, 3, 1]);
+
+julia> inverse(p)
+Perm([3, 1, 2])
+
+julia> p * inverse(p) == one(Perm, 3)
+true
+```
+"""
+function inverse(p::T) where {T<:Union{PPerm,Perm}}
+    return T(inverse(p.cxx_obj))
+end
+
+"""
+    Base.one(p::T) where T<:Union{PPerm,Perm} -> T
+
+Returns the identity on the same number of points as the degree of _p_.
+
+This function returns a newly constructed object of the same type as
+_p_ that fixes every value from `1` to `degree(p)`.
+
+# Example
+```jldoctest
+julia> using Semigroups
+
+julia> p = Perm([2, 3, 1]);
+
+julia> one(p)
+Perm([1, 2, 3])
+
+julia> p * one(p) == p
+true
+```
+"""
+function Base.one(p::T) where {T<:Union{PPerm,Perm}}
+    return T(one(p.cxx_obj))
 end
 
 """

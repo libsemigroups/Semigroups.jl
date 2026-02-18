@@ -98,58 +98,17 @@ const _PTransfTypes = Union{_TransfTypes,_PPermTypes,_PermTypes}
 # ============================================================================
 # Instance methods - Direct wrappers
 # ============================================================================
-
-"""
-    degree(t) -> Int
-
-Return the degree of the transformation, i.e., the number of points in its domain.
-"""
 degree(t::_PTransfTypes) = Int(LibSemigroups.degree(t))
 
-"""
-    rank(t) -> Int
-
-Return the rank of the transformation, i.e., the number of distinct values in its image.
-"""
 rank(t::_PTransfTypes) = Int(LibSemigroups.rank(t))
 
-"""
-    hash_value(t) -> UInt
-
-Return the hash value of the transformation.
-"""
 hash_value(t::_PTransfTypes) = LibSemigroups.hash(t)
 
-"""
-    images_vector(t) -> Vector
-
-Return a vector containing all image values of the transformation.
-For [`PPerm`](@ref), undefined points are represented by
-[`UNDEFINED`](@ref).
-"""
 images_vector(t::_PTransfTypes) = LibSemigroups.images_vector(t)
 
 # ============================================================================
 # Methods requiring GC.@preserve for memory safety
 # ============================================================================
-
-"""
-    product_inplace!(result::T, x::T, y::T) where T
-
-Compute the product of `x` and `y` and store the result in `result`.
-This modifies `result` in place. The result is equivalent to `result = x * y`.
-
-Returns `nothing` (modifies `result` in place).
-
-# Example
-```julia
-result = Transf1([0, 0, 0])
-x = Transf1([1, 0, 1])
-y = Transf1([0, 1, 0])
-product_inplace!(result, x, y)
-# result now contains x * y
-```
-"""
 function product_inplace!(result::T, x::T, y::T) where {T<:_PTransfTypes}
     GC.@preserve result x y begin
         @wrap_libsemigroups_call LibSemigroups.product_inplace!(result, x, y)
@@ -157,18 +116,6 @@ function product_inplace!(result::T, x::T, y::T) where {T<:_PTransfTypes}
     return nothing
 end
 
-"""
-    increase_degree_by!(t::T, n::Integer) where T -> T
-
-Increase the degree of transformation `t` by `n`.
-This modifies `t` in place and returns `t` for method chaining.
-
-# Example
-```julia
-t = Transf1([1, 0])
-increase_degree_by!(t, 2)  # Now has degree 4
-```
-"""
 function increase_degree_by!(t::T, n::Integer) where {T<:_PTransfTypes}
     GC.@preserve t begin
         @wrap_libsemigroups_call LibSemigroups.increase_degree_by!(t, UInt(n))
@@ -176,11 +123,6 @@ function increase_degree_by!(t::T, n::Integer) where {T<:_PTransfTypes}
     return t
 end
 
-"""
-    swap!(t::T, x::T) where T
-
-Swap the contents of `t` with `x`. Both objects are modified.
-"""
 function swap!(t::T, x::T) where {T<:_PTransfTypes}
     GC.@preserve t x begin
         @wrap_libsemigroups_call LibSemigroups.swap(t, x)
@@ -188,11 +130,6 @@ function swap!(t::T, x::T) where {T<:_PTransfTypes}
     return nothing
 end
 
-"""
-    copy(t)
-
-Create a copy of the transformation `t`.
-"""
 function copy(t::_PTransfTypes)
     return LibSemigroups.copy(t)
 end
@@ -201,18 +138,10 @@ end
 # Module-level helper functions
 # ============================================================================
 
-"""
-    one(t)
-
-Return the identity transformation with the same degree as `t`.
-"""
+# Return the identity transformation with the same degree as `t`.
 one(t::_PTransfTypes) = LibSemigroups.one(t)
 
-"""
-    one(::Type{T}, n::Integer) where T
-
-Return the identity transformation of type `T` with degree `n`.
-"""
+# Return the identity transformation of type `T` with degree `n`.
 one(::Type{Transf1}, n::Integer) = LibSemigroups.one(Transf1, UInt(n))
 one(::Type{Transf2}, n::Integer) = LibSemigroups.one(Transf2, UInt(n))
 one(::Type{Transf4}, n::Integer) = LibSemigroups.one(Transf4, UInt(n))
@@ -223,46 +152,12 @@ one(::Type{Perm1}, n::Integer) = LibSemigroups.one(Perm1, UInt(n))
 one(::Type{Perm2}, n::Integer) = LibSemigroups.one(Perm2, UInt(n))
 one(::Type{Perm4}, n::Integer) = LibSemigroups.one(Perm4, UInt(n))
 
-"""
-    image(t) -> Vector
-
-Return a sorted vector of all points in the image of the transformation.
-For partial transformations (PPerm), only defined image points are included.
-"""
 image(t::_PTransfTypes) = LibSemigroups.image(t)
 
-"""
-    domain(t) -> Vector
-
-Return a sorted vector of all points in the domain of the transformation.
-For full transformations (Transf, Perm), this is `[1, 2, ..., degree(t)]`.
-For partial transformations (PPerm), only defined domain points are included.
-"""
 domain(t::_PTransfTypes) = LibSemigroups.domain(t)
 
-"""
-    inverse(p)
-
-Return the inverse of the partial permutation or permutation `p`.
-For PPerm, returns the inverse partial permutation.
-For Perm, returns the inverse permutation.
-
-Note: Not available for general transformations (Transf) as they may not be invertible.
-"""
 inverse(p::Union{_PPermTypes,_PermTypes}) = LibSemigroups.inverse(p)
 
-"""
-    left_one(p)
-
-Return the partial permutation that acts as the identity on the domain of `p`.
-This is the partial permutation that maps each point in `domain(p)` to itself.
-"""
 left_one(p::_PPermTypes) = LibSemigroups.left_one(p)
 
-"""
-    right_one(p)
-
-Return the partial permutation that acts as the identity on the image of `p`.
-This is the partial permutation that maps each point in `image(p)` to itself.
-"""
 right_one(p::_PPermTypes) = LibSemigroups.right_one(p)

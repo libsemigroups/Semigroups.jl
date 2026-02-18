@@ -40,7 +40,6 @@ makedocs(;
                     "Transf" => "data-structures/elements/transformations/transf.md",
                     "PPerm" => "data-structures/elements/transformations/pperm.md",
                     "Perm" => "data-structures/elements/transformations/perm.md",
-                    "Helpers" => "data-structures/elements/transformations/helpers.md",
                 ],
             ],
         ],
