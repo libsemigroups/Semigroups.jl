@@ -1,6 +1,6 @@
+// report.cpp - ReportGuard bindings for libsemigroups_julia
 //
-// Semigroups.jl
-// Copyright (C) 2026, James W. Swent
+// Copyright (c) 2026 James W. Swent
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,28 +14,18 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-
-// This file defines the main Julia module that wraps libsemigroups
-// functionality.
 
 #include "libsemigroups_julia.hpp"
 
+#include <libsemigroups/detail/report.hpp>
+
 namespace libsemigroups_julia {
 
-JLCXX_MODULE define_julia_module(jl::Module & mod)
+void define_report(jl::Module & m)
 {
-  // Define constants first (UNDEFINED, POSITIVE_INFINITY, etc.)
-  define_constants(mod);
+  using libsemigroups::ReportGuard;
 
-  // Define ReportGuard (RAII reporting control)
-  define_report(mod);
-
-  // Define base types (must be registered before derived types)
-  define_runner(mod);
-
-  // Define element types
-  define_transf(mod);
+  m.add_type<ReportGuard>("CppReportGuard").constructor<bool>();
 }
 
 }    // namespace libsemigroups_julia

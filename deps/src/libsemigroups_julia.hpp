@@ -58,6 +58,7 @@ namespace libsemigroups = ::libsemigroups;
 
 // Forward declarations of binding functions
 void define_constants(jl::Module & mod);
+void define_report(jl::Module & mod);
 void define_runner(jl::Module & mod);
 void define_transf(jl::Module & mod);
 

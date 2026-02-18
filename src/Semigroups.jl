@@ -61,6 +61,7 @@ using .Errors: LibsemigroupsError, @wrap_libsemigroups_call
 
 # Julia-side wrapper files
 include("libsemigroups/constants.jl")
+include("libsemigroups/report.jl")
 include("libsemigroups/runner.jl")
 include("libsemigroups/transf.jl")
 
@@ -77,7 +78,7 @@ end
 # Exports
 # ============================================================================
 
-export enable_debug, is_debug, LibsemigroupsError
+export enable_debug, is_debug, LibsemigroupsError, ReportGuard
 export UNDEFINED, POSITIVE_INFINITY, NEGATIVE_INFINITY, LIMIT_MAX
 export Runner, RunnerState
 export STATE_NEVER_RUN, STATE_RUNNING_TO_FINISH, STATE_RUNNING_FOR
