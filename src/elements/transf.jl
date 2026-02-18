@@ -440,6 +440,13 @@ function PPerm(images::AbstractVector, ::Type{T}) where {T}
 
     images_typed = Vector{T}(undef, n)
     for (i, img) in enumerate(images)
+        if img isa Integer && img <= 0
+            throw(
+                ArgumentError(
+                    "expected a positive integer or UNDEFINED, found $img in position $i",
+                ),
+            )
+        end
         images_typed[i] = convert(T, img)  # UNDEFINED → T(0), integers → T(img)
     end
 
