@@ -80,10 +80,10 @@ Run for a specified amount of time.
 
 For this to work it is necessary to periodically check if
 [`timed_out`](@ref) returns `true`, and to stop if it is, in the
-[`run`](@ref) member function of any derived class of [`Runner`](@ref).
+[`run!`](@ref) method of any subtype of [`Runner`](@ref).
 
 # Arguments
-- `t::TimePeriod`:  the time in to run for.
+- `t::TimePeriod`:  the duration to run for.
 
 # Examples
 ```julia
@@ -159,10 +159,7 @@ finished(r::Runner) = LibSemigroups.finished(r)
 """
     Base.success(r::Runner) -> Bool
 
-Return `true` if the algorithm has completed successfully. 
-
-
-Check if run has been run to completion successfully.
+Check if [`run!`](@ref) has been run to completion successfully.
 
 Returns `true` if [`run!`](@ref) has been run to completion and it was
 successful. The default implementation is to just call [`finished`](@ref).
@@ -175,9 +172,9 @@ Base.success(r::Runner) = LibSemigroups.success(r)
 """
     started(r::Runner) -> Bool
 
-Check if [`run`](@ref) has been called at least once before.
+Check if [`run!`](@ref) has been called at least once before.
 
-Returns `true` if [`run`](@ref) has started to run (it can be running or
+Returns `true` if [`run!`](@ref) has started to run (it can be running or
 not).
 
 # See also
@@ -190,7 +187,7 @@ started(r::Runner) = LibSemigroups.started(r)
 
 Check if currently running.
 
-Returns `true` if [`run`](@ref) is in the process of running and `false` it is
+Returns `true` if [`run!`](@ref) is in the process of running and `false` it is
 not.
 
 # See also
@@ -201,10 +198,10 @@ running(r::Runner) = LibSemigroups.running(r)
 """
     timed_out(r::Runner) -> Bool
 
-Check if the amount of time passed to [`run_for`](@ref) has elapsed.
+Check if the amount of time passed to [`run_for!`](@ref) has elapsed.
 
 # See also
-[`run_for(::Runner, ::TimePeriod)`](@ref)
+[`run_for!(::Runner, ::TimePeriod)`](@ref)
 """
 timed_out(r::Runner) = LibSemigroups.timed_out(r)
 
@@ -236,12 +233,12 @@ dead(r::Runner) = LibSemigroups.dead(r)
     stopped_by_predicate(r::Runner) -> Bool
 
 Check if the runner was stopped, or should stop, because of
-the argument last passed to [`run_until`](@ref).
+the argument last passed to [`run_until!`](@ref).
 
 If `r` is running, then the nullary predicate is called and its
 return value is returned. If `r` is not running, then `true` is
 returned if and only if the last time `r` was running it was
-stopped by a call to the nullary predicate passed to [`run_until`](@ref).
+stopped by a call to the nullary predicate passed to [`run_until!`](@ref).
 """
 stopped_by_predicate(r::Runner) = LibSemigroups.stopped_by_predicate(r)
 
@@ -272,7 +269,7 @@ Check if the runner is currently running until a nullary
 predicate returns `true`.
 
 If the Runner is currently running because its member function
-[`run_until`](@ref) has been invoked, then this function returns `true`.
+[`run_until!`](@ref) has been invoked, then this function returns `true`.
 Otherwise, `false` is returned.
 """
 running_until(r::Runner) = LibSemigroups.running_until(r)
@@ -293,10 +290,10 @@ current_state(r::Runner) = LibSemigroups.current_state(r)
 """
     kill!(r::Runner)
 
-Stop [`run`](@ref) from running (thread-safe).
+Stop [`run!`](@ref) from running (thread-safe).
 
-This function can be used to terminate [`run`](@ref) from another thread.
-After [`kill`](@ref) has been called the Runner may no longer be in a valid
+This function can be used to terminate [`run!`](@ref) from another thread.
+After [`kill!`](@ref) has been called the Runner may no longer be in a valid
 state, but will return `true` from [`dead`](@ref) .
 
 # See also
@@ -311,10 +308,10 @@ kill!(r::Runner) = LibSemigroups.kill!(r)
 """
     report_why_we_stopped(r::Runner)
 
-Report why [`run`](@ref) stopped.
+Report why [`run!`](@ref) stopped.
 
-Reports whether run() was stopped because it is finished(),
-timed_out(), or dead().
+Reports whether [`run!`](@ref) was stopped because it is [`finished`](@ref),
+[`timed_out`](@ref), or [`dead`](@ref).
 """
 report_why_we_stopped(r::Runner) = LibSemigroups.report_why_we_stopped(r)
 
