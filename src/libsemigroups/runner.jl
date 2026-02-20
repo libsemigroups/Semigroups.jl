@@ -108,8 +108,8 @@ end
 
 Run until a nullary predicate returns `true` or [`finished`](@ref).
 
-Run the algorithm until the nullary predicate `f` returns `true` or the
-algorithm [`finished`](@ref). 
+This function runs the algorithm until the nullary predicate `f` returns `true`
+or the algorithm [`finished`](@ref). 
 
 # Arguments 
 - `f::Function`: a function with `0` arguments returning `true` or `false`
