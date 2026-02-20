@@ -58,8 +58,9 @@ const STATE_DEAD = LibSemigroups.state_dead
 """
     run!(r::Runner)
 
-Run the algorithm to completion. This is a blocking call that will not return
-until the algorithm has finished, timed out, or been killed.
+Run until [`finished`](@ref).
+
+Run the main algorithm implemented by a derived class of [`Runner`](@ref).
 """
 run!(r::Runner) = LibSemigroups.run!(r)
 
@@ -118,18 +119,28 @@ init!(r::Runner) = LibSemigroups.init!(r)
 """
     finished(r::Runner) -> Bool
 
-Return `true` if the algorithm has run to completion.
+Check if [`run`](@ref) has been run to completion or not.
+
+Returns `true` if [`run`](@ref) has been run to completion; and `false` if not.
+
+# See also
+[`started`](@ref)
 """
 finished(r::Runner) = LibSemigroups.finished(r)
 
 """
     Base.success(r::Runner) -> Bool
 
-Return `true` if the algorithm has completed successfully. This extends
-`Base.success` (which checks process exit status) to work with libsemigroups
-[`Runner`](@ref) types. By default, this returns the same value as
-[`finished`](@ref), but derived classes may override this to distinguish
-between completion and successful completion.
+Return `true` if the algorithm has completed successfully. 
+
+
+Check if run has been run to completion successfully.
+
+Returns `true` if [`run`](@ref) has been run to completion and it was
+successful. The default implementation is to just call [`finished`](@ref).
+
+This extends `Base.success` (which checks process exit status) to work with
+libsemigroups [`Runner`](@ref) types. 
 """
 Base.success(r::Runner) = LibSemigroups.success(r)
 
