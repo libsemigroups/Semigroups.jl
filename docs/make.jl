@@ -48,4 +48,8 @@ makedocs(;
     warnonly = [:missing_docs],
 )
 
-deploydocs(repo = "github.com/libsemigroups/Semigroups.jl.git", devbranch = "main")
+deploydocs(
+    repo = "github.com/libsemigroups/Semigroups.jl.git",
+    devbranch = "main",
+    push_preview = true,
+)
