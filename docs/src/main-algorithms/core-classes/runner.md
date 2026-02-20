@@ -11,6 +11,7 @@ Runner
 | [`current_state`](@ref current_state(::Runner))                 | Return the current state.                                                                                    |
 | [`dead`](@ref dead(::Runner))                                   | Check if the runner is dead.                                                                                 |
 | [`finished`](@ref finished(::Runner))                           | Check if run has been run to completion or not.                                                              |
+| [`init!`](@ref init!(::Runner))                                 | Initialize an existing [`Runner`](@ref) object.                                                              |
 | [`kill!`](@ref kill!(::Runner))                                 | Stop run from running (thread-safe).                                                                         |
 | [`report_why_we_stopped`](@ref report_why_we_stopped(::Runner)) | Report why run stopped.                                                                                      |
 | [`run!`](@ref run!(::Runner))                                   | Run until finished.                                                                                          |
@@ -31,6 +32,7 @@ Runner
 current_state(::Runner)
 dead(::Runner)
 finished(::Runner)
+init!(::Runner)
 kill!(::Runner)
 report_why_we_stopped(::Runner)
 run!(::Runner)

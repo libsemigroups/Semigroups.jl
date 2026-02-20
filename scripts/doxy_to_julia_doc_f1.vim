@@ -10,6 +10,7 @@ function! DoxyToJuliaDoc()
   silent '<,'>s/\\exceptions.*\n//ge
   silent '<,'>s/\\noexcept.*\n//ge
   silent '<,'>s/\\param\s\+\(\w\+\)/- `\1::TODO`: /ge
+  silent '<,'>s/\\note\>/!!! note\r    /ge
 
   " silent '<,'>s/^.*\\tparam.*$//ge
   " silent '<,'>s/\\param\s\+\(\w\+\)/:param \1:/ge

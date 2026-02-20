@@ -4,10 +4,6 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 
-# Missing functionality:
-# - init
-# - 
-
 """
 runner.jl - Julia wrappers for libsemigroups Runner base class
 
@@ -132,8 +128,16 @@ run_until!(r::Runner, f::Function) = run_until!(f, r)
 """
     init!(r::Runner) -> Runner
 
-Re-initialize the runner to its default-constructed state, discarding all
-previously computed results.
+Initialize an existing Runner object.
+
+This function puts a Runner object back into the same state as if it
+had been newly default constructed.
+
+!!! note 
+    This function is not thread-safe.
+
+# See also
+[`Runner`](@ref)
 """
 init!(r::Runner) = LibSemigroups.init!(r)
 
