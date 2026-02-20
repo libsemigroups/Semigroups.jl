@@ -8,6 +8,7 @@ function! WordUnderCursorRef()
   let new = substitute(word, pat, repl, '')
   execute 'normal! ciw' . new
   silent .s/\(\[`\w\+`\](@ref)\)()/\1/ge
+  silent .s/\(\[`\w\+\)\(`\](@ref)\)!/\1!\2/ge
 endfunction
 
 map! <F2> <ESC>:call WordUnderCursorRef()<CR>i
