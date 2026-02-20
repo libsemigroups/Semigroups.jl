@@ -21,9 +21,9 @@ Runner
 | [`running_for`](@ref running_for(::Runner))                     | Check if the runner is currently running for a particular length of time.                                    |
 | [`running_until`](@ref running_until(::Runner))                 | Check if the runner is currently running until a nullary predicate returns true.                             |
 | [`started`](@ref started(::Runner))                             | Check if run has been called at least once before.                                                           |
-| [`success`](@ref success(::Runner))                             | Check if run has been run to completion successfully.                                                        |
 | [`stopped`](@ref stopped(::Runner))                             | Check if the runner is stopped.                                                                              |
 | [`stopped_by_predicate`](@ref stopped_by_predicate(::Runner))   | Check if the runner was stopped, or should stop, because of the argument last passed to [`run_until`](@ref). |
+| [`success`](@ref success(::Runner))                             | Check if run has been run to completion successfully.                                                        |
 | [`timed_out`](@ref timed_out(::Runner))                         | Check if the amount of time passed to run_for has elapsed.                                                   |
 
 ## Full API
@@ -41,9 +41,9 @@ run_until!(::Runner, ::Function)
 running(::Runner)
 running_for(::Runner)
 running_until(::Runner)
-success(::Runner)
 started(::Runner)
 stopped(::Runner)
 stopped_by_predicate(::Runner)
+success(::Runner)
 timed_out(::Runner)
 ```
