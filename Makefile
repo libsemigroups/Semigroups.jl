@@ -26,7 +26,7 @@ docs:
 
 docs-serve: docs
 	$(JULIA) --project=docs -e 'using Pkg; Pkg.add("LiveServer")'
-	$(JULIA) --project=docs -e 'using LiveServer; servedocs()'
+	$(JULIA) --project=docs -e 'using LiveServer; servedocs(; include_dirs = ["src"])'
 
 build:
 	$(JULIA) --project=. -e 'using Pkg; Pkg.build("Semigroups")'
