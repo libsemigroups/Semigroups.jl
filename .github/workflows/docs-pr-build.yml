@@ -1,20 +1,21 @@
-name: Deploy documentation
+name: Documentation (PR)
 
-on:
-  push:
-    branches: [main]
-    tags: ["*"]
+on: [pull_request]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  actions: write
+  pull-requests: read
+  contents: read
   statuses: write
+  issues: write
 
 jobs:
-  deploy_docs:
+  docs:
+    name: "Build documentation"
     runs-on: ubuntu-latest
     env:
       CC: gcc
@@ -58,14 +59,25 @@ jobs:
 
       - uses: julia-actions/cache@v2
 
-      - name: Build package
-        run: |
-          julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.build()'
+      - name: "Build package"
+        uses: julia-actions/julia-buildpkg@v1
 
-      - name: Build and deploy documentation
+      - run: |
+          julia --project=docs --color=yes -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=pwd()))
+            Pkg.instantiate()'
+
+      - name: Build documentation
         run: |
-          julia --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
-          julia --project=docs docs/make.jl
+          julia --project=docs --color=yes docs/make.jl
         env:
-          DOCS_DEPLOY: "true"
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCS_DEPLOY: "false"
+
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-html
+          path: docs/build
+          if-no-files-found: error
+          retention-days: 1

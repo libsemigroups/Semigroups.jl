@@ -57,4 +57,10 @@ makedocs(;
     warnonly = [:missing_docs, :linkcheck, :cross_references],
 )
 
-deploydocs(repo = "github.com/libsemigroups/Semigroups.jl.git", devbranch = "main")
+if get(ENV, "DOCS_DEPLOY", "false") == "true"
+    deploydocs(
+        repo = "github.com/libsemigroups/Semigroups.jl.git",
+        devbranch = "main",
+        push_preview = false,
+    )
+end
