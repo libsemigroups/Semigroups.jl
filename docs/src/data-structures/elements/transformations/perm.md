@@ -7,19 +7,19 @@ $\{1, 2, \ldots, n\}$, i.e. $((1)f, (2)f, \ldots, (n)f)$.
 
 ## Contents
 
-| Function                                               | Description                         |
-| ------------------------------------------------------ | ----------------------------------- |
-| [`Perm`](@ref Semigroups.Perm)                         | Construct a permutation             |
-| `p[i]`                                                 | Get the image of a point            |
-| [`degree`](@ref Semigroups.degree(::Semigroups.Perm))  | The degree of the permutation       |
-| [`rank`](@ref Semigroups.rank(::Semigroups.Perm))      | The number of distinct image values |
-| [`image`](@ref Semigroups.image)                       | The sorted set of image values      |
-| [`domain`](@ref Semigroups.domain)                     | The sorted set of defined points    |
-| [`inverse`](@ref Semigroups.inverse)                   | The inverse permutation             |
-| [`one`](@ref Base.one(::Type{Semigroups.Perm}, ::Int)) | The identity permutation            |
-| [`copy`](@ref Base.copy(::Semigroups.Perm))            | Copy a permutation                  |
-| [`p * q`](#Composition)                                | Compose two permutations            |
-| [`==`, `<`, `<=`, `>`, `>=`](#Comparison)              | Comparison operators                |
+| Function                                                     | Description                         |
+| ------------------------------------------------------------ | ----------------------------------- |
+| [`Perm`](@ref Semigroups.Perm)                               | Construct a permutation             |
+| `p[i]`                                                       | Get the image of a point            |
+| [`degree`](@ref Semigroups.degree(::Semigroups.Perm))        | The degree of the permutation       |
+| [`rank`](@ref Semigroups.rank(::Semigroups.Perm))            | The number of distinct image values |
+| [`image`](@ref Semigroups.image)                             | The sorted set of image values      |
+| [`domain`](@ref Semigroups.domain)                           | The sorted set of defined points    |
+| [`inverse`](@ref Semigroups.inverse)                         | The inverse permutation             |
+| [`one`](@ref Semigroups.one(::Type{Semigroups.Perm}, ::Int)) | The identity permutation            |
+| [`copy`](@ref Base.copy(::Semigroups.Perm))                  | Copy a permutation                  |
+| [`p * q`](#Composition)                                      | Compose two permutations            |
+| [`==`, `<`, `<=`, `>`, `>=`](#Comparison)                    | Comparison operators                |
 
 ## Full API
 
@@ -29,7 +29,7 @@ Semigroups.degree(::Semigroups.Perm)
 Semigroups.domain(::Semigroups.Perm)
 Semigroups.image(::Semigroups.Perm)
 Semigroups.inverse(::Semigroups.Perm)
-Base.one(::Type{Semigroups.Perm}, ::Int)
+Semigroups.one(::Type{Semigroups.Perm}, ::Int)
 Semigroups.rank(::Semigroups.Perm)
 ```
 

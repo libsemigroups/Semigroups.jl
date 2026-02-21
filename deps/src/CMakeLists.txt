@@ -32,6 +32,7 @@ message(STATUS "libsemigroups libraries: ${LIBSEMIGROUPS_LIBRARIES}")
 # Build the shared library
 add_library(libsemigroups_julia SHARED
     libsemigroups_julia.cpp
+    bmat8.cpp
     constants.cpp
     report.cpp
     runner.cpp

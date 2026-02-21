@@ -60,12 +60,14 @@ include("libsemigroups/errors.jl")
 using .Errors: LibsemigroupsError, @wrap_libsemigroups_call
 
 # Julia-side wrapper files
+include("libsemigroups/bmat8.jl")
 include("libsemigroups/constants.jl")
 include("libsemigroups/report.jl")
 include("libsemigroups/runner.jl")
 include("libsemigroups/transf.jl")
 
 # High-level element types
+include("elements/bmat8.jl")
 include("elements/transf.jl")
 
 # Module initialization
@@ -96,6 +98,11 @@ export is_undefined, is_positive_infinity, is_negative_infinity, is_limit_max
 export Transf, PPerm, Perm
 export degree, rank, image, domain, inverse
 export increase_degree_by!, swap!
-export left_one, right_one
+export left_one, right_one, one
+
+# BMat8
+export BMat8, to_int, swap!, degree, one, random, row_space_basis
+export col_space_basis, col_space_size, is_regular_element, minimum_dim
+export number_of_cols, number_of_rows, row_space_size, rows
 
 end # module Semigroups

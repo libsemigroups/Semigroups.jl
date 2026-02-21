@@ -32,125 +32,117 @@
 
 namespace libsemigroups_julia {
 
-void define_runner(jl::Module & m)
-{
-  using libsemigroups::Runner;
+  void define_runner(jl::Module& m) {
+    using libsemigroups::Runner;
 
-  // Register Runner as a base type.
-  // Runner is abstract (pure virtual run_impl/finished_impl) so we do NOT
-  // add constructors. It will only be usable through derived types
-  // (e.g. FroidurePinBase).
-  auto type = m.add_type<Runner>("Runner");
+    // Register Runner as a base type.
+    // Runner is abstract (pure virtual run_impl/finished_impl) so we do NOT
+    // add constructors. It will only be usable through derived types
+    // (e.g. FroidurePinBase).
+    auto type = m.add_type<Runner>("Runner");
 
-  //////////////////////////////////////////////////////////////////////////
-  // State enum
-  //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    // State enum
+    //////////////////////////////////////////////////////////////////////////
 
-  m.add_bits<Runner::state>("state", jl::julia_type("CppEnum"));
-  m.set_const("state_never_run", Runner::state::never_run);
-  m.set_const("state_running_to_finish", Runner::state::running_to_finish);
-  m.set_const("state_running_for", Runner::state::running_for);
-  m.set_const("state_running_until", Runner::state::running_until);
-  m.set_const("state_timed_out", Runner::state::timed_out);
-  m.set_const("state_stopped_by_predicate", Runner::state::stopped_by_predicate);
-  m.set_const("state_not_running", Runner::state::not_running);
-  m.set_const("state_dead", Runner::state::dead);
+    m.add_bits<Runner::state>("state", jl::julia_type("CppEnum"));
+    m.set_const("state_never_run", Runner::state::never_run);
+    m.set_const("state_running_to_finish", Runner::state::running_to_finish);
+    m.set_const("state_running_for", Runner::state::running_for);
+    m.set_const("state_running_until", Runner::state::running_until);
+    m.set_const("state_timed_out", Runner::state::timed_out);
+    m.set_const("state_stopped_by_predicate",
+                Runner::state::stopped_by_predicate);
+    m.set_const("state_not_running", Runner::state::not_running);
+    m.set_const("state_dead", Runner::state::dead);
 
-  //////////////////////////////////////////////////////////////////////////
-  // Core algorithm control
-  //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    // Core algorithm control
+    //////////////////////////////////////////////////////////////////////////
 
-  // run / run! - Run the algorithm to completion
-  type.method("run!", [](Runner & self) {
-    self.run();
-  });
+    // run / run! - Run the algorithm to completion
+    type.method("run!", [](Runner& self) { self.run(); });
 
-  // run_for / run_for! - Run for a specified duration.
-  // We accept Int64 nanoseconds from Julia (the Julia layer converts
-  // Dates.TimePeriod to nanoseconds before calling this binding).
-  type.method("run_for!", [](Runner & self, int64_t ns) {
-    self.run_for(std::chrono::nanoseconds(ns));
-  });
-
-  // run_until / run_until! - Run until a nullary predicate returns true.
-  // CxxWrap does not support std::function<bool()> as a parameter type, so we
-  // accept a SafeCFunction and convert it to a function pointer via
-  // make_function_pointer. The Julia side uses @safe_cfunction to create the
-  // SafeCFunction from a closure. A uint8_t is used instead of bool to
-  // avoid C++ bool ABI issues across platforms.
-  type.method("run_until!", [](Runner & self, jlcxx::SafeCFunction func) {
-    auto fp = jlcxx::make_function_pointer<uint8_t()>(func);
-    self.run_until([fp]() -> bool {
-      return fp() != 0;
+    // run_for / run_for! - Run for a specified duration.
+    // We accept Int64 nanoseconds from Julia (the Julia layer converts
+    // Dates.TimePeriod to nanoseconds before calling this binding).
+    type.method("run_for!", [](Runner& self, int64_t ns) {
+      self.run_for(std::chrono::nanoseconds(ns));
     });
-  });
 
-  // init - Re-initialize the runner to its default-constructed state
-  type.method("init!", [](Runner & self) -> Runner & {
-    return self.init();
-  });
+    // run_until / run_until! - Run until a nullary predicate returns true.
+    // CxxWrap does not support std::function<bool()> as a parameter type, so we
+    // accept a SafeCFunction and convert it to a function pointer via
+    // make_function_pointer. The Julia side uses @safe_cfunction to create the
+    // SafeCFunction from a closure. A uint8_t is used instead of bool to
+    // avoid C++ bool ABI issues across platforms.
+    type.method("run_until!", [](Runner& self, jlcxx::SafeCFunction func) {
+      auto fp = jlcxx::make_function_pointer<uint8_t()>(func);
+      self.run_until([fp]() -> bool { return fp() != 0; });
+    });
 
-  //////////////////////////////////////////////////////////////////////////
-  // State queries
-  //////////////////////////////////////////////////////////////////////////
+    // init - Re-initialize the runner to its default-constructed state
+    type.method("init!", [](Runner& self) -> Runner& { return self.init(); });
 
-  // finished - Has the algorithm run to completion?
-  type.method("finished", &Runner::finished);
+    //////////////////////////////////////////////////////////////////////////
+    // State queries
+    //////////////////////////////////////////////////////////////////////////
 
-  // success - Has the algorithm completed successfully?
-  type.method("success", &Runner::success);
+    // finished - Has the algorithm run to completion?
+    type.method("finished", &Runner::finished);
 
-  // started - Has run() been called at least once?
-  type.method("started", &Runner::started);
+    // success - Has the algorithm completed successfully?
+    type.method("success", &Runner::success);
 
-  // running - Is the algorithm currently executing?
-  type.method("running", &Runner::running);
+    // started - Has run() been called at least once?
+    type.method("started", &Runner::started);
 
-  // timed_out - Did run_for! exhaust its time limit?
-  type.method("timed_out", &Runner::timed_out);
+    // running - Is the algorithm currently executing?
+    type.method("running", &Runner::running);
 
-  // stopped - Is the algorithm stopped for any reason?
-  // (finished, timed_out, dead, or stopped_by_predicate)
-  type.method("stopped", &Runner::stopped);
+    // timed_out - Did run_for! exhaust its time limit?
+    type.method("timed_out", &Runner::timed_out);
 
-  // dead - Was the runner killed from another thread?
-  type.method("dead", &Runner::dead);
+    // stopped - Is the algorithm stopped for any reason?
+    // (finished, timed_out, dead, or stopped_by_predicate)
+    type.method("stopped", &Runner::stopped);
 
-  // stopped_by_predicate - Was run_until's predicate satisfied?
-  type.method("stopped_by_predicate", &Runner::stopped_by_predicate);
+    // dead - Was the runner killed from another thread?
+    type.method("dead", &Runner::dead);
 
-  // running_for - Is it currently in a run_for! call?
-  type.method("running_for", &Runner::running_for);
+    // stopped_by_predicate - Was run_until's predicate satisfied?
+    type.method("stopped_by_predicate", &Runner::stopped_by_predicate);
 
-  // running_for_how_long - Return last run_for duration in nanoseconds
-  type.method("running_for_how_long", [](Runner const & self) -> int64_t {
-    return self.running_for_how_long().count();
-  });
+    // running_for - Is it currently in a run_for! call?
+    type.method("running_for", &Runner::running_for);
 
-  // running_until - Is it currently in a run_until call?
-  type.method("running_until", &Runner::running_until);
+    // running_for_how_long - Return last run_for duration in nanoseconds
+    type.method("running_for_how_long", [](Runner const& self) -> int64_t {
+      return self.running_for_how_long().count();
+    });
 
-  // current_state - Return the current state enum value
-  type.method("current_state", &Runner::current_state);
+    // running_until - Is it currently in a run_until call?
+    type.method("running_until", &Runner::running_until);
 
-  //////////////////////////////////////////////////////////////////////////
-  // Control
-  //////////////////////////////////////////////////////////////////////////
+    // current_state - Return the current state enum value
+    type.method("current_state", &Runner::current_state);
 
-  // kill / kill! - Stop the runner from another thread (thread-safe)
-  type.method("kill!", [](Runner & self) {
-    self.kill();
-  });
+    //////////////////////////////////////////////////////////////////////////
+    // Control
+    //////////////////////////////////////////////////////////////////////////
 
-  //////////////////////////////////////////////////////////////////////////
-  // Reporting
-  //////////////////////////////////////////////////////////////////////////
+    // kill / kill! - Stop the runner from another thread (thread-safe)
+    type.method("kill!", [](Runner& self) { self.kill(); });
 
-  // report_why_we_stopped - Print reason for stopping to stderr
-  type.method("report_why_we_stopped", &Runner::report_why_we_stopped);
+    //////////////////////////////////////////////////////////////////////////
+    // Reporting
+    //////////////////////////////////////////////////////////////////////////
 
-  // string_why_we_stopped - Return reason for stopping as a string
-  type.method("string_why_we_stopped", &Runner::string_why_we_stopped);
-}
+    // report_why_we_stopped - Print reason for stopping to stderr
+    type.method("report_why_we_stopped", &Runner::report_why_we_stopped);
 
-}    // namespace libsemigroups_julia
+    // string_why_we_stopped - Return reason for stopping as a string
+    type.method("string_why_we_stopped", &Runner::string_why_we_stopped);
+  }
+
+}  // namespace libsemigroups_julia
