@@ -52,16 +52,17 @@
 
 namespace libsemigroups_julia {
 
-// Namespace aliases for convenience
-namespace jl = jlcxx;
-namespace libsemigroups = ::libsemigroups;
+  // Namespace aliases for convenience
+  namespace jl            = jlcxx;
+  namespace libsemigroups = ::libsemigroups;
 
-// Forward declarations of binding functions
-void define_constants(jl::Module & mod);
-void define_report(jl::Module & mod);
-void define_runner(jl::Module & mod);
-void define_transf(jl::Module & mod);
+  // Forward declarations of binding functions
+  void define_constants(jl::Module& mod);
+  void define_report(jl::Module& mod);
+  void define_runner(jl::Module& mod);
+  void define_transf(jl::Module& mod);
+  void define_bmat8(jl::Module& mod);
 
-}    // namespace libsemigroups_julia
+}  // namespace libsemigroups_julia
 
-#endif    // LIBSEMIGROUPS_JULIA_HPP_
+#endif  // LIBSEMIGROUPS_JULIA_HPP_

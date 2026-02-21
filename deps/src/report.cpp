@@ -21,11 +21,10 @@
 
 namespace libsemigroups_julia {
 
-void define_report(jl::Module & m)
-{
-  using libsemigroups::ReportGuard;
+  void define_report(jl::Module& m) {
+    using libsemigroups::ReportGuard;
 
-  m.add_type<ReportGuard>("CppReportGuard").constructor<bool>();
-}
+    m.add_type<ReportGuard>("CppReportGuard").constructor<bool>();
+  }
 
-}    // namespace libsemigroups_julia
+}  // namespace libsemigroups_julia

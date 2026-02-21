@@ -4,6 +4,7 @@ function! DoxyToJuliaDoc()
   silent '<,'>s/^\s*//ge
   silent '<,'>s/\\ref\s\+\([a-zA-z:]\+\)/[`\1`](@ref)/ge
   silent '<,'>s/\\c\s\+\(\w\+\)/`\1`/ge
+  silent '<,'>s/\\p \(\w\+\)/`\1`/ge
   silent '<,'>s/\\sa/# See also\r/ge
   silent '<,'>s/\\returns.*$//ge
   silent '<,'>s/\\ingroup.$//ge
@@ -11,6 +12,8 @@ function! DoxyToJuliaDoc()
   silent '<,'>s/\\noexcept.*\n//ge
   silent '<,'>s/\\param\s\+\(\w\+\)/- `\1::TODO`: /ge
   silent '<,'>s/\\note\>/!!! note\r    /ge
+  silent '<,'>s/\\throws \(\w\+\)/# Throws\r- \1/ge
+  silent '<,'>s/\\complexity/# Complexity/ge
 
   " silent '<,'>s/^.*\\tparam.*$//ge
   " silent '<,'>s/\\param\s\+\(\w\+\)/:param \1:/ge
