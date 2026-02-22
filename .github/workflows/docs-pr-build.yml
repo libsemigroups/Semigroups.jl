@@ -85,17 +85,17 @@ jobs:
           retention-days: 7
 
       # Generate comment for artifact build
-      - uses: marocchino/sticky-pull-request-comment@v2
-        if: github.event.pull_request.head.repo.full_name != github.repository
-        with:
-          header: docs-preview
-          message: |
-            📦 Documentation built for this PR.
-
-            Since this PR originates from a fork, a preview deployment is not available.
-
-            Download the artifact from this workflow run:
-            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      # - uses: marocchino/sticky-pull-request-comment@v2
+      #   if: github.event.pull_request.head.repo.full_name != github.repository
+      #   with:
+      #     header: docs-preview
+      #     message: |
+      #       📦 Documentation built for this PR.
+      #
+      #       Since this PR originates from a fork, a preview deployment is not available.
+      #
+      #       Download the artifact from this workflow run:
+      #       ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - uses: marocchino/sticky-pull-request-comment@v2
         if: github.event.pull_request.head.repo.full_name == github.repository
