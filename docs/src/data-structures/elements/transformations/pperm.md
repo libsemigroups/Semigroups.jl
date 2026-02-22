@@ -8,21 +8,21 @@ $(i)f$ is undefined (i.e. not among the points where $f$ is defined).
 
 ## Contents
 
-| Function                                               | Description                                                                                      |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
-| [`PPerm`](@ref Semigroups.PPerm)                       | Construct a partial permutation                                                                  |
-| `p[i]`                                                 | Get the image of a point (returns [`UNDEFINED`](@ref Semigroups.UNDEFINED) if not in the domain) |
-| [`degree`](@ref Semigroups.degree(::Semigroups.PPerm)) | The degree of the partial permutation                                                            |
-| [`rank`](@ref Semigroups.rank)                         | The number of distinct image values, not including `UNDEFINED`                                   |
-| [`image`](@ref Semigroups.image)                       | The sorted set of image values                                                                   |
-| [`domain`](@ref Semigroups.domain)                     | The sorted set of points where `f` is defined                                                    |
-| [`inverse`](@ref inverse(::Semigroups.PPerm))          | The inverse partial permutation                                                                  |
-| [`left_one`](@ref Semigroups.left_one)                 | The identity on the domain                                                                       |
-| [`one`](@ref Base.one(::Semigroups.PPerm, ::Int))      | The identity partial permutation of the same degree                                              |
-| [`right_one`](@ref Semigroups.right_one)               | The identity on the image                                                                        |
-| [`copy`](@ref Base.copy(::Semigroups.PPerm))           | Copy a partial permutation                                                                       |
-| [`p * q`](#Composition)                                | Compose two partial permutations                                                                 |
-| [`==`, `<`, `<=`, `>`, `>=`](#Comparison)              | Comparison operators                                                                             |
+| Function                                                | Description                                                                                      |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| [`PPerm`](@ref Semigroups.PPerm)                        | Construct a partial permutation                                                                  |
+| `p[i]`                                                  | Get the image of a point (returns [`UNDEFINED`](@ref Semigroups.UNDEFINED) if not in the domain) |
+| [`degree`](@ref Semigroups.degree(::Semigroups.PPerm))  | The degree of the partial permutation                                                            |
+| [`rank`](@ref Semigroups.rank)                          | The number of distinct image values, not including `UNDEFINED`                                   |
+| [`image`](@ref Semigroups.image)                        | The sorted set of image values                                                                   |
+| [`domain`](@ref Semigroups.domain)                      | The sorted set of points where `f` is defined                                                    |
+| [`inverse`](@ref inverse(::Semigroups.PPerm))           | The inverse partial permutation                                                                  |
+| [`left_one`](@ref Semigroups.left_one)                  | The identity on the domain                                                                       |
+| [`one`](@ref Semigroups.one(::Semigroups.PPerm, ::Int)) | The identity partial permutation of the same degree                                              |
+| [`right_one`](@ref Semigroups.right_one)                | The identity on the image                                                                        |
+| [`copy`](@ref Base.copy(::Semigroups.PPerm))            | Copy a partial permutation                                                                       |
+| [`p * q`](#Composition)                                 | Compose two partial permutations                                                                 |
+| [`==`, `<`, `<=`, `>`, `>=`](#Comparison)               | Comparison operators                                                                             |
 
 ## Full API
 
@@ -33,8 +33,8 @@ Semigroups.domain(::Semigroups.PPerm)
 Semigroups.image(::Semigroups.PPerm)
 Semigroups.inverse(::Semigroups.PPerm)
 Semigroups.left_one(::Semigroups.PPerm)
-Base.one(::Semigroups.PPerm)
-Base.one(::Type{Semigroups.PPerm}, ::Int)
+Semigroups.one(::Semigroups.PPerm)
+Semigroups.one(::Type{Semigroups.PPerm}, ::Int)
 Semigroups.right_one(::Semigroups.PPerm)
 Semigroups.rank(::Semigroups.PPerm)
 ```

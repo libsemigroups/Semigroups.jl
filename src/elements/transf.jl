@@ -351,7 +351,7 @@ function Base.show(io::IO, t::Transf)
 end
 
 """
-    Base.one(::Type{Transf}, n::Integer) -> Transf
+    one(::Type{Transf}, n::Integer) -> Transf
 
 Returns the identity transformation on _n_ points.
 
@@ -360,13 +360,13 @@ that fixes every value from `1` to _n_.
 
 # Example
 ```jldoctest
-julia> using Semigroups
+julia> import Semigroups: one
 
 julia> one(Transf, 3)
 Transf([1, 2, 3])
 ```
 """
-function Base.one(::Type{Transf}, n::Integer)
+function Semigroups.one(::Type{Transf}, n::Integer)
     CxxType = _transf_type_from_degree(n)
     return Transf(LibSemigroups.one(CxxType, UInt(n)))
 end
@@ -769,7 +769,7 @@ true
 right_one(p::PPerm) = PPerm(right_one(p.cxx_obj))
 
 """
-    Base.one(::Type{PPerm}, n::Integer) -> PPerm
+    one(::Type{PPerm}, n::Integer) -> PPerm
 
 Returns the identity partial permutation on _n_ points.
 
@@ -778,13 +778,13 @@ equal to _n_ that fixes every value from `1` to _n_.
 
 # Example
 ```jldoctest
-julia> using Semigroups
+julia> import Semigroups: one
 
 julia> one(PPerm, 3)
 PPerm([1, 2, 3], [1, 2, 3], 3)
 ```
 """
-function Base.one(::Type{PPerm}, n::Integer)
+function one(::Type{PPerm}, n::Integer)
     CxxType = _pperm_type_from_degree(n)
     return PPerm(LibSemigroups.one(CxxType, UInt(n)))
 end
@@ -1053,7 +1053,7 @@ end
 # Perm-specific methods
 
 """
-    Base.one(::Type{Perm}, n::Integer) -> Perm
+    one(::Type{Perm}, n::Integer) -> Perm
 
 Returns the identity permutation on _n_ points.
 
@@ -1062,13 +1062,13 @@ equal to _n_ that fixes every value from `1` to _n_.
 
 # Example
 ```jldoctest
-julia> using Semigroups
+julia> import Semigroups: one
 
 julia> one(Perm, 3)
 Perm([1, 2, 3])
 ```
 """
-function Base.one(::Type{Perm}, n::Integer)
+function one(::Type{Perm}, n::Integer)
     CxxType = _perm_type_from_degree(n)
     return Perm(LibSemigroups.one(CxxType, UInt(n)))
 end
@@ -1174,7 +1174,7 @@ of a partial permutation _p_ is the partial term `g` such that
 
 # Example
 ```jldoctest
-julia> using Semigroups
+julia> using Semigroups; import Semigroups: one
 
 julia> p = Perm([2, 3, 1]);
 
@@ -1190,7 +1190,7 @@ function inverse(p::T) where {T<:Union{PPerm,Perm}}
 end
 
 """
-    Base.one(p::T) where T<:Union{Transf,PPerm,Perm} -> T
+    one(p::T) where T<:Union{Transf,PPerm,Perm} -> T
 
 Returns the identity on the same number of points as the degree of _p_.
 
@@ -1199,7 +1199,7 @@ _p_ that fixes every value from `1` to `degree(p)`.
 
 # Example
 ```jldoctest
-julia> using Semigroups
+julia> import Semigroups: one
 
 julia> p = Perm([2, 3, 1]);
 
@@ -1210,7 +1210,7 @@ julia> p * one(p) == p
 true
 ```
 """
-function Base.one(p::T) where {T<:Union{Transf,PPerm,Perm}}
+function one(p::T) where {T<:Union{Transf,PPerm,Perm}}
     return T(one(p.cxx_obj))
 end
 

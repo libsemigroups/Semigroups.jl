@@ -7,18 +7,18 @@ $\{1, 2, \ldots, n\}$, i.e. $((1)f, (2)f, \ldots, (n)f)$.
 
 ## Contents
 
-| Function                                                 | Description                         |
-| -------------------------------------------------------- | ----------------------------------- |
-| [`Transf`](@ref Semigroups.Transf)                       | Construct a transformation          |
-| `t[i]`                                                   | Get the image of a point            |
-| [`degree`](@ref Semigroups.degree(::Semigroups.Transf))  | The degree of the transformation    |
-| [`rank`](@ref Semigroups.rank(::Semigroups.Transf))      | The number of distinct image values |
-| [`image`](@ref Semigroups.image)                         | The sorted set of image values      |
-| [`domain`](@ref Semigroups.domain)                       | The sorted set of defined points    |
-| [`one`](@ref Base.one(::Type{Semigroups.Transf}, ::Int)) | The identity transformation         |
-| [`copy`](@ref Base.copy(::Semigroups.Transf))            | Copy a transformation               |
-| [`t * s`](#Composition)                                  | Compose two transformations         |
-| [`==`, `<`, `<=`, `>`, `>=`](#Comparison)                | Comparison operators                |
+| Function                                                       | Description                         |
+| -------------------------------------------------------------- | ----------------------------------- |
+| [`Transf`](@ref Semigroups.Transf)                             | Construct a transformation          |
+| `t[i]`                                                         | Get the image of a point            |
+| [`degree`](@ref Semigroups.degree(::Semigroups.Transf))        | The degree of the transformation    |
+| [`rank`](@ref Semigroups.rank(::Semigroups.Transf))            | The number of distinct image values |
+| [`image`](@ref Semigroups.image)                               | The sorted set of image values      |
+| [`domain`](@ref Semigroups.domain)                             | The sorted set of defined points    |
+| [`one`](@ref Semigroups.one(::Type{Semigroups.Transf}, ::Int)) | The identity transformation         |
+| [`copy`](@ref Base.copy(::Semigroups.Transf))                  | Copy a transformation               |
+| [`t * s`](#Composition)                                        | Compose two transformations         |
+| [`==`, `<`, `<=`, `>`, `>=`](#Comparison)                      | Comparison operators                |
 
 ## Full API
 
@@ -27,7 +27,7 @@ Semigroups.Transf
 Semigroups.degree(::Semigroups.Transf)
 Semigroups.domain(::Semigroups.Transf)
 Semigroups.image(::Semigroups.Transf)
-Base.one(::Type{Semigroups.Transf}, ::Int)
+Semigroups.one(::Type{Semigroups.Transf}, ::Int)
 Semigroups.rank(::Semigroups.Transf)
 ```
 

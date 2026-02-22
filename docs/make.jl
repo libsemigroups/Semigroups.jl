@@ -44,6 +44,10 @@ makedocs(;
                     "PPerm" => "data-structures/elements/transformations/pperm.md",
                     "Perm" => "data-structures/elements/transformations/perm.md",
                 ],
+                "Matrix" => [
+                    "Overview" => "data-structures/elements/matrix/index.md",
+                    "The BMat8 type" => "data-structures/elements/matrix/bmat8.md",
+                ],
             ],
         ],
         "Main Algorithms" => [
