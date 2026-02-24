@@ -20,9 +20,18 @@ algorithm classes.
 """
     Runner
 
-Abstract base type for algorithm runners in libsemigroups. This type is not
-directly constructible; it is used as the base type for concrete algorithm
-classes such as `FroidurePinBase`.
+Abstract class for derived classes that run an algorithm.
+  
+Many of the classes in Semigroups.jl implementing the algorithms that are the
+reason for the existence of this library, are derived from [`Runner`](@ref).
+The [`Runner`](@ref) class exists to collect various common tasks required by
+such a derived class with a possibly long running [`run!`](@ref).
+
+These common tasks include:
+* running for a given amount of time ([`run_for!`](@ref))
+* running until a nullary predicate is true ([`run_until!`](@ref))
+* checking the status of the algorithm: has it [`started`](@ref)? [`finished`](@ref)? been killed by another thread ([`dead`](@ref))? has it timed out ([`timed_out`](@ref))? has it [`stopped`](@ref) for any reason?
+* permit the function [`run!`](@ref) to be killed from another thread ([`kill!`](@ref)).
 """
 const Runner = LibSemigroups.Runner
 
@@ -58,17 +67,23 @@ const STATE_DEAD = LibSemigroups.state_dead
 """
     run!(r::Runner)
 
-Run the algorithm to completion. This is a blocking call that will not return
-until the algorithm has finished, timed out, or been killed.
+Run until [`finished`](@ref).
+
+Run the main algorithm implemented by a derived class of [`Runner`](@ref).
 """
 run!(r::Runner) = LibSemigroups.run!(r)
 
 """
     run_for!(r::Runner, t::TimePeriod)
 
-Run the algorithm for at most the duration `t`. The algorithm may finish
-before the time limit, in which case [`finished`](@ref) will return `true`.
-If the time limit is reached, [`timed_out`](@ref) will return `true`.
+Run for a specified amount of time.
+
+For this to work it is necessary to periodically check if
+[`timed_out`](@ref) returns `true`, and to stop if it is, in the
+[`run!`](@ref) method of any subtype of [`Runner`](@ref).
+
+# Arguments
+- `t::TimePeriod`:  the duration to run for.
 
 # Examples
 ```julia
@@ -83,13 +98,23 @@ function run_for!(r::Runner, t::TimePeriod)
     LibSemigroups.run_for!(r, Int64(Dates.value(ns)))
 end
 
+function run_until!(f::Function, r::Runner)
+    sf = @safe_cfunction($f, Cuchar, ())
+    GC.@preserve sf LibSemigroups.run_until!(r, sf)
+end
 
 """
-    run_until!(f::Function, r::Runner)
     run_until!(r::Runner, f::Function)
 
-Run the algorithm until the nullary predicate `f` returns `true` or the
-algorithm [`finished`](@ref). Supports do-block syntax:
+Run until a nullary predicate returns `true` or [`finished`](@ref).
+
+This function runs the algorithm until the nullary predicate `f` returns `true`
+or the algorithm [`finished`](@ref). 
+
+# Arguments 
+- `f::Function`: a function with `0` arguments returning `true` or `false`
+
+Supports do-block syntax:
 
 ```julia
 run_until!(r) do
@@ -97,17 +122,22 @@ run_until!(r) do
 end
 ```
 """
-function run_until!(f::Function, r::Runner)
-    sf = @safe_cfunction($f, Cuchar, ())
-    GC.@preserve sf LibSemigroups.run_until!(r, sf)
-end
 run_until!(r::Runner, f::Function) = run_until!(f, r)
+
 
 """
     init!(r::Runner) -> Runner
 
-Re-initialize the runner to its default-constructed state, discarding all
-previously computed results.
+Initialize an existing Runner object.
+
+This function puts a Runner object back into the same state as if it
+had been newly default constructed.
+
+!!! note 
+    This function is not thread-safe.
+
+# See also
+[`Runner`](@ref)
 """
 init!(r::Runner) = LibSemigroups.init!(r)
 
@@ -118,71 +148,109 @@ init!(r::Runner) = LibSemigroups.init!(r)
 """
     finished(r::Runner) -> Bool
 
-Return `true` if the algorithm has run to completion.
+Check if [`run!(::Runner)`](@ref) has been run to completion or not.
+
+Returns `true` if [`run!`](@ref) has been run to completion; and `false` if not.
+
+# See also
 """
 finished(r::Runner) = LibSemigroups.finished(r)
 
 """
     Base.success(r::Runner) -> Bool
 
-Return `true` if the algorithm has completed successfully. This extends
-`Base.success` (which checks process exit status) to work with libsemigroups
-[`Runner`](@ref) types. By default, this returns the same value as
-[`finished`](@ref), but derived classes may override this to distinguish
-between completion and successful completion.
+Check if [`run!`](@ref) has been run to completion successfully.
+
+Returns `true` if [`run!`](@ref) has been run to completion and it was
+successful. The default implementation is to just call [`finished`](@ref).
+
+This extends `Base.success` (which checks process exit status) to work with
+libsemigroups [`Runner`](@ref) types. 
 """
 Base.success(r::Runner) = LibSemigroups.success(r)
 
 """
     started(r::Runner) -> Bool
 
-Return `true` if [`run!`](@ref) has been called at least once.
+Check if [`run!`](@ref) has been called at least once before.
+
+Returns `true` if [`run!`](@ref) has started to run (it can be running or
+not).
+
+# See also
+[`finished`](@ref)
 """
 started(r::Runner) = LibSemigroups.started(r)
 
 """
     running(r::Runner) -> Bool
 
-Return `true` if the algorithm is currently executing.
+Check if currently running.
+
+Returns `true` if [`run!`](@ref) is in the process of running and `false` it is
+not.
+
+# See also
+[`finished`](@ref)
 """
 running(r::Runner) = LibSemigroups.running(r)
 
 """
     timed_out(r::Runner) -> Bool
 
-Return `true` if the last call to [`run_for!`](@ref) exhausted its time limit
-without the algorithm finishing.
+Check if the amount of time passed to [`run_for!`](@ref) has elapsed.
+
+# See also
+[`run_for!(::Runner, ::TimePeriod)`](@ref)
 """
 timed_out(r::Runner) = LibSemigroups.timed_out(r)
 
 """
     stopped(r::Runner) -> Bool
 
-Return `true` if the algorithm is stopped for any reason (finished, timed out,
-dead, or stopped by predicate).
+Check if the runner is stopped.
+
+This function can be used to check whether or not [`run!`](@ref) has been
+stopped for whatever reason. In other words, it checks if
+[`timed_out`](@ref), [`finished`](@ref), or [`dead`](@ref).
 """
 stopped(r::Runner) = LibSemigroups.stopped(r)
 
 """
     dead(r::Runner) -> Bool
 
-Return `true` if the runner was killed (e.g. from another thread via
-[`kill!`](@ref)).
+Check if the runner is dead.
+
+This function can be used to check if we should terminate [`run!`](@ref)
+because it has been killed by another thread.
+
+# See also
+[`kill!`](@ref)
 """
 dead(r::Runner) = LibSemigroups.dead(r)
 
 """
     stopped_by_predicate(r::Runner) -> Bool
 
-Return `true` if the last `run_until` call was stopped because the predicate
-was satisfied.
+Check if the runner was stopped, or should stop, because of
+the argument last passed to [`run_until!`](@ref).
+
+If `r` is running, then the nullary predicate is called and its
+return value is returned. If `r` is not running, then `true` is
+returned if and only if the last time `r` was running it was
+stopped by a call to the nullary predicate passed to [`run_until!`](@ref).
 """
 stopped_by_predicate(r::Runner) = LibSemigroups.stopped_by_predicate(r)
 
 """
     running_for(r::Runner) -> Bool
 
-Return `true` if the runner is currently executing a [`run_for!`](@ref) call.
+Check if the runner is currently running for a particular length
+of time.
+
+If the Runner is currently running because its member function
+[`run_for!`](@ref) has been invoked, then this function returns `true`.
+Otherwise, `false` is returned.
 """
 running_for(r::Runner) = LibSemigroups.running_for(r)
 
@@ -197,14 +265,21 @@ running_for_how_long(r::Runner) = Nanosecond(LibSemigroups.running_for_how_long(
 """
     running_until(r::Runner) -> Bool
 
-Return `true` if the runner is currently executing a `run_until` call.
+Check if the runner is currently running until a nullary
+predicate returns `true`.
+
+If the Runner is currently running because its member function
+[`run_until!`](@ref) has been invoked, then this function returns `true`.
+Otherwise, `false` is returned.
 """
 running_until(r::Runner) = LibSemigroups.running_until(r)
 
 """
     current_state(r::Runner) -> RunnerState
 
-Return the current [`RunnerState`](@ref) of the runner.
+Return the current state.
+
+Returns the current state of the [`Runner`](@ref) as given by [`state`](@ref).
 """
 current_state(r::Runner) = LibSemigroups.current_state(r)
 
@@ -215,9 +290,14 @@ current_state(r::Runner) = LibSemigroups.current_state(r)
 """
     kill!(r::Runner)
 
-Kill the runner. This is thread-safe and can be called from another thread
-to stop a running algorithm. After calling `kill!`, [`dead`](@ref) will return
-`true`.
+Stop [`run!`](@ref) from running (thread-safe).
+
+This function can be used to terminate [`run!`](@ref) from another thread.
+After [`kill!`](@ref) has been called the Runner may no longer be in a valid
+state, but will return `true` from [`dead`](@ref) .
+
+# See also
+[`finished`](@ref)
 """
 kill!(r::Runner) = LibSemigroups.kill!(r)
 
@@ -228,7 +308,10 @@ kill!(r::Runner) = LibSemigroups.kill!(r)
 """
     report_why_we_stopped(r::Runner)
 
-Print the reason the algorithm stopped to `stderr`.
+Report why [`run!`](@ref) stopped.
+
+Reports whether [`run!`](@ref) was stopped because it is [`finished`](@ref),
+[`timed_out`](@ref), or [`dead`](@ref).
 """
 report_why_we_stopped(r::Runner) = LibSemigroups.report_why_we_stopped(r)
 

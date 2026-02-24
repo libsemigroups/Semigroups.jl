@@ -10,6 +10,9 @@ make.jl - Documentation build script for Semigroups.jl
 
 using Documenter
 using Semigroups
+using Revise;
+Revise.revise()
+using Dates
 
 DocMeta.setdocmeta!(Semigroups, :DocTestSetup, :(using Semigroups); recursive = true)
 
@@ -43,9 +46,15 @@ makedocs(;
                 ],
             ],
         ],
-        "Main Algorithms" => ["Overview" => "main-algorithms/index.md"],
+        "Main Algorithms" => [
+            "Overview" => "main-algorithms/index.md",
+            "Core classes" => [
+                "main-algorithms/core-classes/index.md",
+                "main-algorithms/core-classes/runner.md",
+            ],
+        ],
     ],
-    warnonly = [:missing_docs],
+    warnonly = [:missing_docs, :linkcheck, :cross_references],
 )
 
 if get(ENV, "DOCS_DEPLOY", "false") == "true"

@@ -23,6 +23,7 @@ Currently under development. To install from the local repository:
 ```julia
 using Pkg
 Pkg.develop(path="/path/to/Semigroups.jl")
+using Semigroups
 ```
 
 The C++ glue library will be automatically built during package precompilation.
