@@ -121,42 +121,50 @@ const BMat8 = LibSemigroups.BMat8
 
 
 function Base.show(io::IO, x::BMat8)
-    # TODO when is @wrap_libsemigroups_call required?
     print(io, @wrap_libsemigroups_call LibSemigroups.to_human_readable_repr(x))
 end
 
 function Base.getindex(x::BMat8, r::Int64, c::Int64)::Bool
-    return LibSemigroups.at(x, UInt(r - 1), UInt(c - 1))
+    return @wrap_libsemigroups_call LibSemigroups.at(x, UInt(r - 1), UInt(c - 1))
 end
 
 function Base.getindex(x::BMat8, r::Int64)::Vector{Bool}
-    return LibSemigroups.at(x, UInt(r - 1))
+    return @wrap_libsemigroups_call LibSemigroups.at(x, UInt(r - 1))
 end
 
 function Base.setindex!(x::BMat8, val::T, r::Int64, c::Int64) where {T<:Union{Bool,Int64}}
-    LibSemigroups.setitem(x, UInt(r - 1), UInt(c - 1), Bool(val))
+    @wrap_libsemigroups_call LibSemigroups.bmat8_setitem(
+        x,
+        UInt(r - 1),
+        UInt(c - 1),
+        Bool(val),
+    )
 end
 
 function Base.setindex!(x::BMat8, row::Vector{UInt8}, r::Int64)
-    LibSemigroups.setrow(x, UInt(r - 1), row)
+    @wrap_libsemigroups_call LibSemigroups.bmat8_setrow(x, UInt(r - 1), row)
 end
 
 function Base.setindex!(x::BMat8, row::Vector{T}, r::Int64) where {T<:Union{Bool,Int64}}
-    setindex!(x, Vector{UInt8}(row), r)
+    @wrap_libsemigroups_call setindex!(x, Vector{UInt8}(row), r)
 end
 
-Base.:(==)(x::BMat8, y::BMat8) = LibSemigroups.is_equal(x, y)
-Base.:(<)(x::BMat8, y::BMat8) = LibSemigroups.is_less(x, y)
-Base.:(<=)(x::BMat8, y::BMat8) = LibSemigroups.is_less_equal(x, y)
-Base.:(>)(x::BMat8, y::BMat8) = LibSemigroups.is_greater(x, y)
-Base.:(>=)(x::BMat8, y::BMat8) = LibSemigroups.is_greater_equal(x, y)
-Base.:(*)(x::BMat8, y::BMat8) = LibSemigroups.multiply(x, y)
-Base.:(*)(x::BMat8, y::T) where {T<:Union{Bool,Int64}} = LibSemigroups.multiply(x, Bool(y))
-Base.:(*)(x::T, y::BMat8) where {T<:Union{Bool,Int64}} = LibSemigroups.multiply(Bool(x), y)
-Base.:(+)(x::BMat8, y::BMat8) = LibSemigroups.add(x, y)
+Base.:(==)(x::BMat8, y::BMat8)::Bool = LibSemigroups.is_equal(x, y)
+Base.isequal(x::BMat8, y::BMat8)::Bool = LibSemigroups.is_equal(x, y)
+Base.:(<)(x::BMat8, y::BMat8)::Bool = LibSemigroups.is_less(x, y)
+Base.isless(x::BMat8, y::BMat8)::Bool = LibSemigroups.is_less(x, y)
+Base.:(<=)(x::BMat8, y::BMat8)::Bool = LibSemigroups.is_less_equal(x, y)
+Base.:(>)(x::BMat8, y::BMat8)::Bool = LibSemigroups.is_greater(x, y)
+Base.:(>=)(x::BMat8, y::BMat8)::Bool = LibSemigroups.is_greater_equal(x, y)
+Base.:(*)(x::BMat8, y::BMat8)::BMat8 = LibSemigroups.multiply_bmat8_bmat8(x, y)
+Base.:(*)(x::BMat8, y::T) where {T<:Union{Bool,Int64}} =
+    LibSemigroups.multiply_bmat8_bool(x, Bool(y))
+Base.:(*)(x::T, y::BMat8) where {T<:Union{Bool,Int64}} =
+    LibSemigroups.multiply_bool_bmat8(Bool(x), y)
+Base.:(+)(x::BMat8, y::BMat8)::BMat8 = LibSemigroups.add(x, y)
 
-Base.copy(x::BMat8) = LibSemigroups.copy(x)
-Base.hash(x::BMat8, h::UInt) = hash(LibSemigroups.hash_value(x), h)
+Base.copy(x::BMat8)::BMat8 = LibSemigroups.copy(x)
+Base.hash(x::BMat8, h::UInt)::UInt64 = hash(LibSemigroups.hash_value(x), h)
 Base.transpose(x::BMat8)::BMat8 = LibSemigroups.bmat8_transpose(x)
 
 ########################################################################
@@ -209,7 +217,7 @@ end
 
 Returns the degree of a [`BMat8`](@ref).
 
-This function returns the degree of `x` which is always returns `8`.
+This function returns the degree of `x` which always returns `8`.
 
 # Arguments
 - `x::BMat8`: the matrix. 
@@ -494,6 +502,9 @@ main diagonal equal to `1` and every other value equal to `0`.
 # Arguments
 - `dim::Int64`: the dimension. 
 
+# Throws
+- `LibsemigroupsError`: if `dim` is not in the interval ``[0, 8]``.
+
 # Complexity
 -  Constant.
 
@@ -508,7 +519,8 @@ BMat8([[1, 0, 0, 0],
        [0, 0, 0, 1]])
 ```
 """
-Base.one(::Type{BMat8}, n::Int64)::BMat8 = LibSemigroups.bmat8_one(n)
+Base.one(::Type{BMat8}, n::Int64)::BMat8 =
+    @wrap_libsemigroups_call LibSemigroups.bmat8_one(n)
 
 """
     one(sample::BMat8, dim::Int64) -> BMat8
@@ -521,6 +533,9 @@ main diagonal equal to `1` and every other value equal to `0`.
 # Arguments
 - `sample::BMat8`: a matrix.
 - `dim::Int64`: the dimension. 
+
+# Throws
+- `LibsemigroupsError`: if `dim` is not in the interval ``[0, 8]``.
 
 # Complexity
 -  Constant.
@@ -541,7 +556,7 @@ BMat8([[1, 0, 0, 0],
        [0, 0, 0, 1]])
 ```
 """
-Base.one(::BMat8, n::Int64)::BMat8 = LibSemigroups.bmat8_one(n)
+Base.one(::BMat8, n::Int64)::BMat8 = @wrap_libsemigroups_call LibSemigroups.bmat8_one(n)
 
 """
     random(::Type{BMat8}, dim::Int64) -> BMat8
@@ -553,8 +568,12 @@ This function returns a [`BMat8`](@ref) chosen at random, where only the top-lef
 
 # Arguments
 - `dim::Int64`: the dimension.
+
+# Throws
+- `LibsemigroupsError`: if `dim` is not in the interval ``[1, 8]``.
 """
-random(::Type{BMat8}, n::Int64)::BMat8 = LibSemigroups.bmat8_random(n)
+random(::Type{BMat8}, n::Int64)::BMat8 =
+    @wrap_libsemigroups_call LibSemigroups.bmat8_random(n)
 
 """
     random(sample::BMat8, dim::Int64) -> BMat8
@@ -567,8 +586,11 @@ This function returns a [`BMat8`](@ref) chosen at random, where only the top-lef
 # Arguments
 - `sample::BMat8`: a matrix.
 - `dim::Int64`: the dimension.
+
+# Throws
+- `LibsemigroupsError`: if `dim` is not in the interval ``[1, 8]``.
 """
-random(::BMat8, n::Int64)::BMat8 = LibSemigroups.bmat8_random(n)
+random(::BMat8, n::Int64)::BMat8 = @wrap_libsemigroups_call LibSemigroups.bmat8_random(n)
 
 """
      row_space_basis(x::BMat8) -> BMat8

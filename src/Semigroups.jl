@@ -60,7 +60,6 @@ include("libsemigroups/errors.jl")
 using .Errors: LibsemigroupsError, @wrap_libsemigroups_call
 
 # Julia-side wrapper files
-include("libsemigroups/bmat8.jl")
 include("libsemigroups/constants.jl")
 include("libsemigroups/report.jl")
 include("libsemigroups/runner.jl")

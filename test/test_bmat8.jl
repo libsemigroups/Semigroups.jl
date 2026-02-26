@@ -102,6 +102,11 @@ using Semigroups
 
         @test one(x, 4) == BMat8([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
+        @test_throws LibsemigroupsError one(x, -1)
+        @test_throws LibsemigroupsError one(BMat8, -1)
+        # TODO uncomment the next tests when we require libsemigroups v3.5.1
+        # @test_throws LibsemigroupsError one(x, 9)
+        # @test_throws LibsemigroupsError one(BMat8, 9)
     end
 
     @testset "random" begin
@@ -111,10 +116,10 @@ using Semigroups
         x = BMat8([[1, 0, 1], [0, 1, 0], [0, 0, 0]])
         @test minimum_dim(random(x, 4)) == 4
 
-        @test_throws ErrorException random(x, 0)
-        @test_throws ErrorException random(BMat8, 0)
-        @test_throws ErrorException random(x, 9)
-        @test_throws ErrorException random(BMat8, 9)
+        @test_throws LibsemigroupsError random(x, 0)
+        @test_throws LibsemigroupsError random(BMat8, 0)
+        @test_throws LibsemigroupsError random(x, 9)
+        @test_throws LibsemigroupsError random(BMat8, 9)
 
     end
 
