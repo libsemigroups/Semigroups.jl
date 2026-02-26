@@ -445,6 +445,7 @@ end
     end
 
     function check_increase_degree_by!(T)
+        # Small increases within UInt8 range
         x = T([1])
         @test degree(x) == 1
         increase_degree_by!(x, 2)
@@ -453,10 +454,28 @@ end
         @test degree(x) == 18
         increase_degree_by!(x, 15)
         @test degree(x) == 33
-        increase_degree_by!(x, 255)
-        @test degree(x) == 288
-        increase_degree_by!(x, 2^16)
-        @test degree(x) == 288 + 2^16
+
+        # UInt8 overflow throws LibsemigroupsError
+        # This test will only pass on libsemigroups >= 3.5.0
+        #= @test_throws LibsemigroupsError increase_degree_by!(T([1]), 256) =#
+
+        # Larger increases with UInt16-backed type
+        y = T(collect(1:256), UInt16)
+        @test degree(y) == 256
+        increase_degree_by!(y, 255)
+        @test degree(y) == 511
+        increase_degree_by!(y, 2^15)
+        @test degree(y) == 511 + 2^15
+
+        # UInt16 overflow throws LibsemigroupsError
+        # This test will only pass on libsemigroups >= 3.5.0
+        #= @test_throws LibsemigroupsError increase_degree_by!(T(collect(1:256), UInt16), 2^16) =#
+
+        # Larger increases with UInt32-backed type
+        z = T(collect(1:256), UInt32)
+        @test degree(z) == 256
+        increase_degree_by!(z, 2^16)
+        @test degree(z) == 256 + 2^16
     end
 
     @testset "increase_degree_by! method" begin
