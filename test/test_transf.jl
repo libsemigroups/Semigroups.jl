@@ -457,7 +457,7 @@ end
 
         # UInt8 overflow throws LibsemigroupsError
         # This test will only pass on libsemigroups >= 3.5.0
-        #= @test_throws LibsemigroupsError increase_degree_by!(T([1]), 256) =#
+        # @test_throws LibsemigroupsError increase_degree_by!(T([1]), 256)
 
         # Larger increases with UInt16-backed type
         y = T(collect(1:256), UInt16)
@@ -469,7 +469,7 @@ end
 
         # UInt16 overflow throws LibsemigroupsError
         # This test will only pass on libsemigroups >= 3.5.0
-        #= @test_throws LibsemigroupsError increase_degree_by!(T(collect(1:256), UInt16), 2^16) =#
+        # @test_throws LibsemigroupsError increase_degree_by!(T(collect(1:256), UInt16), 2^16)
 
         # Larger increases with UInt32-backed type
         z = T(collect(1:256), UInt32)
