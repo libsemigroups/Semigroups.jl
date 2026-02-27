@@ -27,6 +27,8 @@ namespace libsemigroups_julia {
     // Define constants first (UNDEFINED, POSITIVE_INFINITY, etc.)
     define_constants(mod);
 
+    define_forest(mod);
+
     // Define ReportGuard (RAII reporting control)
     define_report(mod);
 

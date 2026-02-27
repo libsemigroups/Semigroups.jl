@@ -34,6 +34,7 @@ add_library(libsemigroups_julia SHARED
     libsemigroups_julia.cpp
     bmat8.cpp
     constants.cpp
+    forest.cpp
     report.cpp
     runner.cpp
     transf.cpp

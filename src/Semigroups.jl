@@ -69,6 +69,8 @@ include("libsemigroups/transf.jl")
 include("elements/bmat8.jl")
 include("elements/transf.jl")
 
+include("forest.jl")
+
 # Module initialization
 function __init__()
     # Initialize the CxxWrap module
@@ -103,5 +105,9 @@ export left_one, right_one
 export BMat8, to_int, swap!, degree, random, row_space_basis
 export col_space_basis, col_space_size, is_regular_element, minimum_dim
 export number_of_cols, number_of_rows, row_space_size, rows
+
+# Forest
+export Forest, add_nodes!, empty, init!, label, labels, number_of_nodes, parent
+export parents, set_parent_and_label!
 
 end # module Semigroups
