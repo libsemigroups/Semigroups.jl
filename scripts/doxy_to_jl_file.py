@@ -18,6 +18,8 @@ from accepts import accepts
 import bs4
 from bs4 import BeautifulSoup
 
+import pdb  # TODO rm
+
 __DOXY_DICT = {}
 __ABSTRACT_CLASSES = {}
 __DOXY_DIR = None
@@ -395,6 +397,7 @@ def skip_fn(thing: str, fn: str, params_t: str) -> bool:
 
 @accepts(str)
 def to_jl_type(param_types: str) -> str:
+    param_types = param_types.replace("libsemigroups::", "")
     param_types = re.sub(r"\bconst\b", "", param_types)
     param_types = re.sub(r"\bconstexpr\b", "", param_types)
     param_types = param_types.replace(r"&", "")
@@ -407,7 +410,6 @@ def to_jl_type(param_types: str) -> str:
     param_types = param_types.replace(">", "}")
     param_types = param_types.replace(" ", "")
     param_types = param_types.replace("void", "nothing")
-    param_types = param_types.replace("libsemigroups::", "")
     param_types = param_types.replace("uint64_t", "UInt64")
 
     return param_types
@@ -470,8 +472,7 @@ def generate_func(thing: str, fn: str, params_t: str) -> str:
 
     result += "LibSemigroups."
     if not is_constructor(thing, fn):
-        result += f"{thing.lower()}_"
-    print(fn)
+        result += f"{to_jl_type(thing).lower()}_"
     result += f"{to_jl_type(fn)}("
 
     if is_mem_fn(thing, fn, params_t) and not is_constructor(thing, fn):
