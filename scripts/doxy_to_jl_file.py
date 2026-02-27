@@ -489,7 +489,7 @@ def generate(thing: str) -> str:
     if len(doxygen_filename(thing)) == 0:
         return ""
 
-    result = ""
+    result = __COPYRIGHT
     xml = get_xml(thing)
     for fn, sigs in sorted(xml.items()):
         for sig in sigs.keys():
