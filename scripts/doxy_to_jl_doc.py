@@ -407,12 +407,14 @@ def to_jl_ref(thing: str, fn_name: str | None = None, param_types: str | None = 
     return f"[`{name}`](@ref Semigroups.{sig})"
 
 
-def to_jl_doc(text: str) -> str:
+def to_jl_doc(thing: str, text: str) -> str:
     text = re.sub(r"\ba\s+const\s+reference\s+to\s+a\b", "a", text)
     text = re.sub(r"\ba\s+reference\s+to\s+a\b", "a", text)
     text = re.sub(r"\ba\s+const\s+reference\b", "", text)
     text = re.sub(r"\ba\s+reference\b", "", text)
     text = re.sub(r"\bvector\b", "`Vector`", text)
+    text = re.sub(r"\buint8_t\b", "`Int64`", text)
+    text = re.sub(f"{thing}", to_jl_ref(thing), text)
     return text
 
 
@@ -440,7 +442,7 @@ This page contains the documentation of the type {to_jl_ref(thing)}.
     for fn, sigs in sorted(xml.items()):
         for sig in sigs.keys():
             if not skip_fn(thing, fn, sig):
-                result += f"| {to_jl_ref(thing, fn, sig)} | {to_jl_doc(brief(thing, fn, sig))} |\n"
+                result += f"| {to_jl_ref(thing, fn, sig)} | {to_jl_doc(thing, brief(thing, fn, sig))} |\n"
     result += """
 ## Full API
 

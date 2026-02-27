@@ -654,7 +654,7 @@ julia> row_space_size(x)
 row_space_size(x::BMat8)::Int64 = LibSemigroups.bmat8_row_space_size(x)
 
 """
-rows(x::BMat8) -> Vector{Vector{Bool}}
+    rows(x::BMat8) -> Vector{Vector{Bool}}
 
 Returns the rows of a [`BMat8`](@ref).
 

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
-TODO
+This is a more or less simple script for generating a .jl file from
+the doxygen output of libsemigroups.
+
+Usage: TODO
 """
 
 import re
@@ -17,12 +20,19 @@ from bs4 import BeautifulSoup
 
 __DOXY_DICT = {}
 __ABSTRACT_CLASSES = {}
+__DOXY_DIR = None
 
 ########################################################################
 # Copyright / Headers / Footers
 ########################################################################
 
-__DOXY_DIR = None
+__COPYRIGHT = """# Copyright (c) 2026, James W. Swent, J. D. Mitchell
+#
+# Distributed under the terms of the GPL license version 3.
+#
+# The full license is in the file LICENSE, distributed with this software.
+"""
+
 
 ########################################################################
 # Internal helpers
@@ -39,7 +49,9 @@ def __bold(msg: str) -> None:
 
 def __parse_args() -> argparse.Namespace:
     global __DOXY_DIR
-    parser = argparse.ArgumentParser(prog="generate_jlcxx", usage="%(prog)s [options]")
+    parser = argparse.ArgumentParser(
+        prog="doxy_to_jl_file.py", usage="%(prog)s [options]"
+    )
     parser.add_argument(
         "things",
         nargs="+",
@@ -213,10 +225,10 @@ def is_namespace(thing: str) -> bool:
     return "namespace" in doxygen_filename(thing)
 
 
-# @cache
-# @accepts(str)
-# def is_free_fn(thing: str) -> bool:
-#     return doxygen_filename(thing).startswith(f"{__DOXY_DIR}/group__")
+@cache
+@accepts(str)
+def is_free_fn(thing: str) -> bool:
+    return doxygen_filename(thing).startswith(f"{__DOXY_DIR}/group__")
 
 
 # @cache
@@ -228,10 +240,26 @@ def is_namespace(thing: str) -> bool:
 #     return xml["static"] == "yes"
 
 
+@cache
+@accepts(str, str, str)
+def is_mem_fn(thing: str, fn: str, params_t: str) -> bool:
+    return not is_namespace(thing) and not is_free_fn(thing)
+
+
 # @cache
 # @accepts(str)
 # def is_abstract_class(thing: str) -> bool:
 #     return thing in __ABSTRACT_CLASSES
+
+
+@cache
+@accepts(str, str, str)
+def has_documented_throw(thing: str, fn: str, params_t: str) -> bool:
+    xml = get_xml(thing, fn, params_t)
+    for paramlist in xml.find_all("parameterlist"):
+        if paramlist["kind"] == "exception":
+            return True
+    return False
 
 
 @cache
@@ -251,13 +279,15 @@ def params_dict(thing: str, fn: str, params_t: str) -> dict[str, str]:
 @cache
 @accepts(str, str, str)
 def return_type(thing: str, fn: str, params_t: str) -> str:
+    if is_constructor(thing, fn):
+        return thing
     xml = get_xml(thing, fn, params_t)
     return xml.find("type").text
 
 
-# @accepts(str, str, str)
-# def param_names_str(thing: str, fn: str, params_t: str) -> list[str]:
-#     return list(params_dict(thing, fn, params_t).keys())
+@accepts(str, str, str)
+def param_names_str(thing: str, fn: str, params_t: str) -> list[str]:
+    return list(params_dict(thing, fn, params_t).keys())
 
 
 # @accepts(str, str, str)
@@ -303,10 +333,10 @@ def is_deleted_mem_fn(class_n: str, mem_fn: str, params_t: str) -> bool:
     return xml.find("argsstring").text.find("=delete") != -1
 
 
-# @cache
-# @accepts(str, str)
-# def is_constructor(class_n: str, mem_fn: str) -> bool:
-#     return not is_free_fn(class_n) and mem_fn.startswith(class_n.split("::")[-1])
+@cache
+@accepts(str, str)
+def is_constructor(class_n: str, mem_fn: str) -> bool:
+    return not is_free_fn(class_n) and mem_fn.startswith(class_n.split("::")[-1])
 
 
 # @cache
@@ -365,9 +395,10 @@ def skip_fn(thing: str, fn: str, params_t: str) -> bool:
 
 @accepts(str)
 def to_jl_type(param_types: str) -> str:
-    param_types = param_types.replace("const", "")
-    param_types = param_types.replace("&", "")
-    param_types = re.sub(param_types, "\bsize_t\b", "Int64")
+    param_types = re.sub(r"\bconst\b", "", param_types)
+    param_types = re.sub(r"\bconstexpr\b", "", param_types)
+    param_types = param_types.replace(r"&", "")
+    param_types = re.sub(r"\bsize_t\b", "Int64", param_types)
     param_types = param_types.replace("uint8_t", "Int64")
     param_types = param_types.replace("bool", "Bool")
     param_types = param_types.replace("typename", "")
@@ -375,24 +406,31 @@ def to_jl_type(param_types: str) -> str:
     param_types = param_types.replace("<", "{")
     param_types = param_types.replace(">", "}")
     param_types = param_types.replace(" ", "")
+    param_types = param_types.replace("void", "nothing")
+    param_types = param_types.replace("libsemigroups::", "")
+    param_types = param_types.replace("uint64_t", "UInt64")
 
     return param_types
 
 
+@accepts(str, str, str, bool)
 def to_jl_sig(
     thing: str, fn_name: str, param_types: str, include_return_type: bool = False
 ) -> str:
+    if is_mem_fn(thing, fn_name, param_types) and not is_constructor(thing, fn_name):
+        params = {"self": f"{thing}"}
+    else:
+        params = dict()
+    params = params | params_dict(thing, fn_name, param_types)
     result = f"{fn_name}("
-    result += ",".join(
-        f"{name}::{to_jl_type(type_)}"
-        for name, type_ in params_dict(thing, fn_name, param_types).items()
-    )
+    result += ",".join(f"{name}::{to_jl_type(type_)}" for name, type_ in params.items())
     result += ")"
     if include_return_type:
         result += f"::{to_jl_type(return_type(thing, fn_name, param_types))}"
     return result
 
 
+# TODO accepts
 def to_jl_ref(thing: str, fn_name: str | None = None, param_types: str | None = None):
     if fn_name is None and param_types is None:
         sig, name = shortname(thing), shortname(thing)
@@ -423,38 +461,39 @@ def to_jl_doc(text: str) -> str:
 ########################################################################
 
 
+@accepts(str, str, str)
+def generate_func(thing: str, fn: str, params_t: str) -> str:
+    result = to_jl_sig(thing, fn, params_t, include_return_type=True)
+    result += " = "
+    if has_documented_throw(thing, fn, params_t):
+        result += "@wrap_libsemigroups_call "
+
+    result += "LibSemigroups."
+    if not is_constructor(thing, fn):
+        result += f"{thing.lower()}_"
+    print(fn)
+    result += f"{to_jl_type(fn)}("
+
+    if is_mem_fn(thing, fn, params_t) and not is_constructor(thing, fn):
+        params = ["self"]
+    else:
+        params = []
+    params.extend(param_names_str(thing, fn, params_t))
+    result += ", ".join(params) + ")\n"
+    return result
+
+
 @accepts(str)
 def generate(thing: str) -> str:
     if len(doxygen_filename(thing)) == 0:
         return ""
 
-    result = f"""# The {shortname(thing)} type
-
-This page contains the documentation of the type {to_jl_ref(thing)}.
-
-## Contents
-
-| Function | Description |
-| -------- | ----------- |
-"""
-
+    result = ""
     xml = get_xml(thing)
     for fn, sigs in sorted(xml.items()):
         for sig in sigs.keys():
             if not skip_fn(thing, fn, sig):
-                result += f"| {to_jl_ref(thing, fn, sig)} | {to_jl_doc(brief(thing, fn, sig))} |\n"
-    result += """
-## Full API
-
-```@docs
-"""
-    for fn, sigs in sorted(xml.items()):
-        for sig in sigs.keys():
-            if not skip_fn(thing, fn, sig):
-                result += f"Semigroups.{to_jl_sig(thing, fn, sig)}\n"
-
-    result += "```\n"
-
+                result += generate_func(thing, fn, sig)
     return result
 
 
