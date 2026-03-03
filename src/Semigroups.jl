@@ -107,7 +107,7 @@ export col_space_basis, col_space_size, is_regular_element, minimum_dim
 export number_of_cols, number_of_rows, row_space_size, rows
 
 # Forest
-export Forest, add_nodes!, empty, init!, label, labels, number_of_nodes, parent
+export Forest, add_nodes!, empty, init!, label, labels, number_of_nodes, parent_node
 export parents, set_parent_and_label!
 
 end # module Semigroups
