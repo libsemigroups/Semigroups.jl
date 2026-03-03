@@ -429,7 +429,7 @@ Returns the number of non-zero columns in a [`BMat8`](@ref).
 
 [`BMat8`](@ref) objects do not know their "dimension" - in effect they are all of
 dimension `8`. However, this function can be used to obtain the number of
-non-zero rows of a [`BMat8`](@ref).
+non-zero columns of a [`BMat8`](@ref).
 
 # Arguments
 - `x::BMat8`: the matrix.
@@ -636,7 +636,7 @@ Returns the size of the row space of a [`BMat8`](@ref).
 - ``O(n)`` where ``n`` is the return value of this function.
 
 # See Also
-- [`row_space_size`](@ref).
+- [`col_space_size`](@ref).
 
 # Example
 
@@ -654,7 +654,7 @@ julia> row_space_size(x)
 row_space_size(x::BMat8)::Int64 = LibSemigroups.bmat8_row_space_size(x)
 
 """
-rows(x::BMat8) -> Vector{Vector{bool}}
+rows(x::BMat8) -> Vector{Vector{Bool}}
 
 Returns the rows of a [`BMat8`](@ref).
 
