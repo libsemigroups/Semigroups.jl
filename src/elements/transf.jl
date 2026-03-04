@@ -1174,7 +1174,7 @@ of a partial permutation _p_ is the partial term `g` such that
 
 # Example
 ```jldoctest
-julia> using Semigroups; using Semigroups
+julia> using Semigroups
 
 julia> p = Perm([2, 3, 1]);
 
