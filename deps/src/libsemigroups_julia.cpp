@@ -23,19 +23,19 @@
 
 namespace libsemigroups_julia {
 
-JLCXX_MODULE define_julia_module(jl::Module & mod)
-{
-  // Define constants first (UNDEFINED, POSITIVE_INFINITY, etc.)
-  define_constants(mod);
+  JLCXX_MODULE define_julia_module(jl::Module& mod) {
+    // Define constants first (UNDEFINED, POSITIVE_INFINITY, etc.)
+    define_constants(mod);
 
-  // Define ReportGuard (RAII reporting control)
-  define_report(mod);
+    // Define ReportGuard (RAII reporting control)
+    define_report(mod);
 
-  // Define base types (must be registered before derived types)
-  define_runner(mod);
+    // Define base types (must be registered before derived types)
+    define_runner(mod);
 
-  // Define element types
-  define_transf(mod);
-}
+    // Define element types
+    define_transf(mod);
+    define_bmat8(mod);
+  }
 
-}    // namespace libsemigroups_julia
+}  // namespace libsemigroups_julia

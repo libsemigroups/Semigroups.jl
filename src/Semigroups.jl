@@ -66,6 +66,7 @@ include("libsemigroups/runner.jl")
 include("libsemigroups/transf.jl")
 
 # High-level element types
+include("elements/bmat8.jl")
 include("elements/transf.jl")
 
 # Module initialization
@@ -97,5 +98,10 @@ export Transf, PPerm, Perm
 export degree, rank, image, domain, inverse
 export increase_degree_by!, swap!
 export left_one, right_one
+
+# BMat8
+export BMat8, to_int, swap!, degree, random, row_space_basis
+export col_space_basis, col_space_size, is_regular_element, minimum_dim
+export number_of_cols, number_of_rows, row_space_size, rows
 
 end # module Semigroups

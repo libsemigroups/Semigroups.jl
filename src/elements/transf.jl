@@ -351,7 +351,7 @@ function Base.show(io::IO, t::Transf)
 end
 
 """
-    Base.one(::Type{Transf}, n::Integer) -> Transf
+    one(::Type{Transf}, n::Integer) -> Transf
 
 Returns the identity transformation on _n_ points.
 
@@ -769,7 +769,7 @@ true
 right_one(p::PPerm) = PPerm(right_one(p.cxx_obj))
 
 """
-    Base.one(::Type{PPerm}, n::Integer) -> PPerm
+    one(::Type{PPerm}, n::Integer) -> PPerm
 
 Returns the identity partial permutation on _n_ points.
 
@@ -1053,7 +1053,7 @@ end
 # Perm-specific methods
 
 """
-    Base.one(::Type{Perm}, n::Integer) -> Perm
+    one(::Type{Perm}, n::Integer) -> Perm
 
 Returns the identity permutation on _n_ points.
 
@@ -1190,7 +1190,7 @@ function inverse(p::T) where {T<:Union{PPerm,Perm}}
 end
 
 """
-    Base.one(p::T) where T<:Union{Transf,PPerm,Perm} -> T
+    one(p::T) where T<:Union{Transf,PPerm,Perm} -> T
 
 Returns the identity on the same number of points as the degree of _p_.
 
