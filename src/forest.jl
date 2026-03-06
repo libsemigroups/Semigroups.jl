@@ -19,10 +19,17 @@ using CxxWrap.StdLib: StdVector
 
 const Forest = LibSemigroups.Forest
 
+const Int64OrUndefined = Union{Int64,UndefinedType}
+
 # TODO add this to the script
 function Base.show(io::IO, x::Forest)
     print(io, @wrap_libsemigroups_call LibSemigroups.forest_to_human_readable_repr(x))
 end
+
+# TODO add to script
+Base.:(==)(x::Forest, y::Forest) = LibSemigroups.forest_is_equal(x, y)
+# TODO add to script
+Base.:(!=)(x::Forest, y::Forest) = LibSemigroups.forest_is_not_equal(x, y)
 
 """
     empty(self::Forest)::Bool
@@ -34,7 +41,7 @@ otherwise.
 
 # Complexity
 
-Constant
+- Constant
 """
 Base.empty(self::Forest)::Bool = LibSemigroups.forest_empty(self)
 
@@ -45,6 +52,7 @@ Default copy constructor.
 """
 
 """
+TODO this doc is not correct
     Forest(n::Int64)::Forest
 
 Constructs a forest with `n` nodes.
@@ -56,11 +64,18 @@ Constructs a forest with `n` nodes, that is initialised so that the
 
  - `n::Int64`: the number of nodes, defaults to 0.
 """
-
 function Forest(parents::Vector{Any}, labels::Vector{Any})
-    parents = [x == UNDEFINED ? x : UInt32(x - 1) for x in parents] 
-    labels = [x == UNDEFINED ? x : UInt32(x - 1) for x in labels] 
-    return @wrap_libsemigroups_call LibSemigroups.forest_make(StdVector{UInt32}(parents), StdVector{UInt32}(labels))
+    return @wrap_libsemigroups_call LibSemigroups.forest_make(
+        StdVector{UInt32}(convert.(UInt32, parents.-1)),
+        StdVector{UInt32}(convert.(UInt32, labels.-1)),
+    )
+end
+
+function Forest(parents::Vector{Int64OrUndefined}, labels::Vector{Int64OrUndefined})
+    return @wrap_libsemigroups_call LibSemigroups.forest_make(
+        StdVector{UInt32}(convert.(UInt32, parents.-1)),
+        StdVector{UInt32}(convert.(UInt32, labels.-1)),
+    )
 end
 
 """
@@ -74,12 +89,9 @@ This function adds `n` nodes to the forest, but no edges.
 
  - `n::Int64`: the number of nodes to add.
 
- exception is thrown, `self` is guaranteed not to be modified (strong exception
-guarantee).
-
 # Complexity
 
-At most linear in `number_of_nodes() + n`.
+- At most linear in `number_of_nodes() + n`.
 """
 add_nodes!(self::Forest, n::Int64)::Forest = LibSemigroups.forest_add_nodes(self, n)[]
 
@@ -102,7 +114,7 @@ init!(self::Forest, n::Int64)::Forest = LibSemigroups.forest_init(self, n)[]
 init!(self::Forest)::Forest = init!(self, 0)
 
 """
-    label(self::Forest,i::Integer)::Integer
+    label(self::Forest,i::Int64)::Int64OrUndefined
 
 Returns the label of the edge from a node to its parent.
 
@@ -112,34 +124,38 @@ This function returns the label of the edge from the parent of `i` to the node
 
 # Arguments
 
- - `i::Integer`: the node whose label is sought.
+ - `i::Int64`: the node whose label is sought.
 
  # Throws
 
-- LibsemigroupsError:  if `i` exceeds `number_of_nodes()`.
+- LibsemigroupsError:  if `i` exceeds `number_of_nodes(self)`.
 
 # Complexity
 
-Constant
+- Constant
 """
-label(self::Forest, i::Integer)::Integer =
-    @wrap_libsemigroups_call LibSemigroups.forest_label(self, i) + 1
+label(self::Forest, i::Int64OrUndefined)::Int64OrUndefined =
+    @wrap_libsemigroups_call convert(
+        Int64OrUndefined,
+        LibSemigroups.forest_label(self, i - 1),
+    ) + 1
 
 """
-    labels(self::Forest)::Vector{Integer}
+    labels(self::Forest)::Vector{Int64OrUndefined}
 
 Returns  to the `Vector` of edge labels.
 
-This function returns  to the `Vector` of edge labels in the [`Forest`](@ref).
+This function returns the `Vector` of edge labels in the [`Forest`](@ref).
 The value in position `i` of this `Vector` is the label of the edge from the
-parent of node `i` to `i`. If the parent equals UNDEFINED, then node `i` is a
-root node.
+parent of node `i` to `i`. If the parent equals [`UNDEFINED`](@ref), then node
+`i` is a root node.
 
 # Complexity
 
-Constant.
+- Constant.
 """
-labels(self::Forest)::Vector{Integer} = LibSemigroups.forest_labels(self)[]
+labels(self::Forest)::Vector{Int64OrUndefined} =
+    convert(Vector{Int64OrUndefined}, LibSemigroups.forest_labels(self)[]) .+ 1
 
 """
     number_of_nodes(self::Forest)::Int64
@@ -150,12 +166,12 @@ This function returns the number of nodes in the forest.
 
 # Complexity
 
-Constant
+- Constant
 """
 number_of_nodes(self::Forest)::Int64 = LibSemigroups.forest_number_of_nodes(self)
 
 """
-    parent(self::Forest,i::Integer)::Integer
+    parent(self::Forest,i::Int64)::Int64OrUndefined
 
 Returns the parent of a node.
 
@@ -165,93 +181,41 @@ node.
 
 # Arguments
 
- - `i::Integer`: the node whose parent is sought.
+ - `i::Int64`: the node whose parent is sought.
 
  # Throws
 
-- LibsemigroupsError:  if `i` exceeds `number_of_nodes()`. 
+- LibsemigroupsError:  if `i` exceeds `number_of_nodes(self)`. 
 
 # Complexity
 
-Constant
+- Constant
 """
-function parent_node(self::Forest, i::Integer)::Union{Integer,UndefinedType}
-    @wrap_libsemigroups_call to_undefined(
+function parent_node(self::Forest, i::Int64)::Int64OrUndefined
+    return @wrap_libsemigroups_call convert(
+        Int64OrUndefined,
         LibSemigroups.forest_parent(self, i - 1),
     ) + 1
 end
 
 """
-    parents(self::Forest)::Vector{Integer}
+    parents(self::Forest)::Vector{Int64OrUndefined}
 
 Returns  to the `Vector` of parents.
 
 This function returns  to the `Vector` of parents in the [`Forest`](@ref). The
 value in position `i` of this `Vector` is the parent of node `i`. If the parent
-equals UNDEFINED, then node `i` is a root node.
+equals [`UNDEFINED`](@ref), then node `i` is a root node.
 
 # Complexity
 
-Constant.
+- Constant.
 """
-function parents(self::Forest)::Vector{Any}
-  return [x == typemax(UInt32) ? UNDEFINED : Integer(x + 1) for x in LibSemigroups.forest_parents(self)[]] 
-end
-
-"""
-    path_from_root(self::Forest,d_first::Iterator,i::Integer)::Iterator
-
-template <typename Iterator>Store the labels of the edges on the path from a root node to a given node.
-
-This function writes labels of the edges on the path from a root node to node
-`i` to the iterator `d_first`.
-
-# Arguments
-
- - `d_first::Iterator`: the output iterator.
-
- - `i::Integer`: the node.
-
- # Throws
-
-- LibsemigroupsError:  if `i` is greater than or equal to
-[`number_of_nodes`](@ref).
-
-- LibsemigroupsError:  if `self` is not acyclic.
-
-# See also
-
-- [`forest::PathsFromRoots`](@ref)
-"""
-# path_from_root(self::Forest, d_first::Iterator, i::Integer)::Iterator =
-#    @wrap_libsemigroups_call LibSemigroups.forest_path_from_root(self, d_first, i)
+parents(self::Forest)::Vector{Int64OrUndefined} =
+    convert(Vector{Int64OrUndefined}, LibSemigroups.forest_parents(self)[]) .+ 1
 
 """
-    path_to_root(self::Forest,d_first::Iterator,i::Integer)::Iterator
-
-template <typename Iterator>Store the labels of the edges on the path to a root node from a given node.
-
-This function writes labels of the edges on the path to a root node from node
-`i` to the iterator `d_first`.
-
-# Arguments
-
- - `d_first::Iterator`: the output iterator.
-
- - `i::Integer`: the node.
-
- # Throws
-
-- LibsemigroupsError:  if `i` is greater than or equal to
-[`number_of_nodes`](@ref).
-
-- LibsemigroupsError:  if `self` is not acyclic.
-"""
-# path_to_root(self::Forest, d_first::Iterator, i::Integer)::Iterator =
-#     @wrap_libsemigroups_call LibSemigroups.forest_path_to_root(self, d_first, i)
-
-"""
-    set_parent_and_label!(self::Forest,node::Integer,parent::Integer,gen::Integer)::Forest
+    set_parent_and_label!(self::Forest,node::Int64,parent::Int64OrUndefined,gen::Int64OrUndefined)::Forest
 
 Set the parent and edge label for a node.
 
@@ -260,29 +224,29 @@ edge-label to be `gen`.
 
 # Arguments
 
- - `node::Integer`: the node whose parent and label to set.
-
- - `parent::Integer`: the parent node.
-
- - `gen::Integer`: the label of the edge from parent to node.
+ - `node::Int64`: the node whose parent and label to set.
+ - `parent::Int64OrUndefined`: the parent node.
+ - `gen::Int64OrUndefined`: the label of the edge from parent to node.
 
  # Throws
 
 - LibsemigroupsError:  if `node` or `parent` exceeds [`number_of_nodes`](@ref).
-
 - LibsemigroupsError:  if `node` equals `parent`.
-
 - LibsemigroupsError:  if adding `parent` as the parent of `node` would result
-in a cycle.
+    in a cycle.
 
 # Complexity
 
-Constant
+- Constant
 """
-set_parent_and_label!(self::Forest, node::Integer, parent::Integer, gen::Integer)::Forest =
-    @wrap_libsemigroups_call LibSemigroups.forest_set_parent_and_label(
-        self,
-        node,
-        parent,
-        gen,
-    )[]
+set_parent_and_label!(
+    self::Forest,
+    node::Int64,
+    parent::Int64OrUndefined,
+    gen::Int64OrUndefined,
+)::Forest = @wrap_libsemigroups_call LibSemigroups.forest_set_parent_and_label(
+    self,
+    node - 1,
+    parent - 1,
+    gen - 1,
+)[]

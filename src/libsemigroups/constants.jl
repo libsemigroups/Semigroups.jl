@@ -11,6 +11,8 @@ This file provides Julia-friendly access to the libsemigroups constants
 UNDEFINED, POSITIVE_INFINITY, NEGATIVE_INFINITY, and LIMIT_MAX.
 """
 
+using CxxWrap.StdLib: StdVector
+
 # Singleton types for special constants
 # These allow us to dispatch on the constant type while providing
 # type-specific conversions to integer values.
@@ -40,21 +42,28 @@ p[1] == UNDEFINED  # false
 """
 const UNDEFINED = UndefinedType()
 
-function to_undefined(val::T)::Union{T,UndefinedType} where {T}
-    if val == typemax(T)
-        return UNDEFINED
-    end
-    return val
+function Base.convert(::Type{Union{S,UndefinedType}}, val::T) where {S<:Integer,T<:Integer}
+    return val == typemax(T) ? UNDEFINED : val
 end
 
-function from_undefined(val::Union{T, UndefinedType})::T where {T}
-    if val == UNDEFINED
-      return typemax(T)
-    end
-    return val
+function Base.convert(::Type{T}, val::Union{T,UndefinedType}) where {T<:Integer}
+    return val == UNDEFINED ? typemax(T) : val
 end
 
+function Base.convert(
+    ::Type{Vector{Union{UndefinedType,S}}},
+    vec::CxxWrap.StdLib.StdVectorDereferenced{T},
+) where {S,T}
+    return convert.(Union{UndefinedType,S}, vec)
+end
 
+function Base.:(+)(x::UndefinedType, y::Integer)::UndefinedType
+    return x
+end
+
+function Base.:(-)(x::UndefinedType, y::Integer)::UndefinedType
+    return x
+end
 
 struct PositiveInfinityType end
 

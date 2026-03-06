@@ -8,25 +8,30 @@
 test_constants.jl - Tests for libsemigroups constants
 """
 
+using Test
+using Semigroups
+
 @testset "Constants" begin
-    # Test UNDEFINED conversions — 0 is the Julia sentinel (never a valid 1-based index)
-    @test convert(UInt8, UNDEFINED) === UInt8(0)
-    @test convert(UInt16, UNDEFINED) === UInt16(0)
-    @test convert(UInt32, UNDEFINED) === UInt32(0)
-    @test convert(UInt64, UNDEFINED) === UInt64(0)
-    @test convert(Int64, UNDEFINED) === Int64(0)
+    # Test UNDEFINED conversions 
+    @test convert(UInt8, UNDEFINED) === typemax(UInt8)
+    @test convert(UInt16, UNDEFINED) === typemax(UInt16)
+    @test convert(UInt32, UNDEFINED) === typemax(UInt32)
+    @test convert(UInt64, UNDEFINED) === typemax(UInt64)
+    @test convert(Int64, UNDEFINED) === typemax(Int64)
 
     # Test POSITIVE_INFINITY conversions
     @test convert(UInt8, POSITIVE_INFINITY) == typemax(UInt8) - 1
     @test convert(UInt16, POSITIVE_INFINITY) == typemax(UInt16) - 1
     @test convert(UInt32, POSITIVE_INFINITY) == typemax(UInt32) - 1
     @test convert(UInt64, POSITIVE_INFINITY) == typemax(UInt64) - 1
+    @test convert(Int64, POSITIVE_INFINITY) == typemax(Int64) - 1
 
     # Test LIMIT_MAX conversions
     @test convert(UInt8, LIMIT_MAX) == typemax(UInt8) - 2
     @test convert(UInt16, LIMIT_MAX) == typemax(UInt16) - 2
     @test convert(UInt32, LIMIT_MAX) == typemax(UInt32) - 2
     @test convert(UInt64, LIMIT_MAX) == typemax(UInt64) - 2
+    @test convert(Int64, LIMIT_MAX) == typemax(Int64) - 2
 
     # Test NEGATIVE_INFINITY conversions
     @test convert(Int8, NEGATIVE_INFINITY) == typemin(Int8)

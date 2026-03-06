@@ -94,6 +94,7 @@ export current_state, running_for_how_long
 export report_why_we_stopped, string_why_we_stopped
 export tril, tril_FALSE, tril_TRUE, tril_unknown, tril_to_bool
 export is_undefined, is_positive_infinity, is_negative_infinity, is_limit_max
+export Int64OrUndefined
 
 # Transformation types and functions
 export Transf, PPerm, Perm
