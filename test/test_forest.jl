@@ -26,7 +26,7 @@ using Semigroups
         @test hasmethod(label, Tuple{Forest,Int64})
         @test hasmethod(labels, Tuple{Forest})
         @test hasmethod(number_of_nodes, Tuple{Forest})
-        @test hasmethod(parent_node, Tuple{Forest,Int64OrUndefined})
+        @test hasmethod(parent_node, Tuple{Forest,Int64})
         @test hasmethod(parents, Tuple{Forest})
         @test hasmethod(
             set_parent_and_label!,
@@ -99,6 +99,11 @@ using Semigroups
         @test label(f, 2) == 7
         @test label(f, 3) == 8
         @test label(f, 4) === UNDEFINED
+
+        @test_throws LibsemigroupsError Forest([1], [1])
+        @test_throws LibsemigroupsError Forest([2, 1], [1, 1])
+        @test_throws LibsemigroupsError Forest([2, 1], [1])
+        @test_throws LibsemigroupsError Forest([UNDEFINED, 2, 1], [UNDEFINED, 1, 1])
     end
 
     @testset "Forest error behavior" begin

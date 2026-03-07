@@ -46,32 +46,39 @@ otherwise.
 Base.empty(self::Forest)::Bool = LibSemigroups.forest_empty(self)
 
 """
-    Forest()::Forest
-
-Default copy constructor.
-"""
-
-"""
-TODO this doc is not correct
     Forest(n::Int64)::Forest
 
 Constructs a forest with `n` nodes.
 
-Constructs a forest with `n` nodes, that is initialised so that the
-[`parent`](@ref) and [`label`](@ref) of every node is UNDEFINED.
+Constructs a forest with `n` nodes, initialised so that the
+[`parent_node`](@ref) and [`label`](@ref) of every node are [`UNDEFINED`](@ref).
 
 # Arguments
 
- - `n::Int64`: the number of nodes, defaults to 0.
+ - `n::Int64`: the number of nodes (defaults to `0`).
 """
-function Forest(parents::Vector{Any}, labels::Vector{Any})
-    return @wrap_libsemigroups_call LibSemigroups.forest_make(
-        StdVector{UInt32}(convert.(UInt32, parents.-1)),
-        StdVector{UInt32}(convert.(UInt32, labels.-1)),
-    )
-end
+Forest(n::Int64)::Forest = invoke(Forest, Tuple{Integer}, n)
 
-function Forest(parents::Vector{Int64OrUndefined}, labels::Vector{Int64OrUndefined})
+"""
+    Forest(parents::Vector{T},labels::Vector{T})::Forest where T
+
+Construct a forest from vectors of parent nodes and edge labels.
+
+The vectors `parents` and `labels` must have the same length. The value in
+position `i` determines the parent and edge label for node `i`.
+ 
+# Arguments
+
+ - `parents::Vector{T}`: the parents of the nodes. 
+ - `labels::Vector{T}`: the labels of the edges.
+
+ # Throws
+
+- LibsemigroupsError:  if the arguments do not describe a [`Forest`](@ref)
+  (e.g. if there are any cycles or loops in `parents`).
+- LibsemigroupsError:  if `length(parents)` is not equal to `length(labels)`.
+"""
+function Forest(parents::Vector{T}, labels::Vector{T}) where T
     return @wrap_libsemigroups_call LibSemigroups.forest_make(
         StdVector{UInt32}(convert.(UInt32, parents.-1)),
         StdVector{UInt32}(convert.(UInt32, labels.-1)),
@@ -102,7 +109,7 @@ add_nodes!(self::Forest, n::Int64)::Forest = LibSemigroups.forest_add_nodes(self
 Reinitialize an existing [`Forest`](@ref) object.
 
 This function reinitializes an existing [`Forest`](@ref) object so that it is in
-the same state as if it had just be constructed as `Forest(n)`.
+the same state as if it had just been constructed as `Forest(n)`.
 
 # Arguments
 
@@ -143,7 +150,7 @@ label(self::Forest, i::Int64OrUndefined)::Int64OrUndefined =
 """
     labels(self::Forest)::Vector{Int64OrUndefined}
 
-Returns  to the `Vector` of edge labels.
+Returns the `Vector` of edge labels.
 
 This function returns the `Vector` of edge labels in the [`Forest`](@ref).
 The value in position `i` of this `Vector` is the label of the edge from the
@@ -171,7 +178,7 @@ This function returns the number of nodes in the forest.
 number_of_nodes(self::Forest)::Int64 = LibSemigroups.forest_number_of_nodes(self)
 
 """
-    parent(self::Forest,i::Int64)::Int64OrUndefined
+    parent_node(self::Forest,i::Int64)::Int64OrUndefined
 
 Returns the parent of a node.
 
@@ -201,9 +208,9 @@ end
 """
     parents(self::Forest)::Vector{Int64OrUndefined}
 
-Returns  to the `Vector` of parents.
+Returns the `Vector` of parents.
 
-This function returns  to the `Vector` of parents in the [`Forest`](@ref). The
+This function returns the `Vector` of parents in the [`Forest`](@ref). The
 value in position `i` of this `Vector` is the parent of node `i`. If the parent
 equals [`UNDEFINED`](@ref), then node `i` is a root node.
 
