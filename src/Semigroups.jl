@@ -109,6 +109,6 @@ export number_of_cols, number_of_rows, row_space_size, rows
 
 # Forest
 export Forest, add_nodes!, empty, init!, label, labels, number_of_nodes, parent_node
-export parents, set_parent_and_label!
+export parents, set_parent_and_label!, depth, is_forest, is_root, max_label, path_from_root, path_to_root 
 
 end # module Semigroups

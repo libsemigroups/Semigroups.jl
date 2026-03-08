@@ -54,11 +54,32 @@ namespace libsemigroups_julia {
         [](Forest const& a, Forest const& b) -> bool { return a == b; });
     type.method("forest_parent", &Forest::parent);
     type.method("forest_parents", &Forest::parents);
-    // type.method("forest_path_from_root", &Forest::path_from_root);
-    // type.method("forest_path_to_root", &Forest::path_to_root);
     type.method("forest_set_parent_and_label", &Forest::set_parent_and_label);
     type.method("forest_to_human_readable_repr",
                 [](Forest const& f) { return to_human_readable_repr(f); });
+
+    m.method("forest_depth", [](Forest const& f, Forest::node_type n) {
+      return forest::depth(f, n);
+    });
+    // TODO  uncomment when Dot is implemented
+    // m.method("dot", [](Forest const& f) { return forest::dot(f); });
+    // m.method("dot",
+    //          [](Forest const& f, std::vector<std::string> const& labels) {
+    //            return forest::dot(f, labels);
+    //          });
+    m.method("forest_is_forest",
+             [](Forest const& f) { return forest::is_forest(f); });
+    m.method("forest_is_root", [](Forest const& f, Forest::node_type n) {
+      return forest::is_root(f, n);
+    });
+    m.method("forest_max_label",
+             [](Forest const& f) { return forest::max_label(f); });
+    m.method("forest_path_from_root", [](Forest const& f, Forest::node_type n) {
+      return forest::path_from_root(f, n);
+    });
+    m.method("forest_path_to_root", [](Forest const& f, Forest::node_type n) {
+      return forest::path_to_root(f, n);
+    });
 
   }  // define_forest
 

@@ -31,19 +31,25 @@ Base.:(==)(x::Forest, y::Forest) = LibSemigroups.forest_is_equal(x, y)
 # TODO add to script
 Base.:(!=)(x::Forest, y::Forest) = LibSemigroups.forest_is_not_equal(x, y)
 
+# TODO arguments are missing
+
 """
-    empty(self::Forest)::Bool
+    empty(f::Forest)::Bool
 
 Check if there are any nodes in the forest.
 
 This function returns `true` if there are 0 nodes in the forest, and `false`
 otherwise.
 
+# Arguments
+
+ - `f::Forest`: the forest.
+
 # Complexity
 
 - Constant
 """
-Base.empty(self::Forest)::Bool = LibSemigroups.forest_empty(self)
+Base.empty(f::Forest)::Bool = LibSemigroups.forest_empty(f)
 
 """
     Forest(n::Int64)::Forest
@@ -51,7 +57,8 @@ Base.empty(self::Forest)::Bool = LibSemigroups.forest_empty(self)
 Constructs a forest with `n` nodes.
 
 Constructs a forest with `n` nodes, initialised so that the
-[`parent_node`](@ref) and [`label`](@ref) of every node are [`UNDEFINED`](@ref).
+[`parent_node(::Forest,::Int64)`](@ref) and [`label(::Forest,::Int64)`](@ref)
+of every node are [`UNDEFINED`](@ref).
 
 # Arguments
 
@@ -74,9 +81,9 @@ position `i` determines the parent and edge label for node `i`.
 
  # Throws
 
-- LibsemigroupsError:  if the arguments do not describe a [`Forest`](@ref)
+- [`LibsemigroupsError`](@ref):  if the arguments do not describe a [`Forest`](@ref)
   (e.g. if there are any cycles or loops in `parents`).
-- LibsemigroupsError:  if `length(parents)` is not equal to `length(labels)`.
+- [`LibsemigroupsError`](@ref):  if `length(parents)` is not equal to `length(labels)`.
 """
 function Forest(parents::Vector{T}, labels::Vector{T}) where T
     return @wrap_libsemigroups_call LibSemigroups.forest_make(
@@ -86,7 +93,7 @@ function Forest(parents::Vector{T}, labels::Vector{T}) where T
 end
 
 """
-    add_nodes!(self::Forest,n::Int64)::Forest
+    add_nodes!(f::Forest,n::Int64)::Forest
 
 Add nodes to the [`Forest`](@ref).
 
@@ -94,17 +101,18 @@ This function adds `n` nodes to the forest, but no edges.
 
 # Arguments
 
+ - `f::Forest`: the forest.
  - `n::Int64`: the number of nodes to add.
 
 # Complexity
 
-- At most linear in `number_of_nodes() + n`.
+- At most linear in [`number_of_nodes(::Forest)`](@ref) + `n`.
 """
-add_nodes!(self::Forest, n::Int64)::Forest = LibSemigroups.forest_add_nodes(self, n)[]
+add_nodes!(f::Forest, n::Int64)::Forest = LibSemigroups.forest_add_nodes(f, n)[]
 
 
 """
-    init!(self::Forest,n::Int64)::Forest
+    init!(f::Forest,n::Int64)::Forest
 
 Reinitialize an existing [`Forest`](@ref) object.
 
@@ -113,15 +121,16 @@ the same state as if it had just been constructed as `Forest(n)`.
 
 # Arguments
 
- - `n::Int64`: the number of nodes, defaults to 0.
+ - `f::Forest`: the forest.
+ - `n::Int64`: the number of nodes, defaults to `0`.
 """
-init!(self::Forest, n::Int64)::Forest = LibSemigroups.forest_init(self, n)[]
+init!(f::Forest, n::Int64)::Forest = LibSemigroups.forest_init(f, n)[]
 
 # TODO doc
-init!(self::Forest)::Forest = init!(self, 0)
+init!(f::Forest)::Forest = init!(f, 0)
 
 """
-    label(self::Forest,i::Int64)::Int64OrUndefined
+    label(f::Forest,i::Int64)::Int64OrUndefined
 
 Returns the label of the edge from a node to its parent.
 
@@ -131,24 +140,25 @@ This function returns the label of the edge from the parent of `i` to the node
 
 # Arguments
 
+ - `f::Forest`: the forest.
  - `i::Int64`: the node whose label is sought.
 
  # Throws
 
-- LibsemigroupsError:  if `i` exceeds `number_of_nodes(self)`.
+- [`LibsemigroupsError`](@ref):  if `i` exceeds [`number_of_nodes(::Forest)`](@ref).
 
 # Complexity
 
 - Constant
 """
-label(self::Forest, i::Int64OrUndefined)::Int64OrUndefined =
+label(f::Forest, i::Int64OrUndefined)::Int64OrUndefined =
     @wrap_libsemigroups_call convert(
         Int64OrUndefined,
-        LibSemigroups.forest_label(self, i - 1),
+        LibSemigroups.forest_label(f, i - 1),
     ) + 1
 
 """
-    labels(self::Forest)::Vector{Int64OrUndefined}
+    labels(f::Forest)::Vector{Int64OrUndefined}
 
 Returns the `Vector` of edge labels.
 
@@ -157,28 +167,36 @@ The value in position `i` of this `Vector` is the label of the edge from the
 parent of node `i` to `i`. If the parent equals [`UNDEFINED`](@ref), then node
 `i` is a root node.
 
+# Arguments
+
+ - `f::Forest`: the forest.
+
 # Complexity
 
 - Constant.
 """
-labels(self::Forest)::Vector{Int64OrUndefined} =
-    convert(Vector{Int64OrUndefined}, LibSemigroups.forest_labels(self)[]) .+ 1
+labels(f::Forest)::Vector{Int64OrUndefined} =
+    convert(Vector{Int64OrUndefined}, LibSemigroups.forest_labels(f)[]) .+ 1
 
 """
-    number_of_nodes(self::Forest)::Int64
+    number_of_nodes(f::Forest)::Int64
 
 Returns the number of nodes in the forest.
 
 This function returns the number of nodes in the forest.
 
+# Arguments
+
+ - `f::Forest`: the forest.
+
 # Complexity
 
 - Constant
 """
-number_of_nodes(self::Forest)::Int64 = LibSemigroups.forest_number_of_nodes(self)
+number_of_nodes(f::Forest)::Int64 = LibSemigroups.forest_number_of_nodes(f)
 
 """
-    parent_node(self::Forest,i::Int64)::Int64OrUndefined
+    parent_node(f::Forest,i::Int64)::Int64OrUndefined
 
 Returns the parent of a node.
 
@@ -188,25 +206,26 @@ node.
 
 # Arguments
 
+ - `f::Forest`: the forest.
  - `i::Int64`: the node whose parent is sought.
 
  # Throws
 
-- LibsemigroupsError:  if `i` exceeds `number_of_nodes(self)`. 
+- [`LibsemigroupsError`](@ref):  if `i` exceeds [`number_of_nodes(::Forest)`](@ref). 
 
 # Complexity
 
 - Constant
 """
-function parent_node(self::Forest, i::Int64)::Int64OrUndefined
+function parent_node(f::Forest, i::Int64)::Int64OrUndefined
     return @wrap_libsemigroups_call convert(
         Int64OrUndefined,
-        LibSemigroups.forest_parent(self, i - 1),
+        LibSemigroups.forest_parent(f, i - 1),
     ) + 1
 end
 
 """
-    parents(self::Forest)::Vector{Int64OrUndefined}
+    parents(f::Forest)::Vector{Int64OrUndefined}
 
 Returns the `Vector` of parents.
 
@@ -214,15 +233,19 @@ This function returns the `Vector` of parents in the [`Forest`](@ref). The
 value in position `i` of this `Vector` is the parent of node `i`. If the parent
 equals [`UNDEFINED`](@ref), then node `i` is a root node.
 
+# Arguments
+
+ - `f::Forest`: the forest.
+
 # Complexity
 
 - Constant.
 """
-parents(self::Forest)::Vector{Int64OrUndefined} =
-    convert(Vector{Int64OrUndefined}, LibSemigroups.forest_parents(self)[]) .+ 1
+parents(f::Forest)::Vector{Int64OrUndefined} =
+    convert(Vector{Int64OrUndefined}, LibSemigroups.forest_parents(f)[]) .+ 1
 
 """
-    set_parent_and_label!(self::Forest,node::Int64,parent::Int64OrUndefined,gen::Int64OrUndefined)::Forest
+    set_parent_and_label!(f::Forest,node::Int64,parent::Int64OrUndefined,gen::Int64OrUndefined)::Forest
 
 Set the parent and edge label for a node.
 
@@ -231,15 +254,16 @@ edge-label to be `gen`.
 
 # Arguments
 
+ - `f::Forest`: the forest.
  - `node::Int64`: the node whose parent and label to set.
  - `parent::Int64OrUndefined`: the parent node.
  - `gen::Int64OrUndefined`: the label of the edge from parent to node.
 
  # Throws
 
-- LibsemigroupsError:  if `node` or `parent` exceeds [`number_of_nodes`](@ref).
-- LibsemigroupsError:  if `node` equals `parent`.
-- LibsemigroupsError:  if adding `parent` as the parent of `node` would result
+- [`LibsemigroupsError`](@ref):  if `node` or `parent` exceeds [`number_of_nodes(::Forest)`](@ref).
+- [`LibsemigroupsError`](@ref):  if `node` equals `parent`.
+- [`LibsemigroupsError`](@ref):  if adding `parent` as the parent of `node` would result
     in a cycle.
 
 # Complexity
@@ -247,13 +271,184 @@ edge-label to be `gen`.
 - Constant
 """
 set_parent_and_label!(
-    self::Forest,
+    f::Forest,
     node::Int64,
     parent::Int64OrUndefined,
     gen::Int64OrUndefined,
 )::Forest = @wrap_libsemigroups_call LibSemigroups.forest_set_parent_and_label(
-    self,
+    f,
     node - 1,
     parent - 1,
     gen - 1,
 )[]
+
+"""
+    depth(f::Forest,n::Integer)::Int64
+
+Returns the depth of a node in the forest, i.e. the distance, in terms of the
+number of edges, from a root.
+
+This function returns the length of the word returned by
+[`path_to_root(::Forest,::Int64)`](@ref) and [`path_from_root(::Forest,::Int64)`](@ref).
+
+# Arguments
+
+ - `f::Forest`: the [`Forest`](@ref).
+ - `n::Integer`: the node.
+
+ # Throws
+
+- [`LibsemigroupsError`](@ref):  if `n` is out of bounds (i.e. it is greater than or equal
+  to [`number_of_nodes(::Forest)`](@ref)).
+"""
+depth(f::Forest, n::Integer)::Int64 =
+    @wrap_libsemigroups_call LibSemigroups.forest_depth(f, n - 1)
+
+"""
+    dot(f::Forest)::Dot
+
+Returns a [`Dot`](@ref) object representing a [`Forest`](@ref).
+
+This function returns a [`Dot`](@ref) object representing the [`Forest`](@ref)
+`f`.
+
+# Arguments
+
+ - `f::Forest`: the [`Forest`](@ref).
+"""
+# TODO not yet impled
+# dot(f::Forest)::Dot = LibSemigroups.forest_dot(f)
+
+"""
+    dot(f::Forest,labels::Vector{String})::Dot
+
+Returns a [`Dot`](@ref) object representing a [`Forest`](@ref).
+
+This function returns a [`Dot`](@ref) object representing the [`Forest`](@ref)
+`f`. If `labels` is not empty, then each node is labelled with the path from
+that node to the root of its tree with each letter replaced by the string in the
+corresponding position of `labels`. If `labels` is empty, then the nodes are
+not labelled by their paths.
+
+# Arguments
+
+ - `f::Forest`: the [`Forest`](@ref).
+ - `labels::Vector{String}`: substitute for each edge label.
+
+ # Throws
+
+- [`LibsemigroupsError`](@ref):  if the size of `labels` is not the same as the
+  [`max_label(::Forest)`](@ref) plus one.
+"""
+# TODO not yet impled
+# dot(f::Forest,labels::Vector{String})::Dot = @wrap_libsemigroups_call LibSemigroups.forest_dot(f, labels)
+
+"""
+    is_forest(f::Forest)::Bool
+
+Check whether a [`Forest`](@ref) object is well-defined.
+
+This function returns `true` if the [`Forest`](@ref) `f` is well-defined,
+meaning that it contains no cycles. It is not possible to create a
+[`Forest`](@ref) with cycles using
+[`set_parent_and_label(::Forest,::Int64,::Int64OrUndefined,
+::Int64OrUndefined)`](@ref) (which will throw if such a cycle is introduced). 
+
+# Arguments
+ - `f::Forest`: the [`Forest`](@ref)
+"""
+is_forest(f::Forest)::Bool = LibSemigroups.forest_is_forest(f)
+
+"""
+    is_root(f::Forest,n::Integer)::Bool
+
+Check if a node is the root of any tree in the [`Forest`](@ref).
+
+This function returns `true` if the node `n` in the [`Forest`](@ref) `f` is a
+root node, and `false` if it is not.
+
+# Arguments
+
+ - `f::Forest`: the [`Forest`](@ref).
+ - `n::Integer`: the node.
+
+ # Throws
+
+- [`LibsemigroupsError`](@ref):  if `n` is out of bounds (i.e. it is greater than or equal
+  to [`number_of_nodes(::Forest)`](@ref)).
+"""
+is_root(f::Forest, n::Integer)::Bool =
+    @wrap_libsemigroups_call LibSemigroups.forest_is_root(f, n - 1)
+
+"""
+    max_label(f::Forest)::Int64
+
+Returns the maximum label of any edge in a [`Forest`](@ref).
+
+This function returns the maximum label of any edge in the [`Forest`](@ref) `f`
+or [`UNDEFINED`](@ref) if there are no edges.
+
+# Arguments
+
+ - `f::Forest`: the [`Forest`](@ref).
+ 
+"""
+max_label(f::Forest)::Int64OrUndefined =
+    convert(Int64OrUndefined, LibSemigroups.forest_max_label(f)) + 1
+
+"""
+    path_from_root(f::Forest,n::Integer)::Vector{Integer}
+
+Returns a word containing the labels of the edges on the path from a root node
+to `n`.
+
+This function returns a word containing the labels of the edges on the path from
+a root node to the node `n`.
+
+# Arguments
+
+ - `f::Forest`: the forest.
+ - `n::Integer`: the node.
+
+ # Throws
+
+- [`LibsemigroupsError`](@ref):  if `n` is greater than or equal to [`number_of_nodes(::Forest)`](@ref).
+
+# See also
+
+- [`PathsFromRoots`](@ref)
+"""
+path_from_root(f::Forest, n::Integer)::Vector{Int64} =
+    convert(
+        Vector{Int64},
+        (@wrap_libsemigroups_call LibSemigroups.forest_path_from_root(f, n - 1)),
+    ) .+ 1
+
+"""
+    path_to_root(f::Forest,n::Integer)::Vector{Integer}
+
+Returns a word containing the labels of the edges on the path to a root node
+from `n`.
+
+This function returns a word containing the labels of the edges on the path to a
+root node from node `n`.
+
+# Arguments
+
+ - `f::Forest`: the forest.
+ - `n::Integer`: the node.
+
+ # Throws
+
+- [`LibsemigroupsError`](@ref):  if `n` is greater than or equal to [`number_of_nodes(::Forest)`](@ref).
+
+# See also
+
+- [`PathsToRoots`](@ref)
+"""
+path_to_root(f::Forest, n::Integer)::Vector{Int64} =
+    convert(
+        Vector{Int64},
+        (@wrap_libsemigroups_call LibSemigroups.forest_path_to_root(f, n - 1)),
+    ) .+ 1
+
