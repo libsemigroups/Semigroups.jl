@@ -38,6 +38,8 @@ namespace libsemigroups_julia {
     m.method("forest_make",
              [](std::vector<uint32_t> const& parents,
                 std::vector<uint32_t> const& labels) -> Forest {
+               // TODO avoid copies here, i.e. the copying of Julia Vector into
+               // std::vector
                return make<Forest>(parents, labels);
              });
     type.method("forest_add_nodes", &Forest::add_nodes);

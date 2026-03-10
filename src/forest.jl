@@ -81,9 +81,12 @@ position `i` determines the parent and edge label for node `i`.
 
  # Throws
 
-- [`LibsemigroupsError`](@ref):  if the arguments do not describe a [`Forest`](@ref)
-  (e.g. if there are any cycles or loops in `parents`).
-- [`LibsemigroupsError`](@ref):  if `length(parents)` is not equal to `length(labels)`.
+- [`LibsemigroupsError`](@ref):  if the arguments do not describe a
+  [`Forest`](@ref) (e.g. if there are any cycles or loops in `parents`) or the
+  values of [`UNDEFINED`](@ref) do not occur in the same positions of `parents`
+  and `labels`.
+- [`LibsemigroupsError`](@ref):  if `length(parents)` is not equal to
+  `length(labels)`.
 """
 function Forest(parents::Vector{T}, labels::Vector{T}) where {T}
     return @wrap_libsemigroups_call LibSemigroups.forest_make(
