@@ -33,9 +33,7 @@ using Semigroups
         @test hasmethod(is_root, Tuple{Forest,Integer})
         @test hasmethod(max_label, Tuple{Forest})
         @test hasmethod(path_from_root, Tuple{Forest,Integer})
-        @test hasmethod(path_from_root, Tuple{Forest,Vector{Int64},Integer})
         @test hasmethod(path_to_root, Tuple{Forest,Integer})
-        @test hasmethod(path_to_root, Tuple{Forest,Vector{Int64},Integer})
         @test hasmethod(
             set_parent_and_label!,
             Tuple{Forest,Int64,Int64OrUndefined,Int64OrUndefined},
@@ -152,12 +150,6 @@ using Semigroups
         @test path_to_root(f, 3) == [8, 7]
         @test path_from_root(f, 5) == [9]
         @test path_to_root(f, 5) == [9]
-
-        buf = Int64[42, 43]
-        @test path_from_root(f, buf, 3) === nothing
-        @test buf == [7, 8]
-        @test path_to_root(f, buf, 3) === nothing
-        @test buf == [8, 7]
 
         @test_throws LibsemigroupsError depth(f, 6)
         @test_throws LibsemigroupsError is_root(f, 6)

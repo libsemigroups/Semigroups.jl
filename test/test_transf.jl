@@ -10,6 +10,9 @@ test_transf.jl - Tests for transformation types (Transf, PPerm, Perm)
 Ported from libsemigroups_pybind11/tests/test_transf.py
 """
 
+using Semigroups
+using Test
+
 # ============================================================================
 # Helper functions for testing
 # ============================================================================

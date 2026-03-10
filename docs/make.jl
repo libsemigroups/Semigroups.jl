@@ -49,9 +49,8 @@ makedocs(;
                     "The BMat8 type" => "data-structures/elements/matrix/bmat8.md",
                 ],
             ],
-                "Word Graphs" => [
-                    "The Forest type" => "data-structures/word-graph/forest.md",
-                ],
+            "Word Graphs" =>
+                ["The Forest type" => "data-structures/word-graph/forest.md"],
         ],
         "Main Algorithms" => [
             "Overview" => "main-algorithms/index.md",

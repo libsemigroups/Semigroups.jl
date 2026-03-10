@@ -38,7 +38,7 @@ Base.:(!=)(x::Forest, y::Forest) = LibSemigroups.forest_is_not_equal(x, y)
 
 Check if there are any nodes in the forest.
 
-This function returns `true` if there are 0 nodes in the forest, and `false`
+This function returns `true` if there are `0` nodes in the forest, and `false`
 otherwise.
 
 # Arguments
@@ -85,10 +85,10 @@ position `i` determines the parent and edge label for node `i`.
   (e.g. if there are any cycles or loops in `parents`).
 - [`LibsemigroupsError`](@ref):  if `length(parents)` is not equal to `length(labels)`.
 """
-function Forest(parents::Vector{T}, labels::Vector{T}) where T
+function Forest(parents::Vector{T}, labels::Vector{T}) where {T}
     return @wrap_libsemigroups_call LibSemigroups.forest_make(
-        StdVector{UInt32}(convert.(UInt32, parents.-1)),
-        StdVector{UInt32}(convert.(UInt32, labels.-1)),
+        StdVector{UInt32}(convert.(UInt32, parents .- 1)),
+        StdVector{UInt32}(convert.(UInt32, labels .- 1)),
     )
 end
 
@@ -126,7 +126,6 @@ the same state as if it had just been constructed as `Forest(n)`.
 """
 init!(f::Forest, n::Int64)::Forest = LibSemigroups.forest_init(f, n)[]
 
-# TODO doc
 init!(f::Forest)::Forest = init!(f, 0)
 
 """
@@ -151,11 +150,10 @@ This function returns the label of the edge from the parent of `i` to the node
 
 - Constant
 """
-label(f::Forest, i::Int64OrUndefined)::Int64OrUndefined =
-    @wrap_libsemigroups_call convert(
-        Int64OrUndefined,
-        LibSemigroups.forest_label(f, i - 1),
-    ) + 1
+label(f::Forest, i::Int64OrUndefined)::Int64OrUndefined = @wrap_libsemigroups_call convert(
+    Int64OrUndefined,
+    LibSemigroups.forest_label(f, i - 1),
+) + 1
 
 """
     labels(f::Forest)::Vector{Int64OrUndefined}
@@ -451,4 +449,3 @@ path_to_root(f::Forest, n::Integer)::Vector{Int64} =
         Vector{Int64},
         (@wrap_libsemigroups_call LibSemigroups.forest_path_to_root(f, n - 1)),
     ) .+ 1
-
