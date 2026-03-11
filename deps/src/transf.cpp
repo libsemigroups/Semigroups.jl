@@ -34,9 +34,9 @@ namespace libsemigroups_julia {
       ////////////////////////////////////////////////////////////////////////
 
       // Safe constructor using make<> which validates inputs
-      // Julia passes 1-based indices (0 = UNDEFINED for PPerm)
+      // Julia passes 1-based indices
       m.method(type_name, [](std::vector<Scalar> const& imgs) -> PTransfType {
-        return libsemigroups::make<PTransfType>(vec_to_0_based_undef(imgs));
+        return libsemigroups::make<PTransfType>(imgs);
       });
 
       ////////////////////////////////////////////////////////////////////////
