@@ -69,6 +69,8 @@ include("libsemigroups/transf.jl")
 include("elements/bmat8.jl")
 include("elements/transf.jl")
 
+include("forest.jl")
+
 # Module initialization
 function __init__()
     # Initialize the CxxWrap module
@@ -92,6 +94,7 @@ export current_state, running_for_how_long
 export report_why_we_stopped, string_why_we_stopped
 export tril, tril_FALSE, tril_TRUE, tril_unknown, tril_to_bool
 export is_undefined, is_positive_infinity, is_negative_infinity, is_limit_max
+export Int64OrUndefined
 
 # Transformation types and functions
 export Transf, PPerm, Perm
@@ -103,5 +106,16 @@ export left_one, right_one
 export BMat8, to_int, swap!, degree, random, row_space_basis
 export col_space_basis, col_space_size, is_regular_element, minimum_dim
 export number_of_cols, number_of_rows, row_space_size, rows
+
+# Forest
+export Forest, add_nodes!, empty, init!, label, labels, number_of_nodes, parent_node
+export parents,
+    set_parent_and_label!,
+    depth,
+    is_forest,
+    is_root,
+    max_label,
+    path_from_root,
+    path_to_root
 
 end # module Semigroups

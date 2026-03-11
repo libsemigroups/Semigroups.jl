@@ -15,6 +15,7 @@ using Semigroups
     include("test_bmat8.jl")
     include("test_constants.jl")
     include("test_errors.jl")
+    include("test_forest.jl")
     include("test_runner.jl")
     include("test_transf.jl")
 end

@@ -64,6 +64,7 @@ namespace libsemigroups_julia {
     m.set_const("tril_unknown", libsemigroups::tril::unknown);
 
     // Helper to convert tril to Julia Bool or nothing
+    // TODO remove
     m.method("tril_to_bool", [](libsemigroups::tril t) -> jl_value_t* {
       if (t == libsemigroups::tril::TRUE) {
         return jl_box_bool(true);

@@ -24,7 +24,7 @@ docs:
 	$(JULIA) --project=docs -e 'using Pkg; Pkg.develop(path="."); Pkg.instantiate()'
 	$(JULIA) --project=docs docs/make.jl
 
-docs-serve: docs
+docs-serve:
 	$(JULIA) --project=docs -e 'using Pkg; Pkg.add("LiveServer")'
 	$(JULIA) --project=docs -e 'using LiveServer; servedocs(; include_dirs = ["src"])'
 

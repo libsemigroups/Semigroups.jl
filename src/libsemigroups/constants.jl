@@ -11,10 +11,14 @@ This file provides Julia-friendly access to the libsemigroups constants
 UNDEFINED, POSITIVE_INFINITY, NEGATIVE_INFINITY, and LIMIT_MAX.
 """
 
+using CxxWrap.StdLib: StdVector
+
 # Singleton types for special constants
 # These allow us to dispatch on the constant type while providing
 # type-specific conversions to integer values.
 
+# TODO why does this exist? It's defined in constants.cpp, but what's defined
+# there isn't exposed here, i.e. there's no LibSemigroups.UNDEFINED anywhere
 struct UndefinedType end
 
 """
@@ -37,6 +41,29 @@ p[1] == UNDEFINED  # false
 ```
 """
 const UNDEFINED = UndefinedType()
+
+function Base.convert(::Type{Union{S,UndefinedType}}, val::T) where {S<:Integer,T<:Integer}
+    return val == typemax(T) ? UNDEFINED : val
+end
+
+function Base.convert(::Type{T}, val::Union{T,UndefinedType}) where {T<:Integer}
+    return val == UNDEFINED ? typemax(T) : val
+end
+
+function Base.convert(
+    ::Type{Vector{Union{UndefinedType,S}}},
+    vec::CxxWrap.StdLib.StdVectorDereferenced{T},
+) where {S,T}
+    return convert.(Union{UndefinedType,S}, vec)
+end
+
+function Base.:(+)(x::UndefinedType, y::Integer)::UndefinedType
+    return x
+end
+
+function Base.:(-)(x::UndefinedType, y::Integer)::UndefinedType
+    return x
+end
 
 struct PositiveInfinityType end
 
@@ -73,7 +100,7 @@ const LIMIT_MAX = LimitMaxType()
 # Conversion functions to get the underlying integer values
 
 # UNDEFINED conversions — returns 0 (the Julia sentinel for UNDEFINED in 1-based indexing)
-Base.convert(::Type{T}, ::UndefinedType) where {T<:Integer} = T(0)
+Base.convert(::Type{T}, ::UndefinedType) where {T<:Integer} = typemax(T)
 
 # POSITIVE_INFINITY conversions
 Base.convert(::Type{UInt8}, ::PositiveInfinityType) =
