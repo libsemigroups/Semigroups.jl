@@ -56,7 +56,7 @@ jobs:
         with:
           version: "1.10"
 
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
 
       - name: "Build package"
         uses: julia-actions/julia-buildpkg@v1

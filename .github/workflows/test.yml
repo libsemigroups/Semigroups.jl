@@ -47,7 +47,7 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
           arch: ${{ matrix.system.arch }}
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
 
         # Build libsemigroups using ccache
       - name: "Setup ccache . . ."
