@@ -8,9 +8,11 @@
 build.jl - Build script for semigroups_julia C++ library
 
 This script builds the C++ wrapper library during package installation.
+Uses libsemigroups_jll for the pre-built libsemigroups headers and library.
 """
 
 using CxxWrap
+using libsemigroups_jll
 
 # Get the source and build directories
 const src_dir = joinpath(@__DIR__, "src")
@@ -22,6 +24,11 @@ mkpath(build_dir)
 # Get JlCxx directory
 const jlcxx_dir = CxxWrap.prefix_path()
 
+# Get libsemigroups paths from JLL
+const libsemigroups_artifact = libsemigroups_jll.artifact_dir
+const libsemigroups_incdir = joinpath(libsemigroups_artifact, "include")
+const libsemigroups_libdir = joinpath(libsemigroups_artifact, "lib")
+
 # Get Julia paths to work around FindJulia.cmake issues
 julia_bindir = dirname(Sys.BINDIR)
 julia_includedir = joinpath(julia_bindir, "include", "julia")
@@ -31,6 +38,9 @@ println("Building semigroups_julia library...")
 println("Source directory: $src_dir")
 println("Build directory: $build_dir")
 println("JlCxx directory: $jlcxx_dir")
+println("libsemigroups artifact: $libsemigroups_artifact")
+println("libsemigroups include: $libsemigroups_incdir")
+println("libsemigroups lib: $libsemigroups_libdir")
 println("Julia include dir: $julia_includedir")
 println("Julia lib dir: $julia_libdir")
 
@@ -41,6 +51,8 @@ cmake_args = [
     "-DJulia_EXECUTABLE=$(joinpath(Sys.BINDIR, "julia"))",
     "-DJulia_INCLUDE_DIRS=$julia_includedir",
     "-DJulia_LIBRARY_DIR=$julia_libdir",
+    "-DLIBSEMIGROUPS_INCLUDE_DIR=$libsemigroups_incdir",
+    "-DLIBSEMIGROUPS_LIBRARY_DIR=$libsemigroups_libdir",
 ]
 
 # Add macOS-specific flags if needed
