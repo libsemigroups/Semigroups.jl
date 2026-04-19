@@ -5,14 +5,155 @@
 # The full license is in the file LICENSE, distributed with this software.
 
 """
-transf.jl - High-level Julia API for transformations
+transf.jl - Transformation types for Semigroups.jl
 
-This file provides user-facing transformation types (Transf, PPerm, Perm)
-with idiomatic Julia interfaces: 1-based indexing, automatic type selection,
-and standard Julia operators.
+Provides user-facing transformation types (Transf, PPerm, Perm) with idiomatic
+Julia interfaces: 1-based indexing, automatic type selection, and standard
+Julia operators. The C++ template instantiations (Transf1/2/4, PPerm1/2/4,
+Perm1/2/4) are exposed as aliases for advanced use, along with thin
+Julia-level wrappers that delegate to the CxxWrap-bound C++ methods.
 """
 
 using CxxWrap.StdLib: StdVector
+
+# ============================================================================
+# C++ type aliases - concrete template instantiations
+# ============================================================================
+
+"""
+    Transf1
+
+Transformation with uint8_t scalar type (supports degrees up to 2^8 = 256).
+This is the underlying C++ type Transf<0, uint8_t>.
+"""
+const Transf1 = LibSemigroups.Transf1
+
+"""
+    Transf2
+
+Transformation with uint16_t scalar type (supports degrees up to 2^16 = 65536).
+This is the underlying C++ type Transf<0, uint16_t>.
+"""
+const Transf2 = LibSemigroups.Transf2
+
+"""
+    Transf4
+
+Transformation with uint32_t scalar type (supports degrees up to 2^32).
+This is the underlying C++ type Transf<0, uint32_t>.
+"""
+const Transf4 = LibSemigroups.Transf4
+
+"""
+    PPerm1
+
+Partial permutation with uint8_t scalar type (supports degrees up to 2^8 = 256).
+This is the underlying C++ type PPerm<0, uint8_t>.
+"""
+const PPerm1 = LibSemigroups.PPerm1
+
+"""
+    PPerm2
+
+Partial permutation with uint16_t scalar type (supports degrees up to 2^16 = 65536).
+This is the underlying C++ type PPerm<0, uint16_t>.
+"""
+const PPerm2 = LibSemigroups.PPerm2
+
+"""
+    PPerm4
+
+Partial permutation with uint32_t scalar type (supports degrees up to 2^32).
+This is the underlying C++ type PPerm<0, uint32_t>.
+"""
+const PPerm4 = LibSemigroups.PPerm4
+
+"""
+    Perm1
+
+Permutation with uint8_t scalar type (supports degrees up to 2^8 = 256).
+This is the underlying C++ type Perm<0, uint8_t>.
+"""
+const Perm1 = LibSemigroups.Perm1
+
+"""
+    Perm2
+
+Permutation with uint16_t scalar type (supports degrees up to 2^16 = 65536).
+This is the underlying C++ type Perm<0, uint16_t>.
+"""
+const Perm2 = LibSemigroups.Perm2
+
+"""
+    Perm4
+
+Permutation with uint32_t scalar type (supports degrees up to 2^32).
+This is the underlying C++ type Perm<0, uint32_t>.
+"""
+const Perm4 = LibSemigroups.Perm4
+
+# Internal union types used by the low-level helpers below.
+const _TransfTypes = Union{Transf1,Transf2,Transf4}
+const _PPermTypes = Union{PPerm1,PPerm2,PPerm4}
+const _PermTypes = Union{Perm1,Perm2,Perm4}
+const _PTransfTypes = Union{_TransfTypes,_PPermTypes,_PermTypes}
+
+# ============================================================================
+# Low-level helpers dispatching on the C++ types
+# ============================================================================
+
+degree(t::_PTransfTypes) = Int(LibSemigroups.degree(t))
+
+rank(t::_PTransfTypes) = Int(LibSemigroups.rank(t))
+
+hash_value(t::_PTransfTypes) = LibSemigroups.hash(t)
+
+images_vector(t::_PTransfTypes) = LibSemigroups.images_vector(t)
+
+function product_inplace!(result::T, x::T, y::T) where {T<:_PTransfTypes}
+    GC.@preserve result x y begin
+        @wrap_libsemigroups_call LibSemigroups.product_inplace!(result, x, y)
+    end
+    return nothing
+end
+
+function increase_degree_by!(t::T, n::Integer) where {T<:_PTransfTypes}
+    GC.@preserve t begin
+        @wrap_libsemigroups_call LibSemigroups.increase_degree_by!(t, UInt(n))
+    end
+    return t
+end
+
+function swap!(t::T, x::T) where {T<:_PTransfTypes}
+    GC.@preserve t x begin
+        @wrap_libsemigroups_call LibSemigroups.swap(t, x)
+    end
+    return nothing
+end
+
+copy(t::_PTransfTypes) = LibSemigroups.copy(t)
+
+one(t::_PTransfTypes) = LibSemigroups.one(t)
+
+one(::Type{Transf1}, n::Integer) = LibSemigroups.one(Transf1, UInt(n))
+one(::Type{Transf2}, n::Integer) = LibSemigroups.one(Transf2, UInt(n))
+one(::Type{Transf4}, n::Integer) = LibSemigroups.one(Transf4, UInt(n))
+one(::Type{PPerm1}, n::Integer) = LibSemigroups.one(PPerm1, UInt(n))
+one(::Type{PPerm2}, n::Integer) = LibSemigroups.one(PPerm2, UInt(n))
+one(::Type{PPerm4}, n::Integer) = LibSemigroups.one(PPerm4, UInt(n))
+one(::Type{Perm1}, n::Integer) = LibSemigroups.one(Perm1, UInt(n))
+one(::Type{Perm2}, n::Integer) = LibSemigroups.one(Perm2, UInt(n))
+one(::Type{Perm4}, n::Integer) = LibSemigroups.one(Perm4, UInt(n))
+
+image(t::_PTransfTypes) = LibSemigroups.image(t)
+
+domain(t::_PTransfTypes) = LibSemigroups.domain(t)
+
+inverse(p::Union{_PPermTypes,_PermTypes}) = LibSemigroups.inverse(p)
+
+left_one(p::_PPermTypes) = LibSemigroups.left_one(p)
+
+right_one(p::_PPermTypes) = LibSemigroups.right_one(p)
 
 # ============================================================================
 # Type selection helpers (shared by all transformation types)

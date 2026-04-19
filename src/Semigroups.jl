@@ -63,7 +63,6 @@ using .Errors: LibsemigroupsError, @wrap_libsemigroups_call
 include("libsemigroups/constants.jl")
 include("libsemigroups/report.jl")
 include("libsemigroups/runner.jl")
-include("libsemigroups/transf.jl")
 
 # High-level element types
 include("elements/bmat8.jl")
