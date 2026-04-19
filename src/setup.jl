@@ -9,11 +9,13 @@ setup.jl - Library location and build logic for Semigroups.jl
 
 This module handles locating the compiled C++ wrapper library,
 either from a pre-built location or by building it from source.
+Uses libsemigroups_jll for the pre-built libsemigroups headers and library.
 """
 
 module Setup
 
 using CxxWrap
+using libsemigroups_jll
 
 # Get the path to the deps directory
 function deps_dir()
@@ -51,15 +53,21 @@ function build_library()
     # Get JlCxx (CxxWrap C++ library) directory
     jlcxx_dir = CxxWrap.prefix_path()
 
+    # Get libsemigroups paths from JLL
+    libsemigroups_incdir = joinpath(libsemigroups_jll.artifact_dir, "include")
+    libsemigroups_libdir = joinpath(libsemigroups_jll.artifact_dir, "lib")
+
     # Configure with CMake
     cmake_args = [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DJlCxx_DIR=$(joinpath(jlcxx_dir, "lib", "cmake", "JlCxx"))",
+        "-DLIBSEMIGROUPS_INCLUDE_DIR=$libsemigroups_incdir",
+        "-DLIBSEMIGROUPS_LIBRARY_DIR=$libsemigroups_libdir",
     ]
 
     # Add macOS-specific flags if needed
     if Sys.isapple()
-        push!(cmake_args, "-DCMAKE_OSX_DEPLOYMENT_TARGET=10.15")
+        push!(cmake_args, "-DCMAKE_OSX_DEPLOYMENT_TARGET=11.0")
     end
 
     # Run CMake configure

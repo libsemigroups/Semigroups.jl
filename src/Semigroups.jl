@@ -9,6 +9,7 @@ module Semigroups
 using CxxWrap
 using AbstractAlgebra
 using Dates: TimePeriod, Nanosecond
+using libsemigroups_jll
 
 # ============================================================================
 # Debug mode

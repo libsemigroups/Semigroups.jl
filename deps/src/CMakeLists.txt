@@ -18,11 +18,23 @@ endif()
 # Find JlCxx (CxxWrap C++ library)
 find_package(JlCxx REQUIRED)
 
-# Find libsemigroups via pkg-config
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBSEMIGROUPS REQUIRED libsemigroups)
-
-pkg_get_variable(LIBSEMIGROUPS_INCLUDEDIR libsemigroups includedir)
+# Find libsemigroups - prefer JLL paths if provided, fall back to pkg-config
+if(DEFINED LIBSEMIGROUPS_INCLUDE_DIR AND DEFINED LIBSEMIGROUPS_LIBRARY_DIR)
+    message(STATUS "Using libsemigroups from JLL:")
+    message(STATUS "  include dir: ${LIBSEMIGROUPS_INCLUDE_DIR}")
+    message(STATUS "  library dir: ${LIBSEMIGROUPS_LIBRARY_DIR}")
+    # JLL bundles fmt/rx/etc headers under include/libsemigroups/, so we need both paths
+    set(LIBSEMIGROUPS_INCLUDE_DIRS "${LIBSEMIGROUPS_INCLUDE_DIR};${LIBSEMIGROUPS_INCLUDE_DIR}/libsemigroups")
+    set(LIBSEMIGROUPS_LIBRARY_DIRS "${LIBSEMIGROUPS_LIBRARY_DIR}")
+    set(LIBSEMIGROUPS_LIBRARIES "semigroups")
+    set(LIBSEMIGROUPS_INCLUDEDIR "${LIBSEMIGROUPS_INCLUDE_DIR}")
+else()
+    # Fall back to system-installed libsemigroups via pkg-config
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(LIBSEMIGROUPS REQUIRED libsemigroups)
+    pkg_get_variable(LIBSEMIGROUPS_INCLUDEDIR libsemigroups includedir)
+    message(STATUS "Using system libsemigroups via pkg-config")
+endif()
 
 message(STATUS "JlCxx found at: ${JlCxx_DIR}")
 message(STATUS "libsemigroups include dirs: ${LIBSEMIGROUPS_INCLUDE_DIRS}")
@@ -58,12 +70,19 @@ target_link_libraries(libsemigroups_julia
     julia
 )
 
-# Compiler flags from pkg-config
+# Compiler flags
 target_compile_options(libsemigroups_julia PRIVATE
-    ${LIBSEMIGROUPS_CFLAGS_OTHER}
     "-I${LIBSEMIGROUPS_INCLUDEDIR}"
     -fno-char8_t  # Work around C++20 char8_t issues with fmt in libsemigroups
 )
+
+# Set RPATH to find libsemigroups at runtime
+if(DEFINED LIBSEMIGROUPS_LIBRARY_DIR)
+    set_target_properties(libsemigroups_julia PROPERTIES
+        INSTALL_RPATH "${LIBSEMIGROUPS_LIBRARY_DIR}"
+        BUILD_RPATH "${LIBSEMIGROUPS_LIBRARY_DIR}"
+    )
+endif()
 
 # Set output name - removes the extra "lib" prefix CMake would add
 set_target_properties(libsemigroups_julia PROPERTIES
