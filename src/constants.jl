@@ -72,8 +72,8 @@ const LIMIT_MAX = LimitMaxType()
 
 # Conversion functions to get the underlying integer values
 
-# UNDEFINED conversions — returns 0 (the Julia sentinel for UNDEFINED in 1-based indexing)
-Base.convert(::Type{T}, ::UndefinedType) where {T<:Integer} = T(0)
+# UNDEFINED conversions — libsemigroups uses typemax(T) natively
+Base.convert(::Type{T}, ::UndefinedType) where {T<:Integer} = typemax(T)
 
 # POSITIVE_INFINITY conversions
 Base.convert(::Type{UInt8}, ::PositiveInfinityType) =

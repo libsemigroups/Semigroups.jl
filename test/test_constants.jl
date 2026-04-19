@@ -9,12 +9,12 @@ test_constants.jl - Tests for libsemigroups constants
 """
 
 @testset "Constants" begin
-    # Test UNDEFINED conversions — 0 is the Julia sentinel (never a valid 1-based index)
-    @test convert(UInt8, UNDEFINED) === UInt8(0)
-    @test convert(UInt16, UNDEFINED) === UInt16(0)
-    @test convert(UInt32, UNDEFINED) === UInt32(0)
-    @test convert(UInt64, UNDEFINED) === UInt64(0)
-    @test convert(Int64, UNDEFINED) === Int64(0)
+    # Test UNDEFINED conversions — typemax(T) is the libsemigroups native sentinel
+    @test convert(UInt8, UNDEFINED) === typemax(UInt8)
+    @test convert(UInt16, UNDEFINED) === typemax(UInt16)
+    @test convert(UInt32, UNDEFINED) === typemax(UInt32)
+    @test convert(UInt64, UNDEFINED) === typemax(UInt64)
+    @test convert(Int64, UNDEFINED) === typemax(Int64)
 
     # Test POSITIVE_INFINITY conversions
     @test convert(UInt8, POSITIVE_INFINITY) == typemax(UInt8) - 1

@@ -57,18 +57,17 @@ include("LibSemigroups.jl")
 using .LibSemigroups
 
 # Import error handling utilities
-include("libsemigroups/errors.jl")
+include("errors.jl")
 using .Errors: LibsemigroupsError, @wrap_libsemigroups_call
 
 # Julia-side wrapper files
-include("libsemigroups/constants.jl")
-include("libsemigroups/report.jl")
-include("libsemigroups/runner.jl")
-include("libsemigroups/transf.jl")
+include("constants.jl")
+include("report.jl")
+include("runner.jl")
 
 # High-level element types
-include("elements/bmat8.jl")
-include("elements/transf.jl")
+include("bmat8.jl")
+include("transf.jl")
 
 # Module initialization
 function __init__()
