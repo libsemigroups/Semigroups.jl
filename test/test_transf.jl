@@ -530,3 +530,29 @@ end
         @test degree(x) == 6
     end
 end
+
+@testset "Index conversion helpers" begin
+    for T in (UInt8, UInt16, UInt32)
+        # Julia → C++ (integer)
+        @test Semigroups._to_cpp(1, T) === T(0)
+        @test Semigroups._to_cpp(5, T) === T(4)
+
+        # Julia → C++ (UNDEFINED)
+        @test Semigroups._to_cpp(UNDEFINED, T) === typemax(T)
+
+        # C++ → Julia (never undefined)
+        @test Semigroups._from_cpp(T(0)) === 1
+        @test Semigroups._from_cpp(T(4)) === 5
+
+        # C++ → Julia (PPerm; may be undefined)
+        @test Semigroups._from_cpp_undef(T(0)) === 1
+        @test Semigroups._from_cpp_undef(T(4)) === 5
+        @test Semigroups._from_cpp_undef(typemax(T)) === UNDEFINED
+
+        # Vector variants
+        @test Semigroups._vec_to_cpp([1, 2, 3], T) == T[0, 1, 2]
+        @test Semigroups._vec_to_cpp([2, UNDEFINED, 3], T) ==
+              T[1, typemax(T), 2]
+        @test Semigroups._vec_from_cpp(T[0, 1, 2]) == Int[1, 2, 3]
+    end
+end

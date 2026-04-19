@@ -99,6 +99,23 @@ const _PermTypes = Union{Perm1,Perm2,Perm4}
 const _PTransfTypes = Union{_TransfTypes,_PPermTypes,_PermTypes}
 
 # ============================================================================
+# Index convention — helpers for crossing the Julia/C++ boundary
+# ----------------------------------------------------------------------------
+# Julia uses 1-based indexing with `UNDEFINED` for missing values.
+# C++ (libsemigroups) uses 0-based indexing with `typemax(T)` as the UNDEFINED
+# sentinel. These helpers are the *only* place that difference lives.
+# ============================================================================
+
+@inline _to_cpp(i::Integer, ::Type{T}) where {T} = T(i - 1)
+@inline _to_cpp(::UndefinedType, ::Type{T}) where {T} = typemax(T)
+
+@inline _from_cpp(x::Integer) = Int(x) + 1
+@inline _from_cpp_undef(x::T) where {T} = x == typemax(T) ? UNDEFINED : Int(x) + 1
+
+_vec_to_cpp(v, ::Type{T}) where {T} = T[_to_cpp(x, T) for x in v]
+_vec_from_cpp(v) = Int[_from_cpp(x) for x in v]
+
+# ============================================================================
 # Low-level helpers dispatching on the C++ types
 # ============================================================================
 
