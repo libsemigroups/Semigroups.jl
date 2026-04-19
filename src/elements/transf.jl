@@ -125,8 +125,6 @@ rank(t::_PTransfTypes) = Int(LibSemigroups.rank(t))
 
 hash_value(t::_PTransfTypes) = LibSemigroups.hash(t)
 
-images_vector(t::_PTransfTypes) = LibSemigroups.images_vector(t)
-
 function product_inplace!(result::T, x::T, y::T) where {T<:_PTransfTypes}
     GC.@preserve result x y begin
         @wrap_libsemigroups_call LibSemigroups.product_inplace!(result, x, y)
@@ -320,7 +318,7 @@ function Transf(images::AbstractVector{<:Integer}, ::Type{T}) where {T}
     end
 
     CxxType = _transf_type_from_scalar_type(T)
-    images_typed = convert(Vector{T}, images)
+    images_typed = _vec_to_cpp(images, T)
     cxx_obj = @wrap_libsemigroups_call CxxType(StdVector{T}(images_typed))
     return Transf{T}(cxx_obj)
 end
@@ -424,7 +422,7 @@ function Base.getindex(t::Transf, i::Integer)
     if i < 1 || i > degree(t)
         throw(BoundsError(t, i))
     end
-    return Int(LibSemigroups.getindex(t.cxx_obj, UInt(i)))
+    return _from_cpp(LibSemigroups.getindex(t.cxx_obj, _to_cpp(i, UInt)))
 end
 
 # Iteration
@@ -605,7 +603,7 @@ function PPerm(images::AbstractVector, ::Type{T}) where {T}
                 ),
             )
         end
-        images_typed[i] = convert(T, img)  # UNDEFINED → T(0), integers → T(img)
+        images_typed[i] = _to_cpp(img, T)
     end
 
     cxx_obj = @wrap_libsemigroups_call CxxType(StdVector{T}(images_typed))
@@ -672,8 +670,8 @@ function PPerm(
 
     CxxType = _pperm_type_from_scalar_type(T)
 
-    dom_typed = convert(Vector{T}, domain)
-    img_typed = convert(Vector{T}, image)
+    dom_typed = _vec_to_cpp(domain, T)
+    img_typed = _vec_to_cpp(image, T)
 
     cxx_obj = @wrap_libsemigroups_call CxxType(
         StdVector{T}(dom_typed),
@@ -779,9 +777,7 @@ function Base.getindex(p::PPerm, i::Integer)
     if i < 1 || i > degree(p)
         throw(BoundsError(p, i))
     end
-    # C++ binding returns 0 for undefined points (via to_1_based_undef)
-    result = LibSemigroups.getindex(p.cxx_obj, UInt(i))
-    return result == 0 ? UNDEFINED : Int(result)
+    return _from_cpp_undef(LibSemigroups.getindex(p.cxx_obj, _to_cpp(i, UInt)))
 end
 
 # Iteration
@@ -1015,7 +1011,7 @@ function Perm(images::AbstractVector{<:Integer}, ::Type{T}) where {T}
     end
 
     CxxType = _perm_type_from_scalar_type(T)
-    images_typed = convert(Vector{T}, images)
+    images_typed = _vec_to_cpp(images, T)
     cxx_obj = @wrap_libsemigroups_call CxxType(StdVector{T}(images_typed))
     return Perm{T}(cxx_obj)
 end
@@ -1130,7 +1126,7 @@ function Base.getindex(p::Perm, i::Integer)
     if i < 1 || i > degree(p)
         throw(BoundsError(p, i))
     end
-    return Int(LibSemigroups.getindex(p.cxx_obj, UInt(i)))
+    return _from_cpp(LibSemigroups.getindex(p.cxx_obj, _to_cpp(i, UInt)))
 end
 
 # Iteration
@@ -1264,7 +1260,7 @@ julia> image(PPerm([1, 3], [2, 4], 5))
  4
 ```
 """
-image(f::Union{Transf,PPerm,Perm}) = sort([Int(x) for x in image(f.cxx_obj)])
+image(f::Union{Transf,PPerm,Perm}) = sort(_vec_from_cpp(image(f.cxx_obj)))
 
 """
     domain(f::Union{Transf, PPerm, Perm}) -> Vector{Int}
@@ -1296,7 +1292,7 @@ julia> domain(PPerm([1, 3], [2, 4], 5))
  3
 ```
 """
-domain(f::Union{Transf,PPerm,Perm}) = sort([Int(x) for x in domain(f.cxx_obj)])
+domain(f::Union{Transf,PPerm,Perm}) = sort(_vec_from_cpp(domain(f.cxx_obj)))
 
 """
     increase_degree_by!(t::Union{Transf,PPerm,Perm}, n::Integer)
