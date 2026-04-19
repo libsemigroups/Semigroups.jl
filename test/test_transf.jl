@@ -551,8 +551,7 @@ end
 
         # Vector variants
         @test Semigroups._vec_to_cpp([1, 2, 3], T) == T[0, 1, 2]
-        @test Semigroups._vec_to_cpp([2, UNDEFINED, 3], T) ==
-              T[1, typemax(T), 2]
+        @test Semigroups._vec_to_cpp([2, UNDEFINED, 3], T) == T[1, typemax(T), 2]
         @test Semigroups._vec_from_cpp(T[0, 1, 2]) == Int[1, 2, 3]
     end
 end

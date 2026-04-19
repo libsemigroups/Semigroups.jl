@@ -228,8 +228,9 @@ namespace libsemigroups_julia {
     ////////////////////////////////////////////////////////////////////////
 
     // image(f) - returns raw libsemigroups::image (0-based indices).
-    m.method("image",
-             [](Transf<0, uint8_t> const& f) { return libsemigroups::image(f); });
+    m.method("image", [](Transf<0, uint8_t> const& f) {
+      return libsemigroups::image(f);
+    });
     m.method("image", [](Transf<0, uint16_t> const& f) {
       return libsemigroups::image(f);
     });
@@ -237,19 +238,24 @@ namespace libsemigroups_julia {
       return libsemigroups::image(f);
     });
 
-    m.method("image",
-             [](PPerm<0, uint8_t> const& f) { return libsemigroups::image(f); });
-    m.method("image",
-             [](PPerm<0, uint16_t> const& f) { return libsemigroups::image(f); });
-    m.method("image",
-             [](PPerm<0, uint32_t> const& f) { return libsemigroups::image(f); });
+    m.method("image", [](PPerm<0, uint8_t> const& f) {
+      return libsemigroups::image(f);
+    });
+    m.method("image", [](PPerm<0, uint16_t> const& f) {
+      return libsemigroups::image(f);
+    });
+    m.method("image", [](PPerm<0, uint32_t> const& f) {
+      return libsemigroups::image(f);
+    });
 
     m.method("image",
              [](Perm<0, uint8_t> const& f) { return libsemigroups::image(f); });
-    m.method("image",
-             [](Perm<0, uint16_t> const& f) { return libsemigroups::image(f); });
-    m.method("image",
-             [](Perm<0, uint32_t> const& f) { return libsemigroups::image(f); });
+    m.method("image", [](Perm<0, uint16_t> const& f) {
+      return libsemigroups::image(f);
+    });
+    m.method("image", [](Perm<0, uint32_t> const& f) {
+      return libsemigroups::image(f);
+    });
 
     ////////////////////////////////////////////////////////////////////////
     // Module-level helper functions: domain
@@ -276,12 +282,15 @@ namespace libsemigroups_julia {
       return libsemigroups::domain(f);
     });
 
-    m.method("domain",
-             [](Perm<0, uint8_t> const& f) { return libsemigroups::domain(f); });
-    m.method("domain",
-             [](Perm<0, uint16_t> const& f) { return libsemigroups::domain(f); });
-    m.method("domain",
-             [](Perm<0, uint32_t> const& f) { return libsemigroups::domain(f); });
+    m.method("domain", [](Perm<0, uint8_t> const& f) {
+      return libsemigroups::domain(f);
+    });
+    m.method("domain", [](Perm<0, uint16_t> const& f) {
+      return libsemigroups::domain(f);
+    });
+    m.method("domain", [](Perm<0, uint32_t> const& f) {
+      return libsemigroups::domain(f);
+    });
 
     ////////////////////////////////////////////////////////////////////////
     // Module-level helper functions: inverse (PPerm and Perm only)
