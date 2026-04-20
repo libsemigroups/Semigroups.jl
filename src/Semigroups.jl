@@ -66,6 +66,7 @@ include("report.jl")
 include("runner.jl")
 include("order.jl")
 include("word-range.jl")
+include("word-graph.jl")
 
 # High-level element types
 include("bmat8.jl")
@@ -106,6 +107,9 @@ export first_word, last_word, set_first!, set_last!
 export order, set_order!, set_upper_bound!, set_min!, set_max!
 export number_of_words, random_word
 export next!, at_end, valid, init!, size_hint, upper_bound
+
+# WordGraph
+export WordGraph, number_of_nodes, out_degree, target, target!, add_nodes!
 
 # Transformation types and functions
 export Transf, PPerm, Perm
