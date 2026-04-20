@@ -41,15 +41,18 @@ namespace libsemigroups_julia {
 
     // --- Read queries ---
 
-    type.method("number_of_nodes",
-                [](WordGraph_ const& g) -> std::size_t { return g.number_of_nodes(); });
-
-    type.method("out_degree",
-                [](WordGraph_ const& g) -> std::size_t { return g.out_degree(); });
-
-    type.method("target", [](WordGraph_ const& g, uint32_t s, uint32_t a) -> uint32_t {
-      return g.target(s, a);
+    type.method("number_of_nodes", [](WordGraph_ const& g) -> std::size_t {
+      return g.number_of_nodes();
     });
+
+    type.method("out_degree", [](WordGraph_ const& g) -> std::size_t {
+      return g.out_degree();
+    });
+
+    type.method("target",
+                [](WordGraph_ const& g, uint32_t s, uint32_t a) -> uint32_t {
+                  return g.target(s, a);
+                });
 
     // --- Mutators ---
     // Getter `target(s, a)` and setter `target(s, a, t)` are same-name
@@ -57,17 +60,20 @@ namespace libsemigroups_julia {
     // setter is bound under a distinct `target!` name. Returns void -- Julia
     // does not need the *this chaining idiom.
 
-    type.method("target!", [](WordGraph_& g, uint32_t s, uint32_t a, uint32_t t) {
-      g.target(s, a, t);
-    });
+    type.method("target!",
+                [](WordGraph_& g, uint32_t s, uint32_t a, uint32_t t) {
+                  g.target(s, a, t);
+                });
 
     // libsemigroups' target(s, a, t) rejects t = UNDEFINED (typemax) as
     // out-of-range; clearing an edge requires the distinct `remove_target`
     // entry point. Julia's `target!(g, s, a, UNDEFINED)` dispatches here.
-    type.method("remove_target!",
-                [](WordGraph_& g, uint32_t s, uint32_t a) { g.remove_target(s, a); });
+    type.method("remove_target!", [](WordGraph_& g, uint32_t s, uint32_t a) {
+      g.remove_target(s, a);
+    });
 
-    type.method("add_nodes!", [](WordGraph_& g, std::size_t n) { g.add_nodes(n); });
+    type.method("add_nodes!",
+                [](WordGraph_& g, std::size_t n) { g.add_nodes(n); });
   }
 
 }  // namespace libsemigroups_julia
