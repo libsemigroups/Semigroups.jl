@@ -36,6 +36,9 @@ namespace libsemigroups_julia {
     // Define element types
     define_transf(mod);
     define_bmat8(mod);
+
+    define_order(mod);
+    define_word_range(mod);
   }
 
 }  // namespace libsemigroups_julia

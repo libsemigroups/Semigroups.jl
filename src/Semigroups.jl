@@ -64,6 +64,8 @@ using .Errors: LibsemigroupsError, @wrap_libsemigroups_call
 include("constants.jl")
 include("report.jl")
 include("runner.jl")
+include("order.jl")
+include("word-range.jl")
 
 # High-level element types
 include("bmat8.jl")
@@ -92,6 +94,18 @@ export current_state, running_for_how_long
 export report_why_we_stopped, string_why_we_stopped
 export tril, tril_FALSE, tril_TRUE, tril_unknown, tril_to_bool
 export is_undefined, is_positive_infinity, is_negative_infinity, is_limit_max
+
+# Order enum and comparators
+export Order, ORDER_NONE, ORDER_SHORTLEX, ORDER_LEX, ORDER_RECURSIVE
+export lex_less, shortlex_less, recursive_path_less
+export weighted_shortlex_less, weighted_lex_less
+
+# WordRange
+export WordRange, alphabet_size, set_alphabet_size!
+export first_word, last_word, set_first!, set_last!
+export order, set_order!, set_upper_bound!, set_min!, set_max!
+export number_of_words, random_word
+export next!, at_end, valid, init!, size_hint, upper_bound
 
 # Transformation types and functions
 export Transf, PPerm, Perm
