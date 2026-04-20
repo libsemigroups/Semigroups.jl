@@ -18,5 +18,6 @@ using Semigroups
     include("test_order.jl")
     include("test_runner.jl")
     include("test_transf.jl")
+    include("test_word_graph.jl")
     include("test_word_range.jl")
 end
