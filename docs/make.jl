@@ -36,6 +36,8 @@ makedocs(;
         ],
         "Data Structures" => [
             "Constants" => "data-structures/constants/index.md",
+            "Orders" => "data-structures/order.md",
+            "Words" => "data-structures/word-range.md",
             "Elements" => [
                 "Overview" => "data-structures/elements/index.md",
                 "Transformations" => [

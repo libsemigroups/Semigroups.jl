@@ -15,6 +15,8 @@ using Semigroups
     include("test_bmat8.jl")
     include("test_constants.jl")
     include("test_errors.jl")
+    include("test_order.jl")
     include("test_runner.jl")
     include("test_transf.jl")
+    include("test_word_range.jl")
 end
