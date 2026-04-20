@@ -891,9 +891,10 @@ that the inverses act as semigroup inverses.
 # See also
 - [`throw_if_bad_alphabet_or_rules`](@ref)
 """
-throw_if_bad_alphabet_rules_or_inverses(ip::InversePresentation) =
-    (@wrap_libsemigroups_call LibSemigroups.throw_if_bad_alphabet_rules_or_inverses(ip);
-    nothing)
+throw_if_bad_alphabet_rules_or_inverses(ip::InversePresentation) = (
+    @wrap_libsemigroups_call LibSemigroups.throw_if_bad_alphabet_rules_or_inverses(ip);
+    nothing
+)
 
 # Equality that accounts for inverses (not the base `Presentation ==`).
 Base.:(==)(a::InversePresentation, b::InversePresentation) =
