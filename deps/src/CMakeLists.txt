@@ -50,6 +50,7 @@ add_library(libsemigroups_julia SHARED
     report.cpp
     runner.cpp
     transf.cpp
+    word-graph.cpp
     word-range.cpp
 )
 

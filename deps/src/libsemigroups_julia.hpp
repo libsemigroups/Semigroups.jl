@@ -61,6 +61,7 @@ namespace libsemigroups_julia {
   void define_bmat8(jl::Module& mod);
   void define_order(jl::Module& mod);
   void define_word_range(jl::Module& mod);
+  void define_word_graph(jl::Module& mod);
 
 }  // namespace libsemigroups_julia
 

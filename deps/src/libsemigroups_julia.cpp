@@ -39,6 +39,7 @@ namespace libsemigroups_julia {
 
     define_order(mod);
     define_word_range(mod);
+    define_word_graph(mod);
   }
 
 }  // namespace libsemigroups_julia
