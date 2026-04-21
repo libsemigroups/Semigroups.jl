@@ -5,8 +5,8 @@ a finite semigroup or monoid presentation over `word_type` (Julia:
 `Vector{Int}` with 1-based letter indices).
 
 !!! warning "v1 limitation"
-Semigroups.jl v1 binds `Presentation<word_type>` only. Alphabets and
-rules use `Vector{Int}` with 1-based letter indices.
+    Semigroups.jl v1 binds `Presentation<word_type>` only. Alphabets and
+    rules use `Vector{Int}` with 1-based letter indices.
 
 ```@docs
 Semigroups.Presentation

@@ -6,8 +6,8 @@ This page documents the catalogue of standard presentations exposed via
 initialised to a well-known construction.
 
 !!! warning "v1 limitation"
-Semigroups.jl v1 binds `Presentation<word_type>` only. Alphabets and
-rules use `Vector{Int}` with 1-based letter indices.
+    Semigroups.jl v1 binds `Presentation<word_type>` only. Alphabets and
+    rules use `Vector{Int}` with 1-based letter indices.
 
 ## Groups and transformation monoids
 

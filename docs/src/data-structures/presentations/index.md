@@ -7,8 +7,8 @@ standard example presentations provided by
 `libsemigroups::presentation::examples`.
 
 !!! warning "v1 limitation"
-Semigroups.jl v1 binds `Presentation<word_type>` only. Alphabets and
-rules use `Vector{Int}` with 1-based letter indices.
+    Semigroups.jl v1 binds `Presentation<word_type>` only. Alphabets and
+    rules use `Vector{Int}` with 1-based letter indices.
 
 ## Contents
 
