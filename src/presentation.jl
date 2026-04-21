@@ -412,16 +412,42 @@ function rule_rhs(p::Presentation, i::Integer)
 end
 
 """
+    rule(p::Presentation, i::Integer) -> Tuple{Vector{Int},Vector{Int}}
+
+Return the `i`-th rule of `p` as a `(lhs, rhs)` tuple (1-based rule index).
+
+Thin wrapper combining [`rule_lhs`](@ref) and [`rule_rhs`](@ref). For bulk
+access prefer [`rules`](@ref), which makes a single C++ call.
+
+# Arguments
+- `p::Presentation`: the presentation.
+- `i::Integer`: the 1-based index of the rule.
+
+# Throws
+- `LibsemigroupsError`: if `i` is not in the range ``[1, n]``, where ``n``
+  is [`number_of_rules`](@ref)`(p)`.
+
+# See also
+- [`rule_lhs`](@ref)
+- [`rule_rhs`](@ref)
+- [`rules`](@ref)
+"""
+rule(p::Presentation, i::Integer) = (rule_lhs(p, i), rule_rhs(p, i))
+
+"""
     rules(p::Presentation) -> Vector{Tuple{Vector{Int},Vector{Int}}}
 
 Return all rules of `p` as a vector of `(lhs, rhs)` tuples.
 
-This is a convenience wrapper that calls [`rule_lhs`](@ref) and
-[`rule_rhs`](@ref) for each rule index `1:number_of_rules(p)`.
+Mirrors `p.rules` in libsemigroups. This is a single C++ call into
+`LibSemigroups.rules_vector` followed by a Julia-side pairing, so is
+appreciably faster than iterating [`rule_lhs`](@ref) / [`rule_rhs`](@ref)
+for large presentations.
 """
 function rules(p::Presentation)
-    n = number_of_rules(p)
-    return [(rule_lhs(p, i), rule_rhs(p, i)) for i = 1:n]
+    flat = LibSemigroups.rules_vector(p)
+    n = length(flat)
+    return [(_word_from_cpp(flat[i]), _word_from_cpp(flat[i + 1])) for i = 1:2:n]
 end
 
 """
@@ -776,7 +802,366 @@ Linear in the number of rules.
 """
 remove_trivial_rules!(p::Presentation) = (LibSemigroups.remove_trivial_rules!(p); p)
 
+# ----------------------------------------------------------------------------
+# Tier 1 helpers: rule manipulation
+# ----------------------------------------------------------------------------
+
+"""
+    add_rules!(p::Presentation, q::Presentation) -> Presentation
+
+Add the rules of `q` to `p`.
+
+Each rule of `q` is checked to contain only letters of `alphabet(p)` before
+being added; if the ``n``-th rule would fail this check, the first ``n-1``
+rules are still added to `p`.
+
+Mirrors `libsemigroups::presentation::add_rules`.
+
+# Arguments
+- `p::Presentation`: the presentation to add rules to.
+- `q::Presentation`: the presentation whose rules should be copied into `p`.
+
+# Throws
+- `LibsemigroupsError`: if any rule of `q` contains a letter not in
+  `alphabet(p)`.
+"""
+function add_rules!(p::Presentation, q::Presentation)
+    @wrap_libsemigroups_call LibSemigroups.add_rules!(p, q)
+    return p
+end
+
+"""
+    add_inverse_rules!(p::Presentation, inverses::AbstractVector{<:Integer}) -> Presentation
+    add_inverse_rules!(p::Presentation, inverses::AbstractVector{<:Integer}, e::Integer) -> Presentation
+
+Add rules for inverses.
+
+The letter with index `i` in `inverses` is taken to be the inverse of the
+letter `alphabet(p)[i]`. The rules added are ``a_i b_i = e`` where
+``\\{a_1, \\ldots, a_n\\}`` is `alphabet(p)`, ``\\{b_1, \\ldots, b_n\\}``
+is `inverses`, and `e` is the identity letter. If `e` is omitted, the
+identity is taken to be the empty word.
+
+Mirrors `libsemigroups::presentation::add_inverse_rules`.
+
+# Arguments
+- `p::Presentation`: the presentation to add rules to.
+- `inverses::AbstractVector{<:Integer}`: the inverses of the letters in
+  `alphabet(p)`.
+- `e::Integer`: (3-arg form) the identity letter.
+
+# Throws
+- `LibsemigroupsError`: if `length(inverses) != length(alphabet(p))`, if
+  `inverses` does not contain the same letters as `alphabet(p)`, if
+  ``(a_i^{-1})^{-1} = a_i`` fails for some `i`, or if
+  ``e^{-1} = e`` fails.
+"""
+function add_inverse_rules!(p::Presentation, inverses::AbstractVector{<:Integer})
+    v = _word_to_cpp(inverses)
+    @wrap_libsemigroups_call LibSemigroups.add_inverse_rules!(p, v)
+    return p
+end
+
+function add_inverse_rules!(
+    p::Presentation,
+    inverses::AbstractVector{<:Integer},
+    e::Integer,
+)
+    v = _word_to_cpp(inverses)
+    y = _letter_to_cpp(e)
+    @wrap_libsemigroups_call LibSemigroups.add_inverse_rules_with_identity!(p, v, y)
+    return p
+end
+
+"""
+    replace_subword!(p::Presentation, existing::AbstractVector{<:Integer}, replacement::AbstractVector{<:Integer}) -> Presentation
+
+Replace every non-overlapping occurrence of the word `existing` in every
+rule of `p` with the word `replacement`. `p` is modified in place.
+
+Mirrors `libsemigroups::presentation::replace_subword`.
+
+# Arguments
+- `p::Presentation`: the presentation to modify.
+- `existing::AbstractVector{<:Integer}`: the subword to replace.
+- `replacement::AbstractVector{<:Integer}`: the replacement word.
+
+# Throws
+- `LibsemigroupsError`: if `existing` is empty.
+
+# See also
+- [`replace_word!`](@ref)
+- [`replace_word_with_new_generator!`](@ref)
+"""
+function replace_subword!(
+    p::Presentation,
+    existing::AbstractVector{<:Integer},
+    replacement::AbstractVector{<:Integer},
+)
+    e = _word_to_cpp(existing)
+    r = _word_to_cpp(replacement)
+    @wrap_libsemigroups_call LibSemigroups.replace_subword!(p, e, r)
+    return p
+end
+
+"""
+    replace_word!(p::Presentation, existing::AbstractVector{<:Integer}, replacement::AbstractVector{<:Integer}) -> Presentation
+
+Replace every instance of the word `existing` that appears as a full side
+of some rule with the word `replacement`. Specifically, every rule of the
+form ``existing = w`` or ``w = existing`` has `existing` replaced by
+`replacement`. `p` is modified in place.
+
+Differs from [`replace_subword!`](@ref), which replaces any non-overlapping
+occurrence of `existing` anywhere inside any rule.
+
+Mirrors `libsemigroups::presentation::replace_word`.
+
+# Arguments
+- `p::Presentation`: the presentation to modify.
+- `existing::AbstractVector{<:Integer}`: the word to replace.
+- `replacement::AbstractVector{<:Integer}`: the replacement word.
+
+# See also
+- [`replace_subword!`](@ref)
+"""
+function replace_word!(
+    p::Presentation,
+    existing::AbstractVector{<:Integer},
+    replacement::AbstractVector{<:Integer},
+)
+    e = _word_to_cpp(existing)
+    r = _word_to_cpp(replacement)
+    @wrap_libsemigroups_call LibSemigroups.replace_word!(p, e, r)
+    return p
+end
+
+"""
+    replace_word_with_new_generator!(p::Presentation, w::AbstractVector{<:Integer}) -> Int
+
+Replace every non-overlapping (left-to-right) instance of the word `w` in
+every rule of `p` with a new generator `z`, and add the rule ``w = z``.
+The new generator and rule are added even if `w` is not a subword of any
+rule. Returns the new generator `z` as a 1-based letter index.
+
+Mirrors `libsemigroups::presentation::replace_word_with_new_generator`.
+
+# Arguments
+- `p::Presentation`: the presentation to modify.
+- `w::AbstractVector{<:Integer}`: the word to replace.
+
+# Throws
+- `LibsemigroupsError`: if `w` is empty.
+"""
+function replace_word_with_new_generator!(
+    p::Presentation,
+    w::AbstractVector{<:Integer},
+)
+    v = _word_to_cpp(w)
+    z = @wrap_libsemigroups_call LibSemigroups.replace_word_with_new_generator!(p, v)
+    return _letter_from_cpp(z)
+end
+
+# ----------------------------------------------------------------------------
+# Tier 1 helpers: rule queries
+# ----------------------------------------------------------------------------
+
+"""
+    first_unused_letter(p::Presentation) -> Int
+
+Return the smallest letter not already in the alphabet of `p`.
+
+Mirrors `libsemigroups::presentation::first_unused_letter`.
+
+# Throws
+- `LibsemigroupsError`: if the alphabet of `p` is already of the maximum
+  possible size supported by the underlying letter type.
+"""
+function first_unused_letter(p::Presentation)
+    return _letter_from_cpp(@wrap_libsemigroups_call LibSemigroups.first_unused_letter(p))
+end
+
+"""
+    index_rule(p::Presentation, lhs::AbstractVector{<:Integer}, rhs::AbstractVector{<:Integer}) -> Union{Int, UndefinedType}
+
+Return the 1-based index of the first rule of `p` equal to `lhs = rhs`,
+or [`UNDEFINED`](@ref Semigroups.UNDEFINED) if no such rule exists.
+
+Mirrors `libsemigroups::presentation::index_rule`. The returned index is
+the rule-pair index — the same index accepted by [`rule_lhs`](@ref),
+[`rule_rhs`](@ref), and [`rule`](@ref).
+
+# Arguments
+- `p::Presentation`: the presentation.
+- `lhs::AbstractVector{<:Integer}`: the left-hand side of the rule.
+- `rhs::AbstractVector{<:Integer}`: the right-hand side of the rule.
+
+# Throws
+- `LibsemigroupsError`: if [`throw_if_bad_alphabet_or_rules`](@ref) throws
+  on `p`.
+
+# See also
+- [`is_rule`](@ref)
+"""
+function index_rule(
+    p::Presentation,
+    lhs::AbstractVector{<:Integer},
+    rhs::AbstractVector{<:Integer},
+)
+    l = _word_to_cpp(lhs)
+    r = _word_to_cpp(rhs)
+    i = @wrap_libsemigroups_call LibSemigroups.index_rule(p, l, r)
+    i == typemax(UInt) && return UNDEFINED
+    return Int(i ÷ 2) + 1
+end
+
+"""
+    is_rule(p::Presentation, lhs::AbstractVector{<:Integer}, rhs::AbstractVector{<:Integer}) -> Bool
+
+Return `true` if `lhs = rhs` is a rule of `p`, and `false` otherwise.
+
+Mirrors `libsemigroups::presentation::is_rule`.
+
+# Throws
+- `LibsemigroupsError`: if [`throw_if_bad_alphabet_or_rules`](@ref) throws
+  on `p`.
+
+# See also
+- [`index_rule`](@ref)
+"""
+function is_rule(
+    p::Presentation,
+    lhs::AbstractVector{<:Integer},
+    rhs::AbstractVector{<:Integer},
+)
+    l = _word_to_cpp(lhs)
+    r = _word_to_cpp(rhs)
+    return @wrap_libsemigroups_call LibSemigroups.is_rule(p, l, r)
+end
+
+"""
+    longest_rule_index(p::Presentation) -> Int
+
+Return the 1-based index of the first rule of `p` of maximal length.
+
+The *length* of a rule is the sum of the lengths of its left- and
+right-hand sides. Mirrors `libsemigroups::presentation::longest_rule`,
+returning a rule-pair index instead of the C++ iterator — so the result is
+suitable to pass to [`rule`](@ref), [`rule_lhs`](@ref), or
+[`rule_rhs`](@ref).
+
+# Throws
+- `LibsemigroupsError`: if the number of rule words in `p` is odd (which
+  includes the case of no rules).
+
+# See also
+- [`shortest_rule_index`](@ref)
+- [`longest_rule_length`](@ref)
+"""
+function longest_rule_index(p::Presentation)
+    flat = @wrap_libsemigroups_call LibSemigroups.longest_rule_index(p)
+    return Int(flat ÷ 2) + 1
+end
+
+"""
+    shortest_rule_index(p::Presentation) -> Int
+
+Return the 1-based index of the first rule of `p` of minimal length.
+
+The *length* of a rule is the sum of the lengths of its left- and
+right-hand sides. Mirrors `libsemigroups::presentation::shortest_rule`,
+returning a rule-pair index instead of the C++ iterator.
+
+# Throws
+- `LibsemigroupsError`: if the number of rule words in `p` is odd (which
+  includes the case of no rules).
+
+# See also
+- [`longest_rule_index`](@ref)
+- [`shortest_rule_length`](@ref)
+"""
+function shortest_rule_index(p::Presentation)
+    flat = @wrap_libsemigroups_call LibSemigroups.shortest_rule_index(p)
+    return Int(flat ÷ 2) + 1
+end
+
+# ----------------------------------------------------------------------------
+# Tier 1 helpers: validation + GAP export
+# ----------------------------------------------------------------------------
+
+"""
+    throw_if_bad_inverses(p::Presentation, inverses::AbstractVector{<:Integer})
+
+Throw a `LibsemigroupsError` if `inverses` does not define a valid list of
+semigroup inverses for `alphabet(p)`.
+
+Mirrors `libsemigroups::presentation::throw_if_bad_inverses`. Specifically,
+this function checks that `alphabet(p)` and `inverses` contain the same
+letters, that `inverses` is duplicate-free, and that if `a_i = b_j` (where
+`a` is the alphabet and `b` is `inverses`) then `a_j = b_i` — i.e. taking
+an inverse is an involution on the letters.
+
+# Arguments
+- `p::Presentation`: the presentation.
+- `inverses::AbstractVector{<:Integer}`: the proposed inverses.
+
+# Throws
+- `LibsemigroupsError`: if any of the above conditions does not hold.
+"""
+function throw_if_bad_inverses(p::Presentation, inverses::AbstractVector{<:Integer})
+    v = _word_to_cpp(inverses)
+    @wrap_libsemigroups_call LibSemigroups.throw_if_bad_inverses(p, v)
+    return nothing
+end
+
+"""
+    to_gap_string(p::Presentation, var_name::AbstractString = "p") -> String
+
+Return the GAP source code that would construct a presentation with the
+same alphabet and rules as `p`. Presentations in GAP are created by taking
+quotients of free semigroups or monoids.
+
+Mirrors `libsemigroups::presentation::to_gap_string`.
+
+# Arguments
+- `p::Presentation`: the presentation.
+- `var_name::AbstractString`: the name of the GAP variable to assign to
+  (defaults to `"p"`).
+
+# Throws
+- `LibsemigroupsError`: if `p` has more than 49 generators (the cap on
+  GAP's default alphabet).
+"""
+function to_gap_string(p::Presentation, var_name::AbstractString = "p")
+    return @wrap_libsemigroups_call LibSemigroups.to_gap_string(p, String(var_name))
+end
+
 Base.:(==)(a::Presentation, b::Presentation) = LibSemigroups.is_equal(a, b)
+
+"""
+    Base.isempty(p::Presentation) -> Bool
+
+Return `true` iff `p` has an empty alphabet and no rules — the state it
+would be in immediately after [`Presentation`](@ref Semigroups.Presentation)`()`
+or [`init!`](@ref).
+"""
+Base.isempty(p::Presentation) = isempty(alphabet(p)) && number_of_rules(p) == 0
+
+"""
+    Base.hash(p::Presentation, h::UInt) -> UInt
+
+Stable hash suitable for dictionary keys: presentations equal under
+[`Base.:(==)`](@ref) hash to the same value. The hash combines the
+alphabet, the flat rules list, and the `contains_empty_word` flag.
+"""
+function Base.hash(p::Presentation, h::UInt)
+    return hash(
+        (alphabet(p),
+         [_word_from_cpp(w) for w in LibSemigroups.rules_vector(p)],
+         contains_empty_word(p)),
+        h,
+    )
+end
 
 function Base.show(io::IO, p::Presentation)
     print(io, LibSemigroups.to_human_readable_repr(p))
