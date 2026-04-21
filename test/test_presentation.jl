@@ -170,7 +170,7 @@ using Semigroups
         @test rule_lhs(r, 1) == [1, 2, 1]           # palindrome reverses to itself
         # adjacent rule with distinct reverse:
         add_rule!(r, [1, 2], [2, 1])
-        reverse!(r);
+        reverse!(r)
         reverse!(r)                    # double-reverse is identity
         @test rule_lhs(r, 2) == [1, 2]
 
@@ -197,7 +197,7 @@ using Semigroups
         t = Presentation()
         set_alphabet!(t, 2)
         set_contains_empty_word!(t, true)
-        add_identity_rules!(t, 1)       # make 1 the identity → 1·a = a·1 = a
+        add_identity_rules!(t, 1)       # make 1 the identity -> 1*a = a*1 = a
         # 2-letter alphabet: rules are {0,0}={0}, {1,0}={1}, {0,1}={1} (0-indexed)
         # i.e., 3 rules for 2 letters (2n-1 where n=2)
         @test number_of_rules(t) == 3
@@ -206,7 +206,7 @@ using Semigroups
         z = Presentation()
         set_alphabet!(z, 2)
         set_contains_empty_word!(z, true)
-        add_zero_rules!(z, 1)           # make 1 a zero → 1·a = a·1 = 1
+        add_zero_rules!(z, 1)           # make 1 a zero -> 1*a = a*1 = 1
         @test number_of_rules(z) == 3
 
         # remove_duplicate_rules!
@@ -288,7 +288,7 @@ using Semigroups
         @test rules(p) == [([1, 1, 1], [1]), ([2, 2], [2]), ([1, 2, 1], [2, 1, 2])]
 
         # Round-trip through Base.reverse! and back
-        reverse!(p);
+        reverse!(p)
         reverse!(p)
         @test rules(p) == [([1, 1, 1], [1]), ([2, 2], [2]), ([1, 2, 1], [2, 1, 2])]
 
@@ -305,5 +305,242 @@ using Semigroups
         set_inverses!(ip, [2, 1])
         @test inverse_of(ip, 1) == 2
         throw_if_bad_alphabet_rules_or_inverses(ip)
+    end
+
+    @testset "add_rules!" begin
+        p = Presentation()
+        set_alphabet!(p, 2)
+        add_rule!(p, [1, 1], [1])
+
+        q = Presentation()
+        set_alphabet!(q, 2)
+        add_rule!(q, [2, 2], [2])
+        add_rule!(q, [1, 2], [2, 1])
+
+        @test add_rules!(p, q) === p                       # chainable
+        @test rules(p) == [([1, 1], [1]), ([2, 2], [2]), ([1, 2], [2, 1])]
+
+        # Bad letter in q's rules -> throws
+        bad = Presentation()
+        set_alphabet!(bad, 1)
+        add_rule_no_checks!(bad, [1, 99], [1])             # 99 not in p's alphabet
+        @test_throws LibsemigroupsError add_rules!(p, bad)
+    end
+
+    @testset "add_inverse_rules!" begin
+        # 2-arg form (no identity): inverses of [1,2] are [2,1]
+        p = Presentation()
+        set_alphabet!(p, [1, 2])
+        set_contains_empty_word!(p, true)                  # empty identity allowed
+        @test add_inverse_rules!(p, [2, 1]) === p          # chainable
+        # The resulting rules should encode a*a^(-1) = empty for each letter.
+        @test number_of_rules(p) >= 2
+
+        # 3-arg form with explicit identity letter.
+        q = Presentation()
+        set_alphabet!(q, [1, 2, 3])
+        @test add_inverse_rules!(q, [2, 1, 3], 3) === q    # identity = letter 3
+        @test number_of_rules(q) >= 1
+
+        # Invalid inverses rejected
+        r = Presentation()
+        set_alphabet!(r, [1, 2])
+        @test_throws LibsemigroupsError add_inverse_rules!(r, [1, 1])
+    end
+
+    @testset "replace_subword!" begin
+        p = Presentation()
+        set_alphabet!(p, 2)
+        add_rule!(p, [1, 1, 1], [1])                       # a^3 = a
+
+        @test replace_subword!(p, [1, 1], [2]) === p
+        # Every non-overlapping "aa" in the rule "aaa = a" is replaced by "b":
+        # "aaa" -> "ba" (one a leftover); rhs "a" unchanged.
+        @test rules(p) == [([2, 1], [1])]
+
+        @test_throws LibsemigroupsError replace_subword!(p, Int[], [1])
+    end
+
+    @testset "replace_word!" begin
+        p = Presentation()
+        set_alphabet!(p, 2)
+        add_rule!(p, [1, 1], [1, 1])                       # a^2 = a^2  (trivial)
+        add_rule!(p, [1, 2], [1, 1])                       # ab = a^2
+        # Replace the full-side word [1,1] wherever it appears as a complete side.
+        replace_word!(p, [1, 1], [2])
+        # After: [1,1] fully replaced on matching sides; [1,2]=[1,1] -> [1,2]=[2].
+        @test rules(p) == [([2], [2]), ([1, 2], [2])]
+    end
+
+    @testset "replace_word_with_new_generator!" begin
+        p = Presentation()
+        set_alphabet!(p, 2)
+        add_rule!(p, [1, 2, 1, 2], [1])
+
+        z = replace_word_with_new_generator!(p, [1, 2])
+        @test z isa Int
+        @test z in alphabet(p)                             # new generator present
+        # The rule for the new generator (w = z) should be present:
+        @test contains_rule(p, [1, 2], [z])
+
+        @test_throws LibsemigroupsError replace_word_with_new_generator!(p, Int[])
+    end
+
+    @testset "first_unused_letter" begin
+        p = Presentation()
+        set_alphabet!(p, 3)
+        @test first_unused_letter(p) == 4                  # 1-based
+
+        q = Presentation()
+        set_alphabet!(q, [1, 3, 5])
+        @test first_unused_letter(q) == 2                  # first gap
+    end
+
+    @testset "index_rule + is_rule + UNDEFINED" begin
+        p = Presentation()
+        set_alphabet!(p, 2)
+        add_rule!(p, [1, 1], [1])
+        add_rule!(p, [2, 2], [2])
+        add_rule!(p, [1, 2], [2, 1])
+
+        @test index_rule(p, [1, 1], [1]) == 1
+        @test index_rule(p, [2, 2], [2]) == 2
+        @test index_rule(p, [1, 2], [2, 1]) == 3
+
+        missing_idx = index_rule(p, [1], [2])
+        @test missing_idx === UNDEFINED                    # singleton, not nothing
+        @test is_undefined(missing_idx)
+
+        @test is_rule(p, [1, 1], [1])
+        @test is_rule(p, [2, 2], [2])
+        @test !is_rule(p, [1], [2])
+    end
+
+    @testset "longest_rule_index + shortest_rule_index" begin
+        p = Presentation()
+        set_alphabet!(p, 2)
+        add_rule!(p, [1], [1])                             # len 2
+        add_rule!(p, [1, 1, 1], [2, 2])                    # len 5
+        add_rule!(p, [1, 2], [2])                          # len 3
+
+        @test longest_rule_index(p) == 2
+        @test shortest_rule_index(p) == 1
+    end
+
+    @testset "throw_if_bad_inverses" begin
+        p = Presentation()
+        set_alphabet!(p, [1, 2])
+        @test throw_if_bad_inverses(p, [2, 1]) === nothing  # valid
+
+        # Duplicate inverses -> throws
+        @test_throws LibsemigroupsError throw_if_bad_inverses(p, [1, 1])
+
+        # Wrong length -> throws
+        @test_throws LibsemigroupsError throw_if_bad_inverses(p, [2])
+    end
+
+    @testset "to_gap_string" begin
+        p = Presentation()
+        set_alphabet!(p, 2)
+        add_rule!(p, [1, 1], [1])
+
+        s = to_gap_string(p)                               # default var_name "p"
+        @test s isa String
+        @test !isempty(s)
+        @test occursin("p", s)
+
+        s2 = to_gap_string(p, "S")
+        @test occursin("S", s2)
+    end
+
+    @testset "rule(p, i) accessor" begin
+        p = Presentation()
+        set_alphabet!(p, 2)
+        add_rule!(p, [1, 1], [1])
+        add_rule!(p, [2, 2], [2])
+        add_rule!(p, [1, 2], [2, 1])
+
+        for i = 1:3
+            @test rule(p, i) == (rule_lhs(p, i), rule_rhs(p, i))
+        end
+    end
+
+    @testset "rules(p) via rules_vector binding" begin
+        p = Presentation()
+        set_alphabet!(p, 2)
+        @test rules(p) == Tuple{Vector{Int},Vector{Int}}[]   # empty
+
+        add_rule!(p, [1, 1], [1])
+        add_rule!(p, [2, 2], [2])
+        @test rules(p) == [([1, 1], [1]), ([2, 2], [2])]
+
+        # Binding-surface: rules_vector is a callable C++ method on Presentation.
+        flat = Semigroups.LibSemigroups.rules_vector(p)
+        @test length(flat) == 2 * number_of_rules(p)
+    end
+
+    @testset "Base.isempty + Base.hash" begin
+        p = Presentation()
+        @test isempty(p)                                   # just constructed
+
+        set_alphabet!(p, 2)
+        @test !isempty(p)                                  # has alphabet
+
+        q = Presentation()
+        set_alphabet!(q, 2)
+        add_rule!(q, [1, 1], [1])
+        @test !isempty(q)                                  # has rules
+
+        init!(q)
+        @test isempty(q)                                   # cleared back
+
+        # hash stability + equality
+        a = Presentation()
+        set_alphabet!(a, 2)
+        add_rule!(a, [1, 1], [1])
+
+        b = deepcopy(a)
+        @test hash(a) isa UInt
+        @test hash(a) == hash(b)
+
+        # Two equal-but-separately-built presentations
+        c = Presentation()
+        set_alphabet!(c, 2)
+        add_rule!(c, [1, 1], [1])
+        @test a == c
+        @test hash(a) == hash(c)
+
+        # Differing presentations hash differently (overwhelmingly likely)
+        add_rule!(c, [2, 2], [2])
+        @test a != c
+        @test hash(a) != hash(c)
+    end
+
+    @testset "binding surface" begin
+        LS = Semigroups.LibSemigroups
+        # Scalar / reference signatures - hasmethod with concrete types works.
+        @test hasmethod(LS.first_unused_letter, Tuple{Presentation})
+        @test hasmethod(LS.longest_rule_index, Tuple{Presentation})
+        @test hasmethod(LS.shortest_rule_index, Tuple{Presentation})
+        @test hasmethod(LS.rules_vector, Tuple{Presentation})
+
+        # Vector-input methods: CxxWrap's ArrayRef<size_t> maps to a concrete
+        # Julia method signature that is tricky to spell as a `Tuple{...}`, so
+        # use `isdefined` to check the binding name is registered - enough to
+        # catch silent omissions. Call-through correctness is covered above.
+        for name in (
+            :add_rules!,
+            :add_inverse_rules!,
+            :add_inverse_rules_with_identity!,
+            :replace_subword!,
+            :replace_word!,
+            :replace_word_with_new_generator!,
+            :index_rule,
+            :is_rule,
+            :throw_if_bad_inverses,
+            :to_gap_string,
+        )
+            @test isdefined(LS, name)
+        end
     end
 end
