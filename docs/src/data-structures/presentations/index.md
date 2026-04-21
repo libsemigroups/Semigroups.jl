@@ -17,4 +17,4 @@ rules use `Vector{Int}` with 1-based letter indices.
 | [Presentation](presentation.md)                | The main `Presentation{word_type}` type.                       |
 | [InversePresentation](inverse-presentation.md) | `InversePresentation{word_type}` with per-generator inverses.  |
 | [Helper functions](helpers.md)                 | Free functions in `presentation::*`.                           |
-| [Examples](examples.md)                        | Standard presentations (symmetric group, partition monoid, …). |
+| [Examples](examples.md)                        | Standard presentations (symmetric group, partition monoid, ...). |

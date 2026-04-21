@@ -23,7 +23,7 @@ rules use `Vector{Int}` with 1-based letter indices.
 | [`partial_transformation_monoid`](@ref Semigroups.partial_transformation_monoid(::Integer))                     | Partial transformation monoid `PT_n`.                    |
 | [`symmetric_inverse_monoid`](@ref Semigroups.symmetric_inverse_monoid(::Integer))                               | Symmetric inverse monoid `I_n`.                          |
 | [`cyclic_inverse_monoid`](@ref Semigroups.cyclic_inverse_monoid(::Integer))                                     | Cyclic inverse monoid.                                   |
-| [`order_preserving_monoid`](@ref Semigroups.order_preserving_monoid(::Integer))                                 | Monoid of order-preserving transformations of `{1,…,n}`. |
+| [`order_preserving_monoid`](@ref Semigroups.order_preserving_monoid(::Integer))                                 | Monoid of order-preserving transformations of `{1,...,n}`. |
 | [`order_preserving_cyclic_inverse_monoid`](@ref Semigroups.order_preserving_cyclic_inverse_monoid(::Integer))   | Order-preserving cyclic inverse monoid.                  |
 | [`orientation_preserving_monoid`](@ref Semigroups.orientation_preserving_monoid(::Integer))                     | Orientation-preserving monoid.                           |
 | [`orientation_preserving_reversing_monoid`](@ref Semigroups.orientation_preserving_reversing_monoid(::Integer)) | Orientation-preserving-or-reversing monoid.              |
