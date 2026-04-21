@@ -90,7 +90,7 @@ Semigroups.abacus_jones_monoid(::Integer, ::Integer)
 | [`plactic_monoid`](@ref Semigroups.plactic_monoid(::Integer))                               | Plactic monoid on `n` letters.     |
 | [`chinese_monoid`](@ref Semigroups.chinese_monoid(::Integer))                               | Chinese monoid on `n` letters.     |
 | [`hypo_plactic_monoid`](@ref Semigroups.hypo_plactic_monoid(::Integer))                     | Hypoplactic monoid on `n` letters. |
-| [`sigma_plactic_monoid`](@ref Semigroups.sigma_plactic_monoid(::AbstractVector{<:Integer})) | σ-plactic monoid for a given `σ`.  |
+| [`sigma_plactic_monoid`](@ref Semigroups.sigma_plactic_monoid(::AbstractVector{<:Integer})) | ``\sigma``-plactic monoid for a given `sigma`.  |
 | [`stylic_monoid`](@ref Semigroups.stylic_monoid(::Integer))                                 | Stylic monoid on `n` letters.      |
 
 ### Full API
@@ -111,7 +111,7 @@ Semigroups.stylic_monoid(::Integer)
 | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | [`fibonacci_semigroup`](@ref Semigroups.fibonacci_semigroup(::Integer, ::Integer))           | Fibonacci semigroup `F(r, n)`.                                  |
 | [`monogenic_semigroup`](@ref Semigroups.monogenic_semigroup(::Integer, ::Integer))           | Monogenic semigroup with index `m`, period `r`.                 |
-| [`rectangular_band`](@ref Semigroups.rectangular_band(::Integer, ::Integer))                 | `m × n` rectangular band.                                       |
+| [`rectangular_band`](@ref Semigroups.rectangular_band(::Integer, ::Integer))                 | ``m \times n`` rectangular band.                                |
 | [`special_linear_group_2`](@ref Semigroups.special_linear_group_2(::Integer))                | `SL(2, q)`.                                                     |
 | [`renner_type_B_monoid`](@ref Semigroups.renner_type_B_monoid(::Integer, ::Integer))         | Renner monoid of type B.                                        |
 | [`renner_type_D_monoid`](@ref Semigroups.renner_type_D_monoid(::Integer, ::Integer))         | Renner monoid of type D.                                        |

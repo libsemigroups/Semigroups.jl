@@ -411,7 +411,7 @@ end
 """
     rectangular_band(m::Integer, n::Integer) -> Presentation
 
-A presentation for the `m × n` rectangular band.
+A presentation for the ``m \\times n`` rectangular band.
 """
 function rectangular_band(m::Integer, n::Integer)
     mm = UInt(m)
@@ -422,12 +422,12 @@ end
 """
     sigma_plactic_monoid(sigma::AbstractVector{<:Integer}) -> Presentation
 
-Presentation for the σ-plactic monoid with coefficient sequence `sigma`.
+Presentation for the ``\\sigma``-plactic monoid with coefficient sequence `sigma`.
 
 !!! note "0-based `sigma`"
     Unlike alphabet letters (which are 1-based in the Julia API), the
     `sigma` argument here is a vector of libsemigroups-native 0-based
-    coefficient indices — pass it through verbatim.
+    coefficient indices - pass it through verbatim.
 """
 function sigma_plactic_monoid(sigma::AbstractVector{<:Integer})
     s = UInt[UInt(x) for x in sigma]

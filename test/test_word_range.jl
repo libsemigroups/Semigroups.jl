@@ -47,7 +47,7 @@ using Semigroups
         set_alphabet_size!(r, 2)
         set_order!(r, ORDER_SHORTLEX)
         set_first!(r, [1])              # 0_w in C++
-        set_last!(r, [1, 1, 1, 1])      # 0000_w in C++ (length 4 → stops before length 4)
+        set_last!(r, [1, 1, 1, 1])      # 0000_w in C++ (length 4 -> stops before length 4)
         # Shortlex over alphabet 2, words of length 1..3: 2 + 4 + 8 = 14.
         @test count(r) == 14
         @test first_word(r) == [1]

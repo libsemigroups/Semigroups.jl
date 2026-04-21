@@ -72,7 +72,7 @@ const LIMIT_MAX = LimitMaxType()
 
 # Conversion functions to get the underlying integer values
 
-# UNDEFINED conversions — libsemigroups uses typemax(T) natively
+# UNDEFINED conversions - libsemigroups uses typemax(T) natively
 Base.convert(::Type{T}, ::UndefinedType) where {T<:Integer} = typemax(T)
 
 # POSITIVE_INFINITY conversions
@@ -105,7 +105,7 @@ Base.convert(::Type{Int64}, ::LimitMaxType) = LibSemigroups.LIMIT_MAX_Int64()
 
 # Comparison operations
 
-# UNDEFINED comparisons — UNDEFINED is a distinct sentinel, never equal to any integer
+# UNDEFINED comparisons - UNDEFINED is a distinct sentinel, never equal to any integer
 Base.:(==)(::Integer, ::UndefinedType) = false
 Base.:(==)(::UndefinedType, ::Integer) = false
 Base.:(==)(::UndefinedType, ::UndefinedType) = true

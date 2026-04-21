@@ -977,7 +977,7 @@ Return the 1-based index of the first rule of `p` equal to `lhs = rhs`,
 or [`UNDEFINED`](@ref Semigroups.UNDEFINED) if no such rule exists.
 
 Mirrors `libsemigroups::presentation::index_rule`. The returned index is
-the rule-pair index — the same index accepted by [`rule_lhs`](@ref),
+the rule-pair index - the same index accepted by [`rule_lhs`](@ref),
 [`rule_rhs`](@ref), and [`rule`](@ref).
 
 # Arguments
@@ -1001,7 +1001,7 @@ function index_rule(
     r = _word_to_cpp(rhs)
     i = UInt(@wrap_libsemigroups_call LibSemigroups.index_rule(p, l, r))
     i == typemax(UInt) && return UNDEFINED
-    return Int(i ÷ 0x2) + 1
+    return div(Int(i), 2) + 1
 end
 
 """
@@ -1035,7 +1035,7 @@ Return the 1-based index of the first rule of `p` of maximal length.
 
 The *length* of a rule is the sum of the lengths of its left- and
 right-hand sides. Mirrors `libsemigroups::presentation::longest_rule`,
-returning a rule-pair index instead of the C++ iterator — so the result is
+returning a rule-pair index instead of the C++ iterator - so the result is
 suitable to pass to [`rule`](@ref), [`rule_lhs`](@ref), or
 [`rule_rhs`](@ref).
 
@@ -1049,7 +1049,7 @@ suitable to pass to [`rule`](@ref), [`rule_lhs`](@ref), or
 """
 function longest_rule_index(p::Presentation)
     flat = UInt(@wrap_libsemigroups_call LibSemigroups.longest_rule_index(p))
-    return Int(flat ÷ 0x2) + 1
+    return div(Int(flat), 2) + 1
 end
 
 """
@@ -1071,7 +1071,7 @@ returning a rule-pair index instead of the C++ iterator.
 """
 function shortest_rule_index(p::Presentation)
     flat = UInt(@wrap_libsemigroups_call LibSemigroups.shortest_rule_index(p))
-    return Int(flat ÷ 0x2) + 1
+    return div(Int(flat), 2) + 1
 end
 
 """
@@ -1083,7 +1083,7 @@ semigroup inverses for `alphabet(p)`.
 Mirrors `libsemigroups::presentation::throw_if_bad_inverses`. Specifically,
 this function checks that `alphabet(p)` and `inverses` contain the same
 letters, that `inverses` is duplicate-free, and that if `a_i = b_j` (where
-`a` is the alphabet and `b` is `inverses`) then `a_j = b_i` — i.e. taking
+`a` is the alphabet and `b` is `inverses`) then `a_j = b_i` - i.e. taking
 an inverse is an involution on the letters.
 
 # Arguments
@@ -1127,7 +1127,7 @@ Base.:(==)(a::Presentation, b::Presentation) = LibSemigroups.is_equal(a, b)
 """
     Base.isempty(p::Presentation) -> Bool
 
-Return `true` iff `p` has an empty alphabet and no rules — the state it
+Return `true` iff `p` has an empty alphabet and no rules - the state it
 would be in immediately after [`Presentation`](@ref Semigroups.Presentation)`()`
 or [`init!`](@ref).
 """

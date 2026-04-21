@@ -61,7 +61,7 @@ using Semigroups
         @test ajm isa Presentation
         throw_if_bad_alphabet_or_rules(ajm)
 
-        # Known-answer: temperley_lieb_monoid(4) — n-1 generators
+        # Known-answer: temperley_lieb_monoid(4) - n-1 generators
         tlm = temperley_lieb_monoid(4)
         @test length(alphabet(tlm)) == 3             # n-1 = 3 generators for n=4
     end
@@ -90,7 +90,7 @@ using Semigroups
             throw_if_bad_alphabet_or_rules(p)
         end
 
-        # sigma_plactic_monoid — vector input (0-based per libsemigroups)
+        # sigma_plactic_monoid - vector input (0-based per libsemigroups)
         spm = sigma_plactic_monoid([2, 1])
         @test spm isa Presentation
         throw_if_bad_alphabet_or_rules(spm)
