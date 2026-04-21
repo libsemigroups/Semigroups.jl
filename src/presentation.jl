@@ -15,9 +15,7 @@ Type for semigroup or monoid presentations.
 This type provides a shallow wrapper around a vector of words (the *rules*
 of the presentation), together with an *alphabet*. It is intended to be
 used as the input to other algorithms in `libsemigroups` (such as
-[`KnuthBendix`](@ref Semigroups.KnuthBendix),
-[`ToddCoxeter`](@ref Semigroups.ToddCoxeter), and
-[`Kambites`](@ref Semigroups.Kambites)).
+the Knuth-Bendix, Todd-Coxeter, and Kambites algorithms).
 
 In a valid presentation, rules only consist of letters from within the
 alphabet; however, for performance reasons, it is possible to update both
@@ -1137,7 +1135,7 @@ Base.isempty(p::Presentation) = isempty(alphabet(p)) && number_of_rules(p) == 0
     Base.hash(p::Presentation, h::UInt) -> UInt
 
 Stable hash suitable for dictionary keys: presentations equal under
-[`Base.:(==)`](@ref) hash to the same value. The hash combines the
+`==` hash to the same value. The hash combines the
 alphabet, the flat rules list, and the `contains_empty_word` flag.
 """
 function Base.hash(p::Presentation, h::UInt)
