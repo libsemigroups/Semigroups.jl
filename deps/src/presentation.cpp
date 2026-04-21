@@ -24,6 +24,8 @@
 #include <jlcxx/array.hpp>
 
 #include <cstddef>
+#include <iterator>
+#include <string>
 #include <vector>
 
 namespace jlcxx {
@@ -222,6 +224,104 @@ namespace libsemigroups_julia {
     m.method("remove_trivial_rules!", [](Presentation<word_type>& p) {
       libsemigroups::presentation::remove_trivial_rules(p);
     });
+
+    m.method("add_rules!",
+             [](Presentation<word_type>& p, Presentation<word_type> const& q) {
+               libsemigroups::presentation::add_rules(p, q);
+             });
+
+    m.method("add_inverse_rules!",
+             [](Presentation<word_type>& p, jlcxx::ArrayRef<size_t> inverses) {
+               word_type v(inverses.begin(), inverses.end());
+               libsemigroups::presentation::add_inverse_rules(p, v);
+             });
+
+    m.method("add_inverse_rules_with_identity!",
+             [](Presentation<word_type>& p,
+                jlcxx::ArrayRef<size_t>  inverses,
+                size_t                   e) {
+               word_type v(inverses.begin(), inverses.end());
+               libsemigroups::presentation::add_inverse_rules(p, v, e);
+             });
+
+    m.method("replace_subword!",
+             [](Presentation<word_type>& p,
+                jlcxx::ArrayRef<size_t>  existing,
+                jlcxx::ArrayRef<size_t>  replacement) {
+               word_type e(existing.begin(), existing.end());
+               word_type r(replacement.begin(), replacement.end());
+               libsemigroups::presentation::replace_subword(p, e, r);
+             });
+
+    m.method("replace_word!",
+             [](Presentation<word_type>& p,
+                jlcxx::ArrayRef<size_t>  existing,
+                jlcxx::ArrayRef<size_t>  replacement) {
+               word_type e(existing.begin(), existing.end());
+               word_type r(replacement.begin(), replacement.end());
+               libsemigroups::presentation::replace_word(p, e, r);
+             });
+
+    m.method(
+        "replace_word_with_new_generator!",
+        [](Presentation<word_type>& p, jlcxx::ArrayRef<size_t> w) -> size_t {
+          word_type v(w.begin(), w.end());
+          return libsemigroups::presentation::replace_word_with_new_generator(
+              p, v);
+        });
+
+    m.method("first_unused_letter",
+             [](Presentation<word_type> const& p) -> size_t {
+               return libsemigroups::presentation::first_unused_letter(p);
+             });
+
+    m.method("index_rule",
+             [](Presentation<word_type> const& p,
+                jlcxx::ArrayRef<size_t>        lhs,
+                jlcxx::ArrayRef<size_t>        rhs) -> size_t {
+               word_type l(lhs.begin(), lhs.end());
+               word_type r(rhs.begin(), rhs.end());
+               return libsemigroups::presentation::index_rule(p, l, r);
+             });
+
+    m.method("is_rule",
+             [](Presentation<word_type> const& p,
+                jlcxx::ArrayRef<size_t>        lhs,
+                jlcxx::ArrayRef<size_t>        rhs) -> bool {
+               word_type l(lhs.begin(), lhs.end());
+               word_type r(rhs.begin(), rhs.end());
+               return libsemigroups::presentation::is_rule(p, l, r);
+             });
+
+    m.method("longest_rule_index",
+             [](Presentation<word_type> const& p) -> size_t {
+               auto it = libsemigroups::presentation::longest_rule(p);
+               return static_cast<size_t>(std::distance(p.rules.cbegin(), it));
+             });
+
+    m.method("shortest_rule_index",
+             [](Presentation<word_type> const& p) -> size_t {
+               auto it = libsemigroups::presentation::shortest_rule(p);
+               return static_cast<size_t>(std::distance(p.rules.cbegin(), it));
+             });
+
+    m.method(
+        "throw_if_bad_inverses",
+        [](Presentation<word_type> const& p, jlcxx::ArrayRef<size_t> inverses) {
+          word_type v(inverses.begin(), inverses.end());
+          libsemigroups::presentation::throw_if_bad_inverses(p, v);
+        });
+
+    m.method("to_gap_string",
+             [](Presentation<word_type> const& p,
+                std::string const&             var_name) -> std::string {
+               return libsemigroups::presentation::to_gap_string(p, var_name);
+             });
+
+    m.method("rules_vector",
+             [](Presentation<word_type> const& p) -> std::vector<word_type> {
+               return std::vector<word_type>(p.rules.cbegin(), p.rules.cend());
+             });
 
     type.method(
         "is_equal",

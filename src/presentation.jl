@@ -447,7 +447,7 @@ for large presentations.
 function rules(p::Presentation)
     flat = LibSemigroups.rules_vector(p)
     n = length(flat)
-    return [(_word_from_cpp(flat[i]), _word_from_cpp(flat[i + 1])) for i = 1:2:n]
+    return [(_word_from_cpp(flat[i]), _word_from_cpp(flat[i+1])) for i = 1:2:n]
 end
 
 """
@@ -802,10 +802,6 @@ Linear in the number of rules.
 """
 remove_trivial_rules!(p::Presentation) = (LibSemigroups.remove_trivial_rules!(p); p)
 
-# ----------------------------------------------------------------------------
-# Tier 1 helpers: rule manipulation
-# ----------------------------------------------------------------------------
-
 """
     add_rules!(p::Presentation, q::Presentation) -> Presentation
 
@@ -953,18 +949,11 @@ Mirrors `libsemigroups::presentation::replace_word_with_new_generator`.
 # Throws
 - `LibsemigroupsError`: if `w` is empty.
 """
-function replace_word_with_new_generator!(
-    p::Presentation,
-    w::AbstractVector{<:Integer},
-)
+function replace_word_with_new_generator!(p::Presentation, w::AbstractVector{<:Integer})
     v = _word_to_cpp(w)
     z = @wrap_libsemigroups_call LibSemigroups.replace_word_with_new_generator!(p, v)
     return _letter_from_cpp(z)
 end
-
-# ----------------------------------------------------------------------------
-# Tier 1 helpers: rule queries
-# ----------------------------------------------------------------------------
 
 """
     first_unused_letter(p::Presentation) -> Int
@@ -1010,9 +999,9 @@ function index_rule(
 )
     l = _word_to_cpp(lhs)
     r = _word_to_cpp(rhs)
-    i = @wrap_libsemigroups_call LibSemigroups.index_rule(p, l, r)
+    i = UInt(@wrap_libsemigroups_call LibSemigroups.index_rule(p, l, r))
     i == typemax(UInt) && return UNDEFINED
-    return Int(i ÷ 2) + 1
+    return Int(i ÷ 0x2) + 1
 end
 
 """
@@ -1059,8 +1048,8 @@ suitable to pass to [`rule`](@ref), [`rule_lhs`](@ref), or
 - [`longest_rule_length`](@ref)
 """
 function longest_rule_index(p::Presentation)
-    flat = @wrap_libsemigroups_call LibSemigroups.longest_rule_index(p)
-    return Int(flat ÷ 2) + 1
+    flat = UInt(@wrap_libsemigroups_call LibSemigroups.longest_rule_index(p))
+    return Int(flat ÷ 0x2) + 1
 end
 
 """
@@ -1081,13 +1070,9 @@ returning a rule-pair index instead of the C++ iterator.
 - [`shortest_rule_length`](@ref)
 """
 function shortest_rule_index(p::Presentation)
-    flat = @wrap_libsemigroups_call LibSemigroups.shortest_rule_index(p)
-    return Int(flat ÷ 2) + 1
+    flat = UInt(@wrap_libsemigroups_call LibSemigroups.shortest_rule_index(p))
+    return Int(flat ÷ 0x2) + 1
 end
-
-# ----------------------------------------------------------------------------
-# Tier 1 helpers: validation + GAP export
-# ----------------------------------------------------------------------------
 
 """
     throw_if_bad_inverses(p::Presentation, inverses::AbstractVector{<:Integer})
@@ -1133,7 +1118,8 @@ Mirrors `libsemigroups::presentation::to_gap_string`.
   GAP's default alphabet).
 """
 function to_gap_string(p::Presentation, var_name::AbstractString = "p")
-    return @wrap_libsemigroups_call LibSemigroups.to_gap_string(p, String(var_name))
+    s = @wrap_libsemigroups_call LibSemigroups.to_gap_string(p, String(var_name))
+    return String(s)
 end
 
 Base.:(==)(a::Presentation, b::Presentation) = LibSemigroups.is_equal(a, b)
@@ -1156,9 +1142,11 @@ alphabet, the flat rules list, and the `contains_empty_word` flag.
 """
 function Base.hash(p::Presentation, h::UInt)
     return hash(
-        (alphabet(p),
-         [_word_from_cpp(w) for w in LibSemigroups.rules_vector(p)],
-         contains_empty_word(p)),
+        (
+            alphabet(p),
+            [_word_from_cpp(w) for w in LibSemigroups.rules_vector(p)],
+            contains_empty_word(p),
+        ),
         h,
     )
 end

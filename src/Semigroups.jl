@@ -118,16 +118,20 @@ export Presentation, alphabet, set_alphabet!, alphabet_from_rules!
 export letter, index_of, in_alphabet
 export contains_empty_word, set_contains_empty_word!
 export add_generator!, remove_generator!
-export add_rule!, add_rule_no_checks!
-export number_of_rules, rule_lhs, rule_rhs, rules, clear_rules!
+export add_rule!, add_rule_no_checks!, add_rules!
+export number_of_rules, rule, rule_lhs, rule_rhs, rules, clear_rules!
 export throw_if_alphabet_has_duplicates, throw_if_letter_not_in_alphabet
 export throw_if_bad_rules, throw_if_bad_alphabet_or_rules
 export length_of, longest_rule_length, shortest_rule_length
+export longest_rule_index, shortest_rule_index
+export first_unused_letter, index_rule, is_rule
 export is_normalized, are_rules_sorted, contains_rule
-export throw_if_odd_number_of_rules
+export throw_if_odd_number_of_rules, throw_if_bad_inverses
 export normalize_alphabet!, change_alphabet!, sort_rules!, sort_each_rule!
-export add_identity_rules!, add_zero_rules!
+export add_identity_rules!, add_zero_rules!, add_inverse_rules!
+export replace_subword!, replace_word!, replace_word_with_new_generator!
 export remove_duplicate_rules!, remove_trivial_rules!
+export to_gap_string
 export InversePresentation, set_inverses!, inverses, inverse_of
 export throw_if_bad_alphabet_rules_or_inverses
 
