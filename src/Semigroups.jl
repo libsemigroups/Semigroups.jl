@@ -8,6 +8,7 @@ module Semigroups
 
 using CxxWrap
 using AbstractAlgebra
+import Dates
 using Dates: TimePeriod, Nanosecond
 using libsemigroups_jll
 
@@ -165,6 +166,7 @@ export left_one, right_one
 
 # FroidurePin
 export FroidurePin, current_size, number_of_generators, enumerate!
+export generator, sorted_at
 
 # BMat8
 export BMat8, to_int, swap!, degree, random, row_space_basis

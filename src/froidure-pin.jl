@@ -288,3 +288,308 @@ function enumerate!(fp::FroidurePin, limit::Integer)
     @wrap_libsemigroups_call LibSemigroups.enumerate!(fp.cxx_obj, UInt(limit))
     return fp
 end
+
+# ============================================================================
+# Runner delegation
+# ============================================================================
+# Every public Runner method is delegated through fp.cxx_obj.
+# Mutating methods return fp for chaining; query methods return the result.
+
+"""
+    run!(fp::FroidurePin) -> FroidurePin
+
+Run the Froidure-Pin algorithm until [`finished`](@ref).
+
+Returns `fp` for method chaining.
+"""
+function run!(fp::FroidurePin)
+    LibSemigroups.run!(fp.cxx_obj)
+    return fp
+end
+
+"""
+    run_for!(fp::FroidurePin, t::TimePeriod) -> FroidurePin
+
+Run the Froidure-Pin algorithm for a specified amount of time.
+
+Returns `fp` for method chaining.
+
+# Examples
+```julia
+run_for!(S, Second(1))
+run_for!(S, Millisecond(500))
+```
+"""
+function run_for!(fp::FroidurePin, t::TimePeriod)
+    ns = convert(Nanosecond, t)
+    Dates.value(ns) >= 0 ||
+        throw(ArgumentError("run_for! requires a non-negative duration, got $t"))
+    LibSemigroups.run_for!(fp.cxx_obj, Int64(Dates.value(ns)))
+    return fp
+end
+
+function run_until!(f::Function, fp::FroidurePin)
+    sf = @safe_cfunction($f, Cuchar, ())
+    GC.@preserve sf LibSemigroups.run_until!(fp.cxx_obj, sf)
+    return fp
+end
+
+"""
+    run_until!(fp::FroidurePin, f::Function) -> FroidurePin
+
+Run the Froidure-Pin algorithm until a nullary predicate returns `true`
+or [`finished`](@ref).
+
+Returns `fp` for method chaining.
+
+Supports do-block syntax:
+
+```julia
+run_until!(S) do
+    some_condition(S)
+end
+```
+"""
+run_until!(fp::FroidurePin, f::Function) = run_until!(f, fp)
+
+"""
+    init!(fp::FroidurePin) -> FroidurePin
+
+Initialize an existing FroidurePin object, resetting it to its default state.
+
+Returns `fp` for method chaining.
+"""
+function init!(fp::FroidurePin)
+    LibSemigroups.init!(fp.cxx_obj)
+    return fp
+end
+
+"""
+    kill!(fp::FroidurePin)
+
+Stop the Froidure-Pin algorithm from running (thread-safe).
+"""
+kill!(fp::FroidurePin) = LibSemigroups.kill!(fp.cxx_obj)
+
+"""
+    finished(fp::FroidurePin) -> Bool
+
+Check if the Froidure-Pin algorithm has been run to completion.
+"""
+finished(fp::FroidurePin) = LibSemigroups.finished(fp.cxx_obj)
+
+"""
+    Base.success(fp::FroidurePin) -> Bool
+
+Check if the Froidure-Pin algorithm has been run to completion successfully.
+"""
+Base.success(fp::FroidurePin) = LibSemigroups.success(fp.cxx_obj)
+
+"""
+    started(fp::FroidurePin) -> Bool
+
+Check if the Froidure-Pin algorithm has been started.
+"""
+started(fp::FroidurePin) = LibSemigroups.started(fp.cxx_obj)
+
+"""
+    running(fp::FroidurePin) -> Bool
+
+Check if the Froidure-Pin algorithm is currently running.
+"""
+running(fp::FroidurePin) = LibSemigroups.running(fp.cxx_obj)
+
+"""
+    timed_out(fp::FroidurePin) -> Bool
+
+Check if the last `run_for!` call timed out.
+"""
+timed_out(fp::FroidurePin) = LibSemigroups.timed_out(fp.cxx_obj)
+
+"""
+    stopped(fp::FroidurePin) -> Bool
+
+Check if the Froidure-Pin algorithm is stopped for any reason.
+"""
+stopped(fp::FroidurePin) = LibSemigroups.stopped(fp.cxx_obj)
+
+"""
+    dead(fp::FroidurePin) -> Bool
+
+Check if the Froidure-Pin algorithm has been killed by another thread.
+"""
+dead(fp::FroidurePin) = LibSemigroups.dead(fp.cxx_obj)
+
+"""
+    stopped_by_predicate(fp::FroidurePin) -> Bool
+
+Check if the algorithm was stopped by the predicate passed to `run_until!`.
+"""
+stopped_by_predicate(fp::FroidurePin) = LibSemigroups.stopped_by_predicate(fp.cxx_obj)
+
+"""
+    running_for(fp::FroidurePin) -> Bool
+
+Check if the algorithm is currently running for a particular length of time.
+"""
+running_for(fp::FroidurePin) = LibSemigroups.running_for(fp.cxx_obj)
+
+"""
+    running_for_how_long(fp::FroidurePin) -> Nanosecond
+
+Return the duration of the most recent `run_for!` call as a `Dates.Nanosecond`.
+"""
+running_for_how_long(fp::FroidurePin) = Nanosecond(LibSemigroups.running_for_how_long(fp.cxx_obj))
+
+"""
+    running_until(fp::FroidurePin) -> Bool
+
+Check if the algorithm is currently running until a predicate returns `true`.
+"""
+running_until(fp::FroidurePin) = LibSemigroups.running_until(fp.cxx_obj)
+
+"""
+    current_state(fp::FroidurePin) -> RunnerState
+
+Return the current state of the Froidure-Pin algorithm.
+"""
+current_state(fp::FroidurePin) = LibSemigroups.current_state(fp.cxx_obj)
+
+"""
+    report_why_we_stopped(fp::FroidurePin)
+
+Report why the Froidure-Pin algorithm stopped.
+"""
+report_why_we_stopped(fp::FroidurePin) = LibSemigroups.report_why_we_stopped(fp.cxx_obj)
+
+"""
+    string_why_we_stopped(fp::FroidurePin) -> String
+
+Return a human-readable string describing why the algorithm stopped.
+"""
+string_why_we_stopped(fp::FroidurePin) = LibSemigroups.string_why_we_stopped(fp.cxx_obj)
+
+# ============================================================================
+# Element access
+# ============================================================================
+
+"""
+    Base.getindex(fp::FroidurePin{E}, i::Integer) -> E
+
+Return the `i`-th element of the semigroup (1-based indexing).
+
+Triggers full enumeration if not already complete.
+
+# Example
+```julia
+S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
+S[1]  # first element
+```
+
+# Throws
+- `BoundsError` if `i` is out of range.
+"""
+function Base.getindex(fp::FroidurePin{E}, i::Integer) where {E}
+    if i < 1 || i > length(fp)
+        throw(BoundsError(fp, i))
+    end
+    idx = _to_cpp(i, UInt)
+    raw = @wrap_libsemigroups_call LibSemigroups.at(fp.cxx_obj, idx)
+    return _wrap_element(E, raw)
+end
+
+"""
+    generator(fp::FroidurePin{E}, i::Integer) -> E
+
+Return the `i`-th generator of the semigroup (1-based indexing).
+
+# Example
+```julia
+S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
+generator(S, 1)  # first generator
+```
+"""
+function generator(fp::FroidurePin{E}, i::Integer) where {E}
+    idx = _to_cpp(i, UInt)
+    raw = @wrap_libsemigroups_call LibSemigroups.generator(fp.cxx_obj, idx)
+    return _wrap_element(E, raw)
+end
+
+"""
+    sorted_at(fp::FroidurePin{E}, i::Integer) -> E
+
+Return the `i`-th element in sorted order (1-based indexing).
+
+# Example
+```julia
+S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
+sorted_at(S, 1)  # first element in sorted order
+```
+"""
+function sorted_at(fp::FroidurePin{E}, i::Integer) where {E}
+    idx = _to_cpp(i, UInt)
+    raw = @wrap_libsemigroups_call LibSemigroups.sorted_at(fp.cxx_obj, idx)
+    return _wrap_element(E, raw)
+end
+
+# ============================================================================
+# Iteration
+# ============================================================================
+
+"""
+    Base.iterate(fp::FroidurePin, state=1)
+
+Iterate over all elements of the semigroup.
+
+# Example
+```julia
+S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
+for x in S
+    println(x)
+end
+elts = collect(S)  # Vector{Transf{UInt8}} of length 6
+```
+"""
+function Base.iterate(fp::FroidurePin, state::Int = 1)
+    if state > length(fp)
+        return nothing
+    end
+    return (fp[state], state + 1)
+end
+
+"""
+    Base.eltype(::Type{FroidurePin{E}}) where E
+
+Return the element type `E` of a `FroidurePin{E}`.
+"""
+Base.eltype(::Type{FroidurePin{E}}) where {E} = E
+
+Base.IteratorSize(::Type{<:FroidurePin}) = Base.HasLength()
+
+# ============================================================================
+# Copy
+# ============================================================================
+
+"""
+    Base.copy(fp::FroidurePin{E}) -> FroidurePin{E}
+
+Create an independent copy of the semigroup by reconstructing it from
+its generators.
+"""
+function Base.copy(fp::FroidurePin{E}) where {E}
+    gens = [generator(fp, i) for i in 1:number_of_generators(fp)]
+    return FroidurePin(gens)
+end
+
+# ============================================================================
+# Display
+# ============================================================================
+
+"""
+    Base.show(io::IO, fp::FroidurePin)
+
+Display a human-readable representation of the semigroup.
+"""
+function Base.show(io::IO, fp::FroidurePin)
+    print(io, @wrap_libsemigroups_call LibSemigroups.to_human_readable_repr(fp.cxx_obj))
+end
