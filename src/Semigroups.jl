@@ -167,6 +167,12 @@ export left_one, right_one
 # FroidurePin
 export FroidurePin, current_size, number_of_generators, enumerate!
 export generator, sorted_at
+export position, sorted_position, to_sorted_position
+export closure!, copy_closure, copy_add_generators
+export batch_size, set_batch_size!
+export contains_one, is_idempotent
+export prefix, suffix, first_letter, final_letter, fast_product
+export number_of_idempotents
 
 # BMat8
 export BMat8, to_int, swap!, degree, random, row_space_basis

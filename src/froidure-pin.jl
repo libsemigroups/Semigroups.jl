@@ -593,3 +593,311 @@ Display a human-readable representation of the semigroup.
 function Base.show(io::IO, fp::FroidurePin)
     print(io, @wrap_libsemigroups_call LibSemigroups.to_human_readable_repr(fp.cxx_obj))
 end
+
+# ============================================================================
+# Containment
+# ============================================================================
+
+"""
+    Base.in(x::E, fp::FroidurePin{E}) where E -> Bool
+
+Check whether the element `x` belongs to the semigroup `fp`.
+
+Triggers full enumeration if not already complete.
+
+# Example
+```julia
+S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
+Transf([2, 1, 3]) in S   # true
+Transf([1, 1, 1]) in S   # false
+```
+"""
+function Base.in(x::E, fp::FroidurePin{E}) where {E}
+    cxx_x = _cxx_element(x)
+    return @wrap_libsemigroups_call LibSemigroups.contains(fp.cxx_obj, cxx_x)
+end
+
+# BMat8 dispatch: BMat8Allocated <: BMat8, so we need a fallback
+function Base.in(x::BMat8, fp::FroidurePin{BMat8})
+    cxx_x = _cxx_element(x)
+    return @wrap_libsemigroups_call LibSemigroups.contains(fp.cxx_obj, cxx_x)
+end
+
+"""
+    position(fp::FroidurePin{E}, x::E) where E -> Int
+
+Return the 1-based position of element `x` in the semigroup `fp`.
+
+Triggers full enumeration if not already complete.
+
+# Example
+```julia
+S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
+position(S, Transf([2, 1, 3]))  # 1-based index
+```
+"""
+function position(fp::FroidurePin{E}, x::E) where {E}
+    cxx_x = _cxx_element(x)
+    raw = @wrap_libsemigroups_call LibSemigroups.position(fp.cxx_obj, cxx_x)
+    return _from_cpp(raw)
+end
+
+function position(fp::FroidurePin{BMat8}, x::BMat8)
+    cxx_x = _cxx_element(x)
+    raw = @wrap_libsemigroups_call LibSemigroups.position(fp.cxx_obj, cxx_x)
+    return _from_cpp(raw)
+end
+
+"""
+    sorted_position(fp::FroidurePin{E}, x::E) where E -> Int
+
+Return the 1-based sorted position of element `x` in the semigroup `fp`.
+
+Triggers full enumeration if not already complete.
+"""
+function sorted_position(fp::FroidurePin{E}, x::E) where {E}
+    cxx_x = _cxx_element(x)
+    raw = @wrap_libsemigroups_call LibSemigroups.sorted_position(fp.cxx_obj, cxx_x)
+    return _from_cpp(raw)
+end
+
+function sorted_position(fp::FroidurePin{BMat8}, x::BMat8)
+    cxx_x = _cxx_element(x)
+    raw = @wrap_libsemigroups_call LibSemigroups.sorted_position(fp.cxx_obj, cxx_x)
+    return _from_cpp(raw)
+end
+
+"""
+    to_sorted_position(fp::FroidurePin, i::Integer) -> Int
+
+Convert a 1-based element position to its 1-based sorted position.
+
+Triggers full enumeration if not already complete.
+"""
+function to_sorted_position(fp::FroidurePin, i::Integer)
+    idx = _to_cpp(i, UInt)
+    raw = @wrap_libsemigroups_call LibSemigroups.to_sorted_position(fp.cxx_obj, idx)
+    return _from_cpp(raw)
+end
+
+# ============================================================================
+# Modification
+# ============================================================================
+
+"""
+    Base.push!(fp::FroidurePin{E}, x::E) where E -> FroidurePin{E}
+
+Add a new generator `x` to the semigroup `fp`.
+
+Returns `fp` for method chaining.
+
+# Example
+```julia
+S = FroidurePin(Transf([2, 1, 3]))
+push!(S, Transf([2, 3, 1]))
+length(S)  # 6
+```
+"""
+function Base.push!(fp::FroidurePin{E}, x::E) where {E}
+    cxx_x = _cxx_element(x)
+    @wrap_libsemigroups_call LibSemigroups.add_generator!(fp.cxx_obj, cxx_x)
+    return fp
+end
+
+function Base.push!(fp::FroidurePin{BMat8}, x::BMat8)
+    cxx_x = _cxx_element(x)
+    @wrap_libsemigroups_call LibSemigroups.add_generator!(fp.cxx_obj, cxx_x)
+    return fp
+end
+
+"""
+    closure!(fp::FroidurePin{E}, x::E) where E -> FroidurePin{E}
+
+Add element `x` to the semigroup `fp` if it is not already contained,
+and re-enumerate.
+
+Returns `fp` for method chaining.
+"""
+function closure!(fp::FroidurePin{E}, x::E) where {E}
+    cxx_x = _cxx_element(x)
+    @wrap_libsemigroups_call LibSemigroups.closure!(fp.cxx_obj, cxx_x)
+    return fp
+end
+
+function closure!(fp::FroidurePin{BMat8}, x::BMat8)
+    cxx_x = _cxx_element(x)
+    @wrap_libsemigroups_call LibSemigroups.closure!(fp.cxx_obj, cxx_x)
+    return fp
+end
+
+"""
+    copy_closure(fp::FroidurePin{E}, x::E) where E -> FroidurePin{E}
+
+Return a new `FroidurePin{E}` that is a copy of `fp` with element `x`
+added as a generator (if not already contained), and re-enumerated.
+"""
+function copy_closure(fp::FroidurePin{E}, x::E) where {E}
+    cxx_x = _cxx_element(x)
+    new_cxx = @wrap_libsemigroups_call LibSemigroups.copy_closure(fp.cxx_obj, cxx_x)
+    return FroidurePin{E}(new_cxx)
+end
+
+function copy_closure(fp::FroidurePin{BMat8}, x::BMat8)
+    cxx_x = _cxx_element(x)
+    new_cxx = @wrap_libsemigroups_call LibSemigroups.copy_closure(fp.cxx_obj, cxx_x)
+    return FroidurePin{BMat8}(new_cxx)
+end
+
+"""
+    copy_add_generators(fp::FroidurePin{E}, x::E) where E -> FroidurePin{E}
+
+Return a new `FroidurePin{E}` that is a copy of `fp` with element `x`
+added as a generator (without checking containment).
+"""
+function copy_add_generators(fp::FroidurePin{E}, x::E) where {E}
+    cxx_x = _cxx_element(x)
+    new_cxx = @wrap_libsemigroups_call LibSemigroups.copy_add_generators(fp.cxx_obj, cxx_x)
+    return FroidurePin{E}(new_cxx)
+end
+
+function copy_add_generators(fp::FroidurePin{BMat8}, x::BMat8)
+    cxx_x = _cxx_element(x)
+    new_cxx = @wrap_libsemigroups_call LibSemigroups.copy_add_generators(fp.cxx_obj, cxx_x)
+    return FroidurePin{BMat8}(new_cxx)
+end
+
+# ============================================================================
+# Settings
+# ============================================================================
+
+"""
+    batch_size(fp::FroidurePin) -> Int
+
+Return the current batch size used for partial enumeration.
+"""
+batch_size(fp::FroidurePin) = Int(LibSemigroups.batch_size(fp.cxx_obj))
+
+"""
+    set_batch_size!(fp::FroidurePin, n::Integer) -> FroidurePin
+
+Set the batch size for partial enumeration.
+
+Returns `fp` for method chaining.
+"""
+function set_batch_size!(fp::FroidurePin, n::Integer)
+    LibSemigroups.set_batch_size!(fp.cxx_obj, UInt(n))
+    return fp
+end
+
+# ============================================================================
+# Predicates
+# ============================================================================
+
+"""
+    contains_one(fp::FroidurePin) -> Bool
+
+Check whether the semigroup contains the identity element.
+
+Triggers full enumeration if not already complete.
+"""
+contains_one(fp::FroidurePin) = LibSemigroups.contains_one(fp.cxx_obj)
+
+"""
+    is_idempotent(fp::FroidurePin, i::Integer) -> Bool
+
+Check whether the element at 1-based position `i` is an idempotent
+(i.e., `x * x == x`).
+
+Triggers full enumeration if not already complete.
+"""
+function is_idempotent(fp::FroidurePin, i::Integer)
+    idx = _to_cpp(i, UInt)
+    return @wrap_libsemigroups_call LibSemigroups.is_idempotent(fp.cxx_obj, idx)
+end
+
+# ============================================================================
+# Index queries (FroidurePinBase methods — uint32_t positions)
+# ============================================================================
+
+"""
+    prefix(fp::FroidurePin, i::Integer) -> Int
+
+Return the 1-based position of the prefix of the element at 1-based
+position `i`. The prefix is the element obtained by removing the last
+letter of the factorisation.
+"""
+function prefix(fp::FroidurePin, i::Integer)
+    idx = _to_cpp(i, UInt32)
+    raw = @wrap_libsemigroups_call LibSemigroups.prefix(fp.cxx_obj, idx)
+    return _from_cpp(raw)
+end
+
+"""
+    suffix(fp::FroidurePin, i::Integer) -> Int
+
+Return the 1-based position of the suffix of the element at 1-based
+position `i`. The suffix is the element obtained by removing the first
+letter of the factorisation.
+"""
+function suffix(fp::FroidurePin, i::Integer)
+    idx = _to_cpp(i, UInt32)
+    raw = @wrap_libsemigroups_call LibSemigroups.suffix(fp.cxx_obj, idx)
+    return _from_cpp(raw)
+end
+
+"""
+    first_letter(fp::FroidurePin, i::Integer) -> Int
+
+Return the 1-based position of the first letter (generator) in the
+factorisation of the element at 1-based position `i`.
+"""
+function first_letter(fp::FroidurePin, i::Integer)
+    idx = _to_cpp(i, UInt32)
+    raw = @wrap_libsemigroups_call LibSemigroups.first_letter(fp.cxx_obj, idx)
+    return _from_cpp(raw)
+end
+
+"""
+    final_letter(fp::FroidurePin, i::Integer) -> Int
+
+Return the 1-based position of the final letter (generator) in the
+factorisation of the element at 1-based position `i`.
+"""
+function final_letter(fp::FroidurePin, i::Integer)
+    idx = _to_cpp(i, UInt32)
+    raw = @wrap_libsemigroups_call LibSemigroups.final_letter(fp.cxx_obj, idx)
+    return _from_cpp(raw)
+end
+
+"""
+    fast_product(fp::FroidurePin, i::Integer, j::Integer) -> Int
+
+Return the 1-based position of the product of the elements at 1-based
+positions `i` and `j`.
+
+The semigroup must be fully enumerated before calling this method.
+"""
+function fast_product(fp::FroidurePin, i::Integer, j::Integer)
+    ci = _to_cpp(i, UInt)
+    cj = _to_cpp(j, UInt)
+    raw = @wrap_libsemigroups_call LibSemigroups.fast_product(fp.cxx_obj, ci, cj)
+    return _from_cpp(raw)
+end
+
+"""
+    number_of_rules(fp::FroidurePin) -> Int
+
+Return the total number of rules (relations) in the semigroup.
+
+Triggers full enumeration if not already complete.
+"""
+number_of_rules(fp::FroidurePin) = Int(LibSemigroups.number_of_rules(fp.cxx_obj))
+
+"""
+    number_of_idempotents(fp::FroidurePin) -> Int
+
+Return the total number of idempotent elements in the semigroup.
+
+Triggers full enumeration if not already complete.
+"""
+number_of_idempotents(fp::FroidurePin) = Int(LibSemigroups.number_of_idempotents(fp.cxx_obj))
