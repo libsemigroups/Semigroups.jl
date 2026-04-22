@@ -74,6 +74,9 @@ include("presentation-examples.jl")
 include("bmat8.jl")
 include("transf.jl")
 
+# Algorithm types (must come after element types)
+include("froidure-pin.jl")
+
 # Module initialization
 function __init__()
     # Initialize the CxxWrap module
@@ -159,6 +162,9 @@ export Transf, PPerm, Perm
 export degree, rank, image, domain, inverse
 export increase_degree_by!, swap!
 export left_one, right_one
+
+# FroidurePin
+export FroidurePin, current_size, number_of_generators, enumerate!
 
 # BMat8
 export BMat8, to_int, swap!, degree, random, row_space_basis
