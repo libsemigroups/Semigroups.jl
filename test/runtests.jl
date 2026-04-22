@@ -22,4 +22,5 @@ using Semigroups
     include("test_presentation.jl")
     include("test_presentation_examples.jl")
     include("test_word_range.jl")
+    include("test_froidure_pin_temp.jl")
 end
