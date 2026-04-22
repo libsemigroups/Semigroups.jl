@@ -67,6 +67,8 @@ include("runner.jl")
 include("order.jl")
 include("word-range.jl")
 include("word-graph.jl")
+include("presentation.jl")
+include("presentation-examples.jl")
 
 # High-level element types
 include("bmat8.jl")
@@ -110,6 +112,47 @@ export next!, at_end, valid, init!, size_hint, upper_bound
 
 # WordGraph
 export WordGraph, number_of_nodes, out_degree, target, target!, add_nodes!
+
+# Presentation
+export Presentation, alphabet, set_alphabet!, alphabet_from_rules!
+export letter, index_of, in_alphabet
+export contains_empty_word, set_contains_empty_word!
+export add_generator!, remove_generator!
+export add_rule!, add_rule_no_checks!, add_rules!
+export number_of_rules, rule, rule_lhs, rule_rhs, rules, clear_rules!
+export throw_if_alphabet_has_duplicates, throw_if_letter_not_in_alphabet
+export throw_if_bad_rules, throw_if_bad_alphabet_or_rules
+export length_of, longest_rule_length, shortest_rule_length
+export longest_rule_index, shortest_rule_index
+export first_unused_letter, index_rule, is_rule
+export is_normalized, are_rules_sorted, contains_rule
+export throw_if_odd_number_of_rules, throw_if_bad_inverses
+export normalize_alphabet!, change_alphabet!, sort_rules!, sort_each_rule!
+export add_identity_rules!, add_zero_rules!, add_inverse_rules!
+export replace_subword!, replace_word!, replace_word_with_new_generator!
+export remove_duplicate_rules!, remove_trivial_rules!
+export to_gap_string
+export InversePresentation, set_inverses!, inverses, inverse_of
+export throw_if_bad_alphabet_rules_or_inverses
+
+# presentation::examples
+export symmetric_group
+export alternating_group, braid_group, not_symmetric_group
+export full_transformation_monoid, partial_transformation_monoid
+export symmetric_inverse_monoid, cyclic_inverse_monoid
+export order_preserving_monoid, order_preserving_cyclic_inverse_monoid
+export orientation_preserving_monoid, orientation_preserving_reversing_monoid
+export partition_monoid, partial_brauer_monoid, brauer_monoid
+export singular_brauer_monoid, temperley_lieb_monoid, motzkin_monoid
+export partial_isometries_cycle_graph_monoid, uniform_block_bijection_monoid
+export dual_symmetric_inverse_monoid, stellar_monoid, zero_rook_monoid
+export abacus_jones_monoid
+export plactic_monoid, chinese_monoid, hypo_plactic_monoid, stylic_monoid
+export special_linear_group_2
+export fibonacci_semigroup, monogenic_semigroup, rectangular_band
+export sigma_plactic_monoid
+export renner_type_B_monoid, renner_type_D_monoid
+export not_renner_type_B_monoid, not_renner_type_D_monoid
 
 # Transformation types and functions
 export Transf, PPerm, Perm

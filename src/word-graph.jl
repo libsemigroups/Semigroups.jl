@@ -51,7 +51,7 @@ const WordGraph = LibSemigroups.WordGraph
 # ============================================================================
 # Index conversion (private, file-local)
 # ============================================================================
-# WordGraph<uint32_t> — node_type = label_type = uint32_t. Conversion happens
+# WordGraph<uint32_t> - node_type = label_type = uint32_t. Conversion happens
 # here, not in C++: the C++ binding is pure pass-through per project convention.
 
 _to_cpp(x::Integer) = UInt32(x - 1)

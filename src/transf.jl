@@ -99,7 +99,7 @@ const _PermTypes = Union{Perm1,Perm2,Perm4}
 const _PTransfTypes = Union{_TransfTypes,_PPermTypes,_PermTypes}
 
 # ============================================================================
-# Index convention — helpers for crossing the Julia/C++ boundary
+# Index convention - helpers for crossing the Julia/C++ boundary
 # ----------------------------------------------------------------------------
 # Julia uses 1-based indexing with `UNDEFINED` for missing values.
 # C++ (libsemigroups) uses 0-based indexing with `typemax(T)` as the UNDEFINED
@@ -178,7 +178,7 @@ right_one(p::_PPermTypes) = LibSemigroups.right_one(p)
     _scalar_type_from_degree(n::Integer) -> Type
 
 Select appropriate unsigned integer type based on degree `n`.
-Returns UInt8 for n ≤ 255, UInt16 for n ≤ 65535, UInt32 otherwise.
+Returns UInt8 for n <= 255, UInt16 for n <= 65535, UInt32 otherwise.
 """
 function _scalar_type_from_degree(n::Integer)
     # Use <= for typemax: degree n stores 0-based indices 0..n-1, so max index n-1
@@ -475,7 +475,7 @@ Base.copy(t::Transf{T}) where {T} = Transf{T}(copy(t.cxx_obj))
 """
     *(t1::Transf, t2::Transf) -> Transf
 
-Compose two transformations. Returns t1 ∘ t2, i.e., (t1*t2)[i] = t1[t2[i]].
+Compose two transformations. Returns ``t_1 \\circ t_2``, i.e., `(t1*t2)[i] = t1[t2[i]]`.
 Both operands must have the same scalar type (use the same underlying C++ type).
 
 # Example

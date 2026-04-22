@@ -5,7 +5,7 @@
 """
 order.jl - Order enum and compare helpers
 
-Exposes `Order` (an enum selecting a word ordering — shortlex, lex, recursive-
+Exposes `Order` (an enum selecting a word ordering - shortlex, lex, recursive-
 path) along with comparator free functions instantiated for Julia
 `Vector{Int}` words. The Julia public API uses 1-based letter indices; the
 private `_word_to_cpp` helper converts to 0-based at the C++ boundary.
@@ -25,10 +25,10 @@ The values of this enum can be passed as the argument to functions such as
 for congruence classes are given with respect to one of these orders.
 
 Values:
-- [`ORDER_NONE`](@ref)        — no ordering
-- [`ORDER_SHORTLEX`](@ref)    — short-lex: order by length, then lexicographically
-- [`ORDER_LEX`](@ref)         — pure lexicographic (not a well-order in general)
-- [`ORDER_RECURSIVE`](@ref)   — recursive-path ordering (Jantzen 2012,
+- [`ORDER_NONE`](@ref)        - no ordering
+- [`ORDER_SHORTLEX`](@ref)    - short-lex: order by length, then lexicographically
+- [`ORDER_LEX`](@ref)         - pure lexicographic (not a well-order in general)
+- [`ORDER_RECURSIVE`](@ref)   - recursive-path ordering (Jantzen 2012,
   Definition 1.2.14, page 24)
 """
 const Order = LibSemigroups.Order
@@ -71,7 +71,7 @@ const ORDER_RECURSIVE = LibSemigroups.order_recursive
 # ----------------------------------------------------------------------------
 # Julia uses 1-based letter indices; libsemigroups stores 0-based in
 # `word_type = std::vector<size_t>` (UInt64 on 64-bit systems). Conversion
-# is applied at the C++ boundary — these helpers are the only place the
+# is applied at the C++ boundary - these helpers are the only place the
 # shift happens.
 # ============================================================================
 

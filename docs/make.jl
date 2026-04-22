@@ -39,6 +39,13 @@ makedocs(;
             "Orders" => "data-structures/order.md",
             "Words" => "data-structures/word-range.md",
             "Word Graphs" => "data-structures/word-graph.md",
+            "Presentations" => [
+                "Overview" => "data-structures/presentations/index.md",
+                "Presentation" => "data-structures/presentations/presentation.md",
+                "InversePresentation" => "data-structures/presentations/inverse-presentation.md",
+                "Helper functions" => "data-structures/presentations/helpers.md",
+                "Examples" => "data-structures/presentations/examples.md",
+            ],
             "Elements" => [
                 "Overview" => "data-structures/elements/index.md",
                 "Transformations" => [

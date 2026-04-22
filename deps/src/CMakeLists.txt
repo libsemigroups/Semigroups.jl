@@ -52,6 +52,8 @@ add_library(libsemigroups_julia SHARED
     transf.cpp
     word-graph.cpp
     word-range.cpp
+    presentation.cpp
+    presentation-examples.cpp
 )
 
 # Include directories

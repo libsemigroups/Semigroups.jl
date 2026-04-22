@@ -352,17 +352,17 @@ end
     # ========================================================================
 
     function check_parametric_type(T)
-        # Auto-selection: small degree → UInt8
+        # Auto-selection: small degree -> UInt8
         x8 = T(collect(1:10))
         @test x8 isa T{UInt8}
         @test degree(x8) == 10
 
-        # Auto-selection: large degree → UInt16
+        # Auto-selection: large degree -> UInt16
         x16 = T(collect(1:300))
         @test x16 isa T{UInt16}
         @test degree(x16) == 300
 
-        # Boundary: 255 → UInt8, 256 → UInt16
+        # Boundary: 255 -> UInt8, 256 -> UInt16
         @test T(collect(1:255)) isa T{UInt8}
         @test T(collect(1:256)) isa T{UInt16}
 
@@ -533,18 +533,18 @@ end
 
 @testset "Index conversion helpers" begin
     for T in (UInt8, UInt16, UInt32)
-        # Julia → C++ (integer)
+        # Julia -> C++ (integer)
         @test Semigroups._to_cpp(1, T) === T(0)
         @test Semigroups._to_cpp(5, T) === T(4)
 
-        # Julia → C++ (UNDEFINED)
+        # Julia -> C++ (UNDEFINED)
         @test Semigroups._to_cpp(UNDEFINED, T) === typemax(T)
 
-        # C++ → Julia (never undefined)
+        # C++ -> Julia (never undefined)
         @test Semigroups._from_cpp(T(0)) === 1
         @test Semigroups._from_cpp(T(4)) === 5
 
-        # C++ → Julia (PPerm; may be undefined)
+        # C++ -> Julia (PPerm; may be undefined)
         @test Semigroups._from_cpp_undef(T(0)) === 1
         @test Semigroups._from_cpp_undef(T(4)) === 5
         @test Semigroups._from_cpp_undef(typemax(T)) === UNDEFINED

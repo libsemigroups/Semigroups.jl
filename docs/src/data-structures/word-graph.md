@@ -4,6 +4,10 @@ This page contains the documentation of the type [`WordGraph`](@ref
 Semigroups.WordGraph), a representation of a word graph over an alphabet
 of fixed out-degree.
 
+!!! warning "Minimal implementation"
+    Semigroups.jl v1 currently contains a minimal implementation of WordGraph
+    in order to support algorithm implementations. 
+
 ```@docs
 Semigroups.WordGraph
 ```

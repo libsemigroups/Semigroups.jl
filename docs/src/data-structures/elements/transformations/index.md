@@ -52,7 +52,7 @@ All transformation types use **1-based indexing** (the standard Julia
 convention). Internally, indices are converted to 0-based for the underlying
 C++ library ([libsemigroups](https://libsemigroups.github.io/libsemigroups/)).
 
-## Full API — shared functions
+## Full API - shared functions
 
 ```@docs
 Base.copy(::Semigroups.Transf)

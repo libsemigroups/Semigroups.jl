@@ -171,7 +171,7 @@ Base.transpose(x::BMat8)::BMat8 = LibSemigroups.bmat8_transpose(x)
 # Semigroups.jl functions
 ########################################################################
 
-# TODO document the 0-arg constructor
+# TODO document the 0-arg constructor
 
 """
     BMat8(rows::Vector{Vector{T}})::BMat8 where {T<:Union{Bool,Int64}} -> BMat8

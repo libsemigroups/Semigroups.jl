@@ -61,7 +61,7 @@ Permutations can be composed using `*`:
 ```julia
 p = Perm([2, 3, 1])
 q = Perm([3, 1, 2])
-r = p * q  # Perm([1, 2, 3]) — the identity
+r = p * q  # Perm([1, 2, 3]) - the identity
 ```
 
 ### Comparison

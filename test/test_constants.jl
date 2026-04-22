@@ -9,7 +9,7 @@ test_constants.jl - Tests for libsemigroups constants
 """
 
 @testset "Constants" begin
-    # Test UNDEFINED conversions — typemax(T) is the libsemigroups native sentinel
+    # Test UNDEFINED conversions - typemax(T) is the libsemigroups native sentinel
     @test convert(UInt8, UNDEFINED) === typemax(UInt8)
     @test convert(UInt16, UNDEFINED) === typemax(UInt16)
     @test convert(UInt32, UNDEFINED) === typemax(UInt32)
