@@ -40,6 +40,7 @@ namespace libsemigroups_julia {
     define_order(mod);
     define_word_range(mod);
     define_word_graph(mod);
+    define_froidure_pin_base(mod);
     define_presentation(mod);
     define_presentation_examples(mod);
   }
