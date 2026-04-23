@@ -173,6 +173,12 @@ export batch_size, set_batch_size!
 export contains_one, is_idempotent
 export prefix, suffix, first_letter, final_letter, fast_product
 export number_of_idempotents
+export rules, current_rules, normal_forms, current_normal_forms
+export idempotents, sorted_elements
+export minimal_factorisation, current_minimal_factorisation, factorisation
+export right_cayley_graph, current_right_cayley_graph
+export left_cayley_graph, current_left_cayley_graph
+export to_element, equal_to
 
 # BMat8
 export BMat8, to_int, swap!, degree, random, row_space_basis

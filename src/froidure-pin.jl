@@ -101,6 +101,19 @@ _cxx_element(x::Perm) = x.cxx_obj
 _cxx_element(x::BMat8) = x  # BMat8 is a direct alias
 
 """
+    _copy_cxx_element(raw) -> CxxWrap object (Allocated)
+
+Copy a raw CxxWrap element to produce an Allocated (owning) copy.
+Needed when iterating CxxWrap StdVectors, which yield Dereferenced
+references that don't own their memory.
+
+For Transf/PPerm/Perm types, calls LibSemigroups.copy().
+For BMat8, returns as-is (value type).
+"""
+_copy_cxx_element(raw::Union{_TransfTypes,_PPermTypes,_PermTypes}) = LibSemigroups.copy(raw)
+_copy_cxx_element(raw::BMat8) = raw
+
+"""
     _fp_element_type(::Type{E}) -> Type
 
 Normalize element type for the FroidurePin{E} type parameter.
@@ -901,3 +914,267 @@ Return the total number of idempotent elements in the semigroup.
 Triggers full enumeration if not already complete.
 """
 number_of_idempotents(fp::FroidurePin) = Int(LibSemigroups.number_of_idempotents(fp.cxx_obj))
+
+# ============================================================================
+# Collections — rules, normal forms, idempotents, sorted elements
+# ============================================================================
+
+"""
+    rules(fp::FroidurePin) -> Vector{Pair{Vector{Int}, Vector{Int}}}
+
+Return all defining rules of the semigroup as a vector of `lhs => rhs`
+pairs, where each side is a 1-based generator-index word.
+
+Triggers full enumeration if not already complete.
+
+# Example
+```julia
+S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
+rs = rules(S)
+for (lhs, rhs) in rs
+    println(lhs, " => ", rhs)
+end
+```
+"""
+function rules(fp::FroidurePin)
+    lhs_raw = @wrap_libsemigroups_call LibSemigroups.rules_lhs(fp.cxx_obj)
+    rhs_raw = @wrap_libsemigroups_call LibSemigroups.rules_rhs(fp.cxx_obj)
+    n = length(lhs_raw)
+    result = Vector{Pair{Vector{Int},Vector{Int}}}(undef, n)
+    for i in 1:n
+        result[i] = _word_from_cpp(lhs_raw[i]) => _word_from_cpp(rhs_raw[i])
+    end
+    return result
+end
+
+"""
+    current_rules(fp::FroidurePin) -> Vector{Pair{Vector{Int}, Vector{Int}}}
+
+Return all rules discovered so far (without triggering further enumeration)
+as a vector of `lhs => rhs` pairs with 1-based generator indices.
+"""
+function current_rules(fp::FroidurePin)
+    lhs_raw = @wrap_libsemigroups_call LibSemigroups.current_rules_lhs(fp.cxx_obj)
+    rhs_raw = @wrap_libsemigroups_call LibSemigroups.current_rules_rhs(fp.cxx_obj)
+    n = length(lhs_raw)
+    result = Vector{Pair{Vector{Int},Vector{Int}}}(undef, n)
+    for i in 1:n
+        result[i] = _word_from_cpp(lhs_raw[i]) => _word_from_cpp(rhs_raw[i])
+    end
+    return result
+end
+
+"""
+    normal_forms(fp::FroidurePin) -> Vector{Vector{Int}}
+
+Return the normal forms (canonical representatives) for all elements,
+as 1-based generator-index words.
+
+Triggers full enumeration if not already complete.
+"""
+function normal_forms(fp::FroidurePin)
+    raw = @wrap_libsemigroups_call LibSemigroups.normal_forms(fp.cxx_obj)
+    return [_word_from_cpp(w) for w in raw]
+end
+
+"""
+    current_normal_forms(fp::FroidurePin) -> Vector{Vector{Int}}
+
+Return the normal forms discovered so far (without triggering further
+enumeration) as 1-based generator-index words.
+"""
+function current_normal_forms(fp::FroidurePin)
+    raw = @wrap_libsemigroups_call LibSemigroups.current_normal_forms(fp.cxx_obj)
+    return [_word_from_cpp(w) for w in raw]
+end
+
+"""
+    idempotents(fp::FroidurePin{E}) -> Vector{E}
+
+Return all idempotent elements of the semigroup (elements `x` such
+that `x * x == x`).
+
+Triggers full enumeration if not already complete.
+
+# Example
+```julia
+S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
+ids = idempotents(S)  # [Transf([1, 2, 3])]
+```
+"""
+function idempotents(fp::FroidurePin{E}) where {E}
+    raw = @wrap_libsemigroups_call LibSemigroups.idempotents(fp.cxx_obj)
+    # GC.@preserve raw to keep StdVector alive while iterating;
+    # _copy_cxx_element converts Dereferenced refs to Allocated copies.
+    GC.@preserve raw begin
+        return E[_wrap_element(E, _copy_cxx_element(x)) for x in raw]
+    end
+end
+
+"""
+    sorted_elements(fp::FroidurePin{E}) -> Vector{E}
+
+Return all elements of the semigroup in sorted order.
+
+Triggers full enumeration if not already complete.
+
+# Example
+```julia
+S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
+se = sorted_elements(S)
+```
+"""
+function sorted_elements(fp::FroidurePin{E}) where {E}
+    raw = @wrap_libsemigroups_call LibSemigroups.sorted_elements(fp.cxx_obj)
+    # GC.@preserve raw to keep StdVector alive while iterating;
+    # _copy_cxx_element converts Dereferenced refs to Allocated copies.
+    GC.@preserve raw begin
+        return E[_wrap_element(E, _copy_cxx_element(x)) for x in raw]
+    end
+end
+
+# ============================================================================
+# Factorisations
+# ============================================================================
+
+"""
+    minimal_factorisation(fp::FroidurePin, i::Integer) -> Vector{Int}
+
+Return the minimal factorisation of the element at 1-based position `i`
+as a 1-based generator-index word.
+
+# Example
+```julia
+S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
+w = minimal_factorisation(S, 1)  # [1] or [2] — a single generator
+```
+"""
+function minimal_factorisation(fp::FroidurePin, i::Integer)
+    idx = _to_cpp(i, UInt32)
+    raw = @wrap_libsemigroups_call LibSemigroups.minimal_factorisation(fp.cxx_obj, idx)
+    return _word_from_cpp(raw)
+end
+
+"""
+    current_minimal_factorisation(fp::FroidurePin, i::Integer) -> Vector{Int}
+
+Return the minimal factorisation of the element at 1-based position `i`
+without triggering further enumeration.
+"""
+function current_minimal_factorisation(fp::FroidurePin, i::Integer)
+    idx = _to_cpp(i, UInt32)
+    raw = @wrap_libsemigroups_call LibSemigroups.current_minimal_factorisation(fp.cxx_obj, idx)
+    return _word_from_cpp(raw)
+end
+
+"""
+    factorisation(fp::FroidurePin, i::Integer) -> Vector{Int}
+
+Return the factorisation of the element at 1-based position `i`
+as a 1-based generator-index word.
+
+This may not be the minimal factorisation.
+"""
+function factorisation(fp::FroidurePin, i::Integer)
+    idx = _to_cpp(i, UInt32)
+    raw = @wrap_libsemigroups_call LibSemigroups.factorisation(fp.cxx_obj, idx)
+    return _word_from_cpp(raw)
+end
+
+# ============================================================================
+# Word-position queries
+# ============================================================================
+
+"""
+    position(fp::FroidurePin, w::AbstractVector{<:Integer}) -> Int
+
+Return the 1-based position of the element represented by the 1-based
+generator-index word `w`.
+
+Triggers full enumeration if not already complete.
+
+# Example
+```julia
+S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
+position(S, [1])  # position of generator 1
+```
+"""
+function position(fp::FroidurePin, w::AbstractVector{<:Integer})
+    cw = _word_to_cpp(w)
+    raw = @wrap_libsemigroups_call LibSemigroups.position(fp.cxx_obj, cw)
+    return _from_cpp(raw)
+end
+
+# ============================================================================
+# Cayley graphs
+# ============================================================================
+
+"""
+    right_cayley_graph(fp::FroidurePin) -> WordGraph
+
+Return the right Cayley graph of the semigroup.
+
+Triggers full enumeration if not already complete.
+"""
+right_cayley_graph(fp::FroidurePin) = LibSemigroups.right_cayley_graph(fp.cxx_obj)
+
+"""
+    current_right_cayley_graph(fp::FroidurePin) -> WordGraph
+
+Return the right Cayley graph for elements enumerated so far.
+"""
+current_right_cayley_graph(fp::FroidurePin) = LibSemigroups.current_right_cayley_graph(fp.cxx_obj)
+
+"""
+    left_cayley_graph(fp::FroidurePin) -> WordGraph
+
+Return the left Cayley graph of the semigroup.
+
+Triggers full enumeration if not already complete.
+"""
+left_cayley_graph(fp::FroidurePin) = LibSemigroups.left_cayley_graph(fp.cxx_obj)
+
+"""
+    current_left_cayley_graph(fp::FroidurePin) -> WordGraph
+
+Return the left Cayley graph for elements enumerated so far.
+"""
+current_left_cayley_graph(fp::FroidurePin) = LibSemigroups.current_left_cayley_graph(fp.cxx_obj)
+
+# ============================================================================
+# Word-element conversion
+# ============================================================================
+
+"""
+    to_element(fp::FroidurePin{E}, w::AbstractVector{<:Integer}) -> E
+
+Convert a 1-based generator-index word `w` to the corresponding element.
+
+# Example
+```julia
+S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
+x = to_element(S, [1, 2])  # product of generators 1 and 2
+```
+"""
+function to_element(fp::FroidurePin{E}, w::AbstractVector{<:Integer}) where {E}
+    cw = _word_to_cpp(w)
+    raw = @wrap_libsemigroups_call LibSemigroups.to_element(fp.cxx_obj, cw)
+    return _wrap_element(E, raw)
+end
+
+"""
+    equal_to(fp::FroidurePin, w1::AbstractVector{<:Integer}, w2::AbstractVector{<:Integer}) -> Bool
+
+Check whether two 1-based generator-index words represent the same element.
+
+# Example
+```julia
+S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
+equal_to(S, [1, 1], [1])  # does gen1*gen1 == gen1?
+```
+"""
+function equal_to(fp::FroidurePin, w1::AbstractVector{<:Integer}, w2::AbstractVector{<:Integer})
+    cw1 = _word_to_cpp(w1)
+    cw2 = _word_to_cpp(w2)
+    return @wrap_libsemigroups_call LibSemigroups.equal_to(fp.cxx_obj, cw1, cw2)
+end

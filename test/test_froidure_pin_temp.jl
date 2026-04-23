@@ -474,7 +474,7 @@ end
         x = to_element(S, w)
         @test x isa Transf{UInt8}
         # Factorising x should give back a word whose product = x
-        wf = minimal_factorisation(S, position(S, x))
+        wf = minimal_factorisation(S, Semigroups.position(S, x))
         @test to_element(S, wf) == x
     end
 
