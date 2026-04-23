@@ -170,9 +170,12 @@ export generator, sorted_at
 export position, sorted_position, to_sorted_position
 export closure!, copy_closure, copy_add_generators
 export batch_size, set_batch_size!
-export contains_one, is_idempotent
+export contains_one, currently_contains_one, is_idempotent
 export prefix, suffix, first_letter, final_letter, fast_product
-export number_of_idempotents
+export number_of_idempotents, number_of_elements_of_length
+export current_number_of_rules, current_max_word_length
+export position_of_generator, current_length, word_length
+export product_by_reduction
 export rules, current_rules, normal_forms, current_normal_forms
 export idempotents, sorted_elements
 export minimal_factorisation, current_minimal_factorisation, factorisation

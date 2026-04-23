@@ -907,6 +907,14 @@ Triggers full enumeration if not already complete.
 number_of_rules(fp::FroidurePin) = Int(LibSemigroups.number_of_rules(fp.cxx_obj))
 
 """
+    current_number_of_rules(fp::FroidurePin) -> Int
+
+Return the number of rules discovered so far (without triggering
+further enumeration).
+"""
+current_number_of_rules(fp::FroidurePin) = Int(LibSemigroups.current_number_of_rules(fp.cxx_obj))
+
+"""
     number_of_idempotents(fp::FroidurePin) -> Int
 
 Return the total number of idempotent elements in the semigroup.
@@ -914,6 +922,97 @@ Return the total number of idempotent elements in the semigroup.
 Triggers full enumeration if not already complete.
 """
 number_of_idempotents(fp::FroidurePin) = Int(LibSemigroups.number_of_idempotents(fp.cxx_obj))
+
+"""
+    currently_contains_one(fp::FroidurePin) -> Bool
+
+Check whether the identity element has been discovered so far
+(without triggering further enumeration).
+"""
+currently_contains_one(fp::FroidurePin) = LibSemigroups.currently_contains_one(fp.cxx_obj)
+
+"""
+    current_max_word_length(fp::FroidurePin) -> Int
+
+Return the maximum word length of elements enumerated so far
+(without triggering further enumeration).
+"""
+current_max_word_length(fp::FroidurePin) = Int(LibSemigroups.current_max_word_length(fp.cxx_obj))
+
+"""
+    number_of_elements_of_length(fp::FroidurePin, len::Integer) -> Int
+
+Return the number of elements whose minimal factorisation has
+exactly length `len`.
+"""
+function number_of_elements_of_length(fp::FroidurePin, len::Integer)
+    return Int(LibSemigroups.number_of_elements_of_length(fp.cxx_obj, UInt(len)))
+end
+
+"""
+    number_of_elements_of_length(fp::FroidurePin, min::Integer, max::Integer) -> Int
+
+Return the number of elements whose minimal factorisation has
+length in the range `[min, max)`.
+"""
+function number_of_elements_of_length(fp::FroidurePin, min::Integer, max::Integer)
+    return Int(LibSemigroups.number_of_elements_of_length_range(fp.cxx_obj, UInt(min), UInt(max)))
+end
+
+"""
+    position_of_generator(fp::FroidurePin, i::Integer) -> Int
+
+Return the 1-based position of the `i`-th generator (1-based) in the
+enumerated elements.
+"""
+function position_of_generator(fp::FroidurePin, i::Integer)
+    idx = _to_cpp(i, UInt32)
+    raw = @wrap_libsemigroups_call LibSemigroups.position_of_generator(fp.cxx_obj, idx)
+    return _from_cpp(raw)
+end
+
+"""
+    current_length(fp::FroidurePin, i::Integer) -> Int
+
+Return the length of the minimal factorisation of the element at
+1-based position `i` (without triggering further enumeration).
+"""
+function current_length(fp::FroidurePin, i::Integer)
+    idx = _to_cpp(i, UInt32)
+    raw = @wrap_libsemigroups_call LibSemigroups.current_length(fp.cxx_obj, idx)
+    return Int(raw)
+end
+
+"""
+    word_length(fp::FroidurePin, i::Integer) -> Int
+
+Return the length of the minimal factorisation of the element at
+1-based position `i`.
+
+Triggers full enumeration if not already complete.
+
+Named `word_length` to avoid conflict with `Base.length`.
+"""
+function word_length(fp::FroidurePin, i::Integer)
+    idx = _to_cpp(i, UInt32)
+    raw = @wrap_libsemigroups_call LibSemigroups.length(fp.cxx_obj, idx)
+    return Int(raw)
+end
+
+"""
+    product_by_reduction(fp::FroidurePin, i::Integer, j::Integer) -> Int
+
+Return the 1-based position of the product of the elements at 1-based
+positions `i` and `j`, computed using the Cayley graph (no full
+enumeration required, but the elements at positions `i` and `j` must
+already be enumerated).
+"""
+function product_by_reduction(fp::FroidurePin, i::Integer, j::Integer)
+    ci = _to_cpp(i, UInt32)
+    cj = _to_cpp(j, UInt32)
+    raw = @wrap_libsemigroups_call LibSemigroups.product_by_reduction(fp.cxx_obj, ci, cj)
+    return _from_cpp(raw)
+end
 
 # ============================================================================
 # Collections — rules, normal forms, idempotents, sorted elements
