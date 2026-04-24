@@ -798,111 +798,94 @@ _w(xs...) = UInt[UInt(x) for x in xs]
     # Layer 3 — High-level integration tests (RED until Task 4)
     # ========================================================================
 
-    @testset "Layer 3: high-level API (RED)" begin
+    @testset "Layer 3: high-level API" begin
 
         # These tests call through the public Semigroups.* API.
-        # They will FAIL until the Julia wrapper (Task 4) is implemented.
 
         @testset "KnuthBendix type alias" begin
-            @test_broken isdefined(Semigroups, :KnuthBendix)
+            @test isdefined(Semigroups, :KnuthBendix)
         end
 
         @testset "Base.length(kb) == number_of_classes" begin
-            @test_broken begin
-                p = Presentation()
-                set_alphabet!(p, 2)
-                add_rule!(p, [1, 1, 1], [1])
-                add_rule!(p, [1], [2, 2])
-                kb = Semigroups.KnuthBendix(twosided, p)
-                length(kb) == 5
-            end
+            p = Presentation()
+            set_alphabet!(p, 2)
+            add_rule!(p, [1, 1, 1], [1])
+            add_rule!(p, [1], [2, 2])
+            kb = KnuthBendix(twosided, p)
+            @test length(kb) == 5
         end
 
         @testset "Base.show(kb) produces output" begin
-            @test_broken begin
-                p = Presentation()
-                set_alphabet!(p, 2)
-                add_rule!(p, [1, 1, 1], [1])
-                kb = Semigroups.KnuthBendix(twosided, p)
-                s = sprint(show, kb)
-                occursin("KnuthBendix", s)
-            end
+            p = Presentation()
+            set_alphabet!(p, 2)
+            add_rule!(p, [1, 1, 1], [1])
+            kb = KnuthBendix(twosided, p)
+            s = sprint(show, kb)
+            @test occursin("KnuthBendix", s)
         end
 
         @testset "Base.copy(kb) produces independent object" begin
-            @test_broken begin
-                p = Presentation()
-                set_alphabet!(p, 2)
-                add_rule!(p, [1, 1, 1], [1])
-                add_rule!(p, [1], [2, 2])
-                kb = Semigroups.KnuthBendix(twosided, p)
-                kb2 = copy(kb)
-                Semigroups.number_of_classes(kb2) == 5
-            end
+            p = Presentation()
+            set_alphabet!(p, 2)
+            add_rule!(p, [1, 1, 1], [1])
+            add_rule!(p, [1], [2, 2])
+            kb = KnuthBendix(twosided, p)
+            kb2 = copy(kb)
+            @test number_of_classes(kb2) == 5
         end
 
         @testset "reduce with 1-based Vector{Int}" begin
-            @test_broken begin
-                p = Presentation()
-                set_alphabet!(p, 2)
-                add_rule!(p, [1, 1, 1], [1])
-                add_rule!(p, [1], [2, 2])
-                kb = Semigroups.KnuthBendix(twosided, p)
-                Semigroups.reduce(kb, [1, 1, 2]) == [1, 1, 2]
-            end
+            p = Presentation()
+            set_alphabet!(p, 2)
+            add_rule!(p, [1, 1, 1], [1])
+            add_rule!(p, [1], [2, 2])
+            kb = KnuthBendix(twosided, p)
+            @test Semigroups.reduce(kb, [1, 1, 2]) == [1, 1, 2]
         end
 
         @testset "contains with 1-based Vector{Int}" begin
-            @test_broken begin
-                p = Presentation()
-                set_alphabet!(p, 2)
-                add_rule!(p, [1, 1, 1], [1])
-                add_rule!(p, [1], [2, 2])
-                kb = Semigroups.KnuthBendix(twosided, p)
-                !Semigroups.contains(kb, [1, 1, 1], [2])
-            end
+            p = Presentation()
+            set_alphabet!(p, 2)
+            add_rule!(p, [1, 1, 1], [1])
+            add_rule!(p, [1], [2, 2])
+            kb = KnuthBendix(twosided, p)
+            @test !Semigroups.contains(kb, [1, 1, 1], [2])
         end
 
         @testset "setter chaining" begin
-            @test_broken begin
-                p = Presentation()
-                set_alphabet!(p, 2)
-                kb = Semigroups.KnuthBendix(twosided, p)
-                Semigroups.max_rules!(Semigroups.max_overlap!(kb, 100), 200) === kb
-            end
+            p = Presentation()
+            set_alphabet!(p, 2)
+            kb = KnuthBendix(twosided, p)
+            result = max_rules!(max_overlap!(kb, 100), 200)
+            @test result === kb
         end
 
         @testset "active_rules returns Vector{Tuple}" begin
-            @test_broken begin
-                p = Presentation()
-                set_alphabet!(p, 2)
-                add_rule!(p, [1, 1, 1], [1])
-                add_rule!(p, [1], [2, 2])
-                kb = Semigroups.KnuthBendix(twosided, p)
-                run!(kb)
-                ar = Semigroups.active_rules(kb)
-                ar isa Vector{Tuple{Vector{Int},Vector{Int}}}
-            end
+            p = Presentation()
+            set_alphabet!(p, 2)
+            add_rule!(p, [1, 1, 1], [1])
+            add_rule!(p, [1], [2, 2])
+            kb = KnuthBendix(twosided, p)
+            run!(kb)
+            ar = active_rules(kb)
+            @test ar isa Vector{Tuple{Vector{Int},Vector{Int}}}
         end
 
         @testset "normal_forms returns 1-based words" begin
-            @test_broken begin
-                p = Presentation()
-                set_alphabet!(p, 2)
-                add_rule!(p, [1, 1, 1], [1])
-                add_rule!(p, [1], [2, 2])
-                kb = Semigroups.KnuthBendix(twosided, p)
-                nf = Semigroups.normal_forms(kb)
-                length(nf) == 5 && all(w -> all(x -> x >= 1, w), nf)
-            end
+            p = Presentation()
+            set_alphabet!(p, 2)
+            add_rule!(p, [1, 1, 1], [1])
+            add_rule!(p, [1], [2, 2])
+            kb = KnuthBendix(twosided, p)
+            nf = normal_forms(kb)
+            @test length(nf) == 5
+            @test all(w -> all(x -> x >= 1, w), nf)
         end
 
         @testset "integration with presentation examples" begin
-            @test_broken begin
-                p = chinese_monoid(3)
-                kb = Semigroups.KnuthBendix(twosided, p)
-                Semigroups.number_of_classes(kb) == POSITIVE_INFINITY
-            end
+            p = chinese_monoid(3)
+            kb = KnuthBendix(twosided, p)
+            @test number_of_classes(kb) == POSITIVE_INFINITY
         end
 
         # TODO: Port tests requiring FroidurePin (test 134: to<FroidurePin>),

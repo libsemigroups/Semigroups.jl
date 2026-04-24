@@ -70,6 +70,7 @@ include("word-range.jl")
 include("word-graph.jl")
 include("presentation.jl")
 include("presentation-examples.jl")
+include("knuth-bendix.jl")
 
 # High-level element types
 include("bmat8.jl")
@@ -158,6 +159,23 @@ export fibonacci_semigroup, monogenic_semigroup, rectangular_band
 export sigma_plactic_monoid
 export renner_type_B_monoid, renner_type_D_monoid
 export not_renner_type_B_monoid, not_renner_type_D_monoid
+
+# KnuthBendix
+export KnuthBendix
+export overlap_ABC, overlap_AB_BC, overlap_MAX_AB_BC
+export max_pending_rules, max_pending_rules!
+export check_confluence_interval, check_confluence_interval!
+export max_overlap, max_overlap!, max_rules, max_rules!
+export overlap_policy, overlap_policy!
+export number_of_active_rules, number_of_inactive_rules
+export number_of_pending_rules, total_rules
+export confluent, confluent_known, number_of_classes
+export kind, number_of_generating_pairs, presentation
+export reduce_no_run, currently_contains
+export add_generating_pair!
+export active_rules, gilman_graph, gilman_graph_node_labels
+export by_overlap_length!, is_reduced, redundant_rule
+export normal_forms, non_trivial_classes
 
 # Transformation types and functions
 export Transf, PPerm, Perm
