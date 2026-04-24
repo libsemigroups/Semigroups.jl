@@ -99,6 +99,7 @@ export finished, started, running, timed_out, stopped, dead
 export stopped_by_predicate, running_for, running_until
 export current_state, running_for_how_long
 export report_why_we_stopped, string_why_we_stopped
+export congruence_kind, onesided, twosided
 export tril, tril_FALSE, tril_TRUE, tril_unknown, tril_to_bool
 export is_undefined, is_positive_infinity, is_negative_infinity, is_limit_max
 

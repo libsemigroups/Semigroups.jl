@@ -199,6 +199,30 @@ Base.show(io::IO, ::PositiveInfinityType) = print(io, "POSITIVE_INFINITY")
 Base.show(io::IO, ::NegativeInfinityType) = print(io, "NEGATIVE_INFINITY")
 Base.show(io::IO, ::LimitMaxType) = print(io, "LIMIT_MAX")
 
+# congruence_kind enum re-exports from LibSemigroups
+
+"""
+    congruence_kind
+
+Enum indicating the sided-ness of a congruence. Use `twosided` or `onesided`
+for the possible values.
+"""
+const congruence_kind = LibSemigroups.congruence_kind
+
+"""
+    onesided
+
+Value of [`congruence_kind`](@ref) representing a one-sided congruence.
+"""
+const onesided = LibSemigroups.congruence_kind_onesided
+
+"""
+    twosided
+
+Value of [`congruence_kind`](@ref) representing a two-sided congruence.
+"""
+const twosided = LibSemigroups.congruence_kind_twosided
+
 # tril enum re-exports from LibSemigroups
 
 """
