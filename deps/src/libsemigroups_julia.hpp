@@ -66,6 +66,7 @@ namespace libsemigroups_julia {
   void define_froidure_pin(jl::Module& mod);
   void define_presentation(jl::Module& mod);
   void define_presentation_examples(jl::Module& mod);
+  void define_knuth_bendix(jl::Module& mod);
 
 }  // namespace libsemigroups_julia
 

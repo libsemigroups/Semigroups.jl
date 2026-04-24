@@ -44,6 +44,7 @@ namespace libsemigroups_julia {
     define_froidure_pin(mod);
     define_presentation(mod);
     define_presentation_examples(mod);
+    define_knuth_bendix(mod);
   }
 
 }  // namespace libsemigroups_julia

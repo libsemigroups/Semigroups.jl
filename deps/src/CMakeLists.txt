@@ -56,6 +56,7 @@ add_library(libsemigroups_julia SHARED
     word-range.cpp
     presentation.cpp
     presentation-examples.cpp
+    knuth-bendix.cpp
 )
 
 # Include directories
