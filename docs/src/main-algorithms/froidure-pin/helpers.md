@@ -2,8 +2,18 @@
 
 This page collects the free functions that operate on a
 [`FroidurePin`](@ref Semigroups.FroidurePin) instance. They mirror the
-`libsemigroups::froidure_pin::*` namespace and are organised into three
-groups: factorisations, collections, and word-element conversion.
+`libsemigroups::froidure_pin::*` namespace and are organised into four
+groups: factorisations, collections, word-element conversion, and Cayley
+graphs.
+
+## Table of contents
+
+| Section | Description |
+| ------- | ----------- |
+| [Factorisations](@ref) | Minimal and non-minimal factorisations of elements as generator-index words. |
+| [Collections](@ref) | Materialized vectors of rules, normal forms, idempotents, and sorted elements. |
+| [Word-element conversion](@ref) | Convert between generator-index words and semigroup elements. |
+| [Cayley graphs](@ref) | Left and right Cayley graphs as `WordGraph` objects. |
 
 ## Factorisations
 
