@@ -337,7 +337,7 @@ Return the Gilman graph of the confluent rewriting system.
 
 Return the node labels of the Gilman graph as 1-based words.
 """
-function gilman_graph_node_labels(kb::KnuthBendix)
+@cxxdereference function gilman_graph_node_labels(kb::KnuthBendix)
     labels = LibSemigroups.gilman_graph_node_labels(kb)
     return [_word_from_cpp(w) for w in labels]
 end
@@ -369,6 +369,9 @@ end
 Create an independent copy of `kb`.
 """
 Base.copy(kb::KnuthBendix) = LibSemigroups.KnuthBendixRewriteTrie(kb)
+
+Base.deepcopy_internal(kb::KnuthBendix, ::IdDict) =
+    LibSemigroups.KnuthBendixRewriteTrie(kb)
 
 # ============================================================================
 # Free functions
