@@ -693,6 +693,41 @@ function to_sorted_position(fp::FroidurePin, i::Integer)
     return _from_cpp(raw)
 end
 
+"""
+    current_position(fp::FroidurePin{E}, x::E) where E -> Int
+
+Return the 1-based position of element `x` among the elements
+enumerated so far (without triggering further enumeration).
+
+Returns `UNDEFINED` if `x` has not yet been enumerated.
+"""
+function current_position(fp::FroidurePin{E}, x::E) where {E}
+    cxx_x = _cxx_element(x)
+    raw = @wrap_libsemigroups_call LibSemigroups.current_position(fp.cxx_obj, cxx_x)
+    return _from_cpp(raw)
+end
+
+function current_position(fp::FroidurePin{BMat8}, x::BMat8)
+    cxx_x = _cxx_element(x)
+    raw = @wrap_libsemigroups_call LibSemigroups.current_position(fp.cxx_obj, cxx_x)
+    return _from_cpp(raw)
+end
+
+"""
+    current_position(fp::FroidurePin, w::AbstractVector{<:Integer}) -> Int
+
+Return the 1-based position of the element represented by the 1-based
+generator-index word `w` among the elements enumerated so far
+(without triggering further enumeration).
+
+Returns `UNDEFINED` if the element has not yet been enumerated.
+"""
+function current_position(fp::FroidurePin, w::AbstractVector{<:Integer})
+    cw = _word_to_cpp(w)
+    raw = @wrap_libsemigroups_call LibSemigroups.current_position(fp.cxx_obj, cw)
+    return _from_cpp(raw)
+end
+
 # ============================================================================
 # Modification
 # ============================================================================
@@ -777,6 +812,19 @@ function copy_add_generators(fp::FroidurePin{BMat8}, x::BMat8)
     cxx_x = _cxx_element(x)
     new_cxx = @wrap_libsemigroups_call LibSemigroups.copy_add_generators(fp.cxx_obj, cxx_x)
     return FroidurePin{BMat8}(new_cxx)
+end
+
+"""
+    reserve!(fp::FroidurePin, n::Integer) -> FroidurePin
+
+Pre-allocate storage for at least `n` elements. This is a performance
+hint and does not affect correctness.
+
+Returns `fp` for method chaining.
+"""
+function reserve!(fp::FroidurePin, n::Integer)
+    @wrap_libsemigroups_call LibSemigroups.reserve!(fp.cxx_obj, UInt(n))
+    return fp
 end
 
 # ============================================================================

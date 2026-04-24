@@ -447,6 +447,7 @@ Base.:(<)(t1::Transf, t2::Transf) = LibSemigroups.is_less(t1.cxx_obj, t2.cxx_obj
 Base.:(<=)(t1::Transf, t2::Transf) = LibSemigroups.is_less_equal(t1.cxx_obj, t2.cxx_obj)
 Base.:(>)(t1::Transf, t2::Transf) = LibSemigroups.is_greater(t1.cxx_obj, t2.cxx_obj)
 Base.:(>=)(t1::Transf, t2::Transf) = LibSemigroups.is_greater_equal(t1.cxx_obj, t2.cxx_obj)
+Base.isless(t1::Transf, t2::Transf) = t1 < t2
 
 # Hash
 Base.hash(t::Transf, h::UInt) = hash(hash_value(t.cxx_obj), h)
@@ -796,6 +797,7 @@ Base.:(<)(p1::PPerm, p2::PPerm) = LibSemigroups.is_less(p1.cxx_obj, p2.cxx_obj)
 Base.:(<=)(p1::PPerm, p2::PPerm) = LibSemigroups.is_less_equal(p1.cxx_obj, p2.cxx_obj)
 Base.:(>)(p1::PPerm, p2::PPerm) = LibSemigroups.is_greater(p1.cxx_obj, p2.cxx_obj)
 Base.:(>=)(p1::PPerm, p2::PPerm) = LibSemigroups.is_greater_equal(p1.cxx_obj, p2.cxx_obj)
+Base.isless(p1::PPerm, p2::PPerm) = p1 < p2
 
 # Hash
 Base.hash(p::PPerm, h::UInt) = hash(hash_value(p.cxx_obj), h)
@@ -1145,6 +1147,7 @@ Base.:(<)(p1::Perm, p2::Perm) = LibSemigroups.is_less(p1.cxx_obj, p2.cxx_obj)
 Base.:(<=)(p1::Perm, p2::Perm) = LibSemigroups.is_less_equal(p1.cxx_obj, p2.cxx_obj)
 Base.:(>)(p1::Perm, p2::Perm) = LibSemigroups.is_greater(p1.cxx_obj, p2.cxx_obj)
 Base.:(>=)(p1::Perm, p2::Perm) = LibSemigroups.is_greater_equal(p1.cxx_obj, p2.cxx_obj)
+Base.isless(p1::Perm, p2::Perm) = p1 < p2
 
 # Hash
 Base.hash(p::Perm, h::UInt) = hash(hash_value(p.cxx_obj), h)

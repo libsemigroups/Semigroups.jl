@@ -168,8 +168,9 @@ export left_one, right_one
 export FroidurePin, current_size, number_of_generators, enumerate!
 export generator, sorted_at
 export position, sorted_position, to_sorted_position
-export closure!, copy_closure, copy_add_generators
+export closure!, copy_closure, copy_add_generators, reserve!
 export batch_size, set_batch_size!
+export current_position
 export contains_one, currently_contains_one, is_idempotent
 export prefix, suffix, first_letter, final_letter, fast_product
 export number_of_idempotents, number_of_elements_of_length
