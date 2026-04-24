@@ -51,7 +51,7 @@ jobs:
           sudo make install
           sudo ldconfig
 
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: "1.10"
 
