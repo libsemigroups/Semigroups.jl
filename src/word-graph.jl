@@ -100,7 +100,7 @@ Constant.
 
 See also [`out_degree`](@ref), [`add_nodes!`](@ref).
 """
-number_of_nodes(g::WordGraph) = Int(LibSemigroups.number_of_nodes(g))
+@cxxdereference number_of_nodes(g::WordGraph) = Int(LibSemigroups.number_of_nodes(g))
 
 """
     out_degree(g::WordGraph) -> Int
@@ -117,7 +117,7 @@ Constant.
 
 See also [`number_of_nodes`](@ref), [`target`](@ref).
 """
-out_degree(g::WordGraph) = Int(LibSemigroups.out_degree(g))
+@cxxdereference out_degree(g::WordGraph) = Int(LibSemigroups.out_degree(g))
 
 """
     target(g::WordGraph, source::Integer, label::Integer) -> Union{Int, UndefinedType}
@@ -142,7 +142,7 @@ Constant.
 
 See also [`target!`](@ref), [`is_undefined`](@ref Semigroups.is_undefined).
 """
-function target(g::WordGraph, source::Integer, label::Integer)
+@cxxdereference function target(g::WordGraph, source::Integer, label::Integer)
     # Do _to_cpp conversion outside @wrap_libsemigroups_call so its
     # InexactError (from zero / negative inputs) propagates as-is rather than
     # being re-wrapped as LibsemigroupsError.
@@ -241,6 +241,6 @@ end
 # Display
 # ============================================================================
 
-function Base.show(io::IO, g::WordGraph)
+@cxxdereference function Base.show(io::IO, g::WordGraph)
     print(io, "WordGraph($(number_of_nodes(g)), $(out_degree(g)))")
 end

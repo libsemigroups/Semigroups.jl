@@ -8,6 +8,7 @@ module Semigroups
 
 using CxxWrap
 using AbstractAlgebra
+import Dates
 using Dates: TimePeriod, Nanosecond
 using libsemigroups_jll
 
@@ -73,6 +74,9 @@ include("presentation-examples.jl")
 # High-level element types
 include("bmat8.jl")
 include("transf.jl")
+
+# Algorithm types (must come after element types)
+include("froidure-pin.jl")
 
 # Module initialization
 function __init__()
@@ -159,6 +163,26 @@ export Transf, PPerm, Perm
 export degree, rank, image, domain, inverse
 export increase_degree_by!, swap!
 export left_one, right_one
+
+# FroidurePin
+export FroidurePin, current_size, number_of_generators, enumerate!
+export generator, sorted_at
+export sorted_position, to_sorted_position
+export closure!, copy_closure, copy_add_generators, reserve!
+export batch_size, set_batch_size!
+export current_position
+export contains_one, currently_contains_one, is_idempotent
+export prefix, suffix, first_letter, final_letter, fast_product
+export number_of_idempotents, number_of_elements_of_length
+export current_number_of_rules, current_max_word_length
+export position_of_generator, current_length, word_length
+export product_by_reduction
+export rules, current_rules, normal_forms, current_normal_forms
+export idempotents, sorted_elements
+export minimal_factorisation, current_minimal_factorisation, factorisation
+export right_cayley_graph, current_right_cayley_graph
+export left_cayley_graph, current_left_cayley_graph
+export to_element, equal_to
 
 # BMat8
 export BMat8, to_int, swap!, degree, random, row_space_basis

@@ -111,10 +111,12 @@ using Semigroups
 
     @testset "random" begin
 
-        @test minimum_dim(random(BMat8, 4)) == 4
+        # random(BMat8, 4) has nonzero entries only in the top-left 4×4 block,
+        # so minimum_dim is at most 4 (can be less if random rows/cols are zero)
+        @test minimum_dim(random(BMat8, 4)) <= 4
 
         x = BMat8([[1, 0, 1], [0, 1, 0], [0, 0, 0]])
-        @test minimum_dim(random(x, 4)) == 4
+        @test minimum_dim(random(x, 4)) <= 4
 
         @test_throws LibsemigroupsError random(x, 0)
         @test_throws LibsemigroupsError random(BMat8, 0)

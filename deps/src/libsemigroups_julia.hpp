@@ -62,6 +62,8 @@ namespace libsemigroups_julia {
   void define_order(jl::Module& mod);
   void define_word_range(jl::Module& mod);
   void define_word_graph(jl::Module& mod);
+  void define_froidure_pin_base(jl::Module& mod);
+  void define_froidure_pin(jl::Module& mod);
   void define_presentation(jl::Module& mod);
   void define_presentation_examples(jl::Module& mod);
 

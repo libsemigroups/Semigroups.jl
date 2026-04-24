@@ -66,6 +66,11 @@ makedocs(;
                 "main-algorithms/core-classes/index.md",
                 "main-algorithms/core-classes/runner.md",
             ],
+            "Froidure-Pin" => [
+                "Overview" => "main-algorithms/froidure-pin/index.md",
+                "The FroidurePin type" => "main-algorithms/froidure-pin/froidure-pin.md",
+                "Helper functions" => "main-algorithms/froidure-pin/helpers.md",
+            ],
         ],
     ],
     warnonly = [:missing_docs, :linkcheck, :cross_references],
