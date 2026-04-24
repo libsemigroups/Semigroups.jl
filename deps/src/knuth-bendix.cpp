@@ -254,8 +254,8 @@ namespace libsemigroups_julia {
         });
 
     // gilman_graph_node_labels — collect to vector of vectors by copy
-    m.method(
-        "kb_gilman_graph_node_labels",
+    type.method(
+        "gilman_graph_node_labels",
         [](KB& self) -> std::vector<word_type> {
           return self.gilman_graph_node_labels();
         });
