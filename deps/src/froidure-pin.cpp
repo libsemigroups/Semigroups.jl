@@ -41,33 +41,42 @@ namespace jlcxx {
 
   // IsMirroredType — one per concrete FroidurePin instantiation
   template <>
-  struct IsMirroredType<libsemigroups::FroidurePin<libsemigroups::Transf<0, uint8_t>>>
+  struct IsMirroredType<
+      libsemigroups::FroidurePin<libsemigroups::Transf<0, uint8_t>>>
       : std::false_type {};
   template <>
-  struct IsMirroredType<libsemigroups::FroidurePin<libsemigroups::Transf<0, uint16_t>>>
+  struct IsMirroredType<
+      libsemigroups::FroidurePin<libsemigroups::Transf<0, uint16_t>>>
       : std::false_type {};
   template <>
-  struct IsMirroredType<libsemigroups::FroidurePin<libsemigroups::Transf<0, uint32_t>>>
-      : std::false_type {};
-
-  template <>
-  struct IsMirroredType<libsemigroups::FroidurePin<libsemigroups::PPerm<0, uint8_t>>>
-      : std::false_type {};
-  template <>
-  struct IsMirroredType<libsemigroups::FroidurePin<libsemigroups::PPerm<0, uint16_t>>>
-      : std::false_type {};
-  template <>
-  struct IsMirroredType<libsemigroups::FroidurePin<libsemigroups::PPerm<0, uint32_t>>>
+  struct IsMirroredType<
+      libsemigroups::FroidurePin<libsemigroups::Transf<0, uint32_t>>>
       : std::false_type {};
 
   template <>
-  struct IsMirroredType<libsemigroups::FroidurePin<libsemigroups::Perm<0, uint8_t>>>
+  struct IsMirroredType<
+      libsemigroups::FroidurePin<libsemigroups::PPerm<0, uint8_t>>>
       : std::false_type {};
   template <>
-  struct IsMirroredType<libsemigroups::FroidurePin<libsemigroups::Perm<0, uint16_t>>>
+  struct IsMirroredType<
+      libsemigroups::FroidurePin<libsemigroups::PPerm<0, uint16_t>>>
       : std::false_type {};
   template <>
-  struct IsMirroredType<libsemigroups::FroidurePin<libsemigroups::Perm<0, uint32_t>>>
+  struct IsMirroredType<
+      libsemigroups::FroidurePin<libsemigroups::PPerm<0, uint32_t>>>
+      : std::false_type {};
+
+  template <>
+  struct IsMirroredType<
+      libsemigroups::FroidurePin<libsemigroups::Perm<0, uint8_t>>>
+      : std::false_type {};
+  template <>
+  struct IsMirroredType<
+      libsemigroups::FroidurePin<libsemigroups::Perm<0, uint16_t>>>
+      : std::false_type {};
+  template <>
+  struct IsMirroredType<
+      libsemigroups::FroidurePin<libsemigroups::Perm<0, uint32_t>>>
       : std::false_type {};
 
   template <>
@@ -120,11 +129,10 @@ namespace libsemigroups_julia {
         return FP(v.begin(), v.end());
       });
 
-      m.method(
-          name, [](E const& g1, E const& g2, E const& g3, E const& g4) {
-            std::vector<E> v{g1, g2, g3, g4};
-            return FP(v.begin(), v.end());
-          });
+      m.method(name, [](E const& g1, E const& g2, E const& g3, E const& g4) {
+        std::vector<E> v{g1, g2, g3, g4};
+        return FP(v.begin(), v.end());
+      });
 
       ////////////////////////////////////////////////////////////////////
       // 2. Element access — ALL return by copy (GC safety)
@@ -134,26 +142,23 @@ namespace libsemigroups_julia {
       type.method("at", [](FP& self, size_t i) -> E { return self.at(i); });
 
       // sorted_at (triggers full enumeration)
-      type.method(
-          "sorted_at", [](FP& self, size_t i) -> E { return self.sorted_at(i); });
+      type.method("sorted_at",
+                  [](FP& self, size_t i) -> E { return self.sorted_at(i); });
 
       // sorted_at_no_checks
-      type.method("sorted_at_no_checks",
-                  [](FP& self, size_t i) -> E {
-                    return self.sorted_at_no_checks(i);
-                  });
+      type.method("sorted_at_no_checks", [](FP& self, size_t i) -> E {
+        return self.sorted_at_no_checks(i);
+      });
 
       // generator (const self)
-      type.method("generator",
-                  [](FP const& self, size_t i) -> E {
-                    return self.generator(i);
-                  });
+      type.method("generator", [](FP const& self, size_t i) -> E {
+        return self.generator(i);
+      });
 
       // generator_no_checks (const self)
-      type.method("generator_no_checks",
-                  [](FP const& self, size_t i) -> E {
-                    return self.generator_no_checks(i);
-                  });
+      type.method("generator_no_checks", [](FP const& self, size_t i) -> E {
+        return self.generator_no_checks(i);
+      });
 
       // getindex_no_checks — binds operator[], const self
       type.method("getindex_no_checks",
@@ -164,16 +169,14 @@ namespace libsemigroups_julia {
       ////////////////////////////////////////////////////////////////////
 
       // contains(FP&, E const&) -> bool
-      type.method("contains",
-                  [](FP& self, E const& x) -> bool {
-                    return self.contains(x);
-                  });
+      type.method("contains", [](FP& self, E const& x) -> bool {
+        return self.contains(x);
+      });
 
       // position(FP&, E const&) -> element_index_type
-      type.method("position",
-                  [](FP& self, E const& x) -> uint32_t {
-                    return self.position(x);
-                  });
+      type.method("position", [](FP& self, E const& x) -> uint32_t {
+        return self.position(x);
+      });
 
       // current_position(FP const&, E const&) -> element_index_type
       type.method("current_position",
@@ -182,16 +185,14 @@ namespace libsemigroups_julia {
                   });
 
       // sorted_position(FP&, E const&) -> element_index_type
-      type.method("sorted_position",
-                  [](FP& self, E const& x) -> uint32_t {
-                    return self.sorted_position(x);
-                  });
+      type.method("sorted_position", [](FP& self, E const& x) -> uint32_t {
+        return self.sorted_position(x);
+      });
 
       // to_sorted_position(FP&, size_t) -> element_index_type
-      type.method("to_sorted_position",
-                  [](FP& self, size_t i) -> uint32_t {
-                    return self.to_sorted_position(i);
-                  });
+      type.method("to_sorted_position", [](FP& self, size_t i) -> uint32_t {
+        return self.to_sorted_position(i);
+      });
 
       ////////////////////////////////////////////////////////////////////
       // 4. Fast product
@@ -211,20 +212,17 @@ namespace libsemigroups_julia {
       // 5. Idempotents
       ////////////////////////////////////////////////////////////////////
 
-      type.method("number_of_idempotents",
-                  [](FP& self) -> size_t {
-                    return self.number_of_idempotents();
-                  });
+      type.method("number_of_idempotents", [](FP& self) -> size_t {
+        return self.number_of_idempotents();
+      });
 
-      type.method("is_idempotent",
-                  [](FP& self, size_t i) -> bool {
-                    return self.is_idempotent(i);
-                  });
+      type.method("is_idempotent", [](FP& self, size_t i) -> bool {
+        return self.is_idempotent(i);
+      });
 
-      type.method("is_idempotent_no_checks",
-                  [](FP& self, size_t i) -> bool {
-                    return self.is_idempotent_no_checks(i);
-                  });
+      type.method("is_idempotent_no_checks", [](FP& self, size_t i) -> bool {
+        return self.is_idempotent_no_checks(i);
+      });
 
       ////////////////////////////////////////////////////////////////////
       // 6. Modification
@@ -235,10 +233,9 @@ namespace libsemigroups_julia {
                   [](FP& self, E const& x) { self.add_generator(x); });
 
       // add_generator_no_checks!
-      type.method("add_generator_no_checks!",
-                  [](FP& self, E const& x) {
-                    self.add_generator_no_checks(x);
-                  });
+      type.method("add_generator_no_checks!", [](FP& self, E const& x) {
+        self.add_generator_no_checks(x);
+      });
 
       // closure! — single element wrapped in 1-element vector
       type.method("closure!", [](FP& self, E const& x) {
@@ -248,18 +245,16 @@ namespace libsemigroups_julia {
 
       // copy_closure — single element, returns new FP by value
       // NOTE: copy_closure is not const in C++ (it may enumerate)
-      type.method("copy_closure",
-                  [](FP& self, E const& x) -> FP {
-                    std::vector<E> v{x};
-                    return self.copy_closure(v.begin(), v.end());
-                  });
+      type.method("copy_closure", [](FP& self, E const& x) -> FP {
+        std::vector<E> v{x};
+        return self.copy_closure(v.begin(), v.end());
+      });
 
       // copy_add_generators — single element, returns new FP by value
-      type.method("copy_add_generators",
-                  [](FP const& self, E const& x) -> FP {
-                    std::vector<E> v{x};
-                    return self.copy_add_generators(v.begin(), v.end());
-                  });
+      type.method("copy_add_generators", [](FP const& self, E const& x) -> FP {
+        std::vector<E> v{x};
+        return self.copy_add_generators(v.begin(), v.end());
+      });
 
       ////////////////////////////////////////////////////////////////////
       // 7. Word-element conversion (ArrayRef<size_t> for Julia Vector{UInt})
@@ -281,7 +276,7 @@ namespace libsemigroups_julia {
 
       // equal_to — two words
       m.method("equal_to",
-               [](FP const& self,
+               [](FP const&               self,
                   jlcxx::ArrayRef<size_t> arr1,
                   jlcxx::ArrayRef<size_t> arr2) -> bool {
                  word_type w1(arr1.begin(), arr1.end());
@@ -292,7 +287,7 @@ namespace libsemigroups_julia {
 
       // equal_to_no_checks
       m.method("equal_to_no_checks",
-               [](FP const& self,
+               [](FP const&               self,
                   jlcxx::ArrayRef<size_t> arr1,
                   jlcxx::ArrayRef<size_t> arr2) -> bool {
                  word_type w1(arr1.begin(), arr1.end());
@@ -333,17 +328,15 @@ namespace libsemigroups_julia {
       // 9. Memory
       ////////////////////////////////////////////////////////////////////
 
-      type.method(
-          "reserve!", [](FP& self, size_t val) { self.reserve(val); });
+      type.method("reserve!", [](FP& self, size_t val) { self.reserve(val); });
 
       ////////////////////////////////////////////////////////////////////
       // 10. Display
       ////////////////////////////////////////////////////////////////////
 
-      m.method("to_human_readable_repr",
-               [](FP const& self) -> std::string {
-                 return libsemigroups::to_human_readable_repr(self);
-               });
+      m.method("to_human_readable_repr", [](FP const& self) -> std::string {
+        return libsemigroups::to_human_readable_repr(self);
+      });
     }
 
   }  // anonymous namespace

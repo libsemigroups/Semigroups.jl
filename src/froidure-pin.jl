@@ -197,7 +197,7 @@ function FroidurePin(gens::Vector{E}) where {E}
     else
         # >4 generators: construct with first, then add the rest
         cxx_obj = @wrap_libsemigroups_call FPType(cxx_gens[1])
-        for i in 2:n
+        for i = 2:n
             @wrap_libsemigroups_call LibSemigroups.add_generator!(cxx_obj, cxx_gens[i])
         end
     end
@@ -298,7 +298,8 @@ This partially enumerates the semigroup. After calling this, `current_size`
 will be at least `min(limit, length(fp))`.
 """
 function enumerate!(fp::FroidurePin, limit::Integer)
-    @wrap_libsemigroups_call LibSemigroups.enumerate!(fp.cxx_obj, UInt(limit))
+    lim = UInt(limit)
+    @wrap_libsemigroups_call LibSemigroups.enumerate!(fp.cxx_obj, lim)
     return fp
 end
 
@@ -452,7 +453,8 @@ running_for(fp::FroidurePin) = LibSemigroups.running_for(fp.cxx_obj)
 
 Return the duration of the most recent `run_for!` call as a `Dates.Nanosecond`.
 """
-running_for_how_long(fp::FroidurePin) = Nanosecond(LibSemigroups.running_for_how_long(fp.cxx_obj))
+running_for_how_long(fp::FroidurePin) =
+    Nanosecond(LibSemigroups.running_for_how_long(fp.cxx_obj))
 
 """
     running_until(fp::FroidurePin) -> Bool
@@ -590,7 +592,7 @@ Create an independent copy of the semigroup by reconstructing it from
 its generators.
 """
 function Base.copy(fp::FroidurePin{E}) where {E}
-    gens = [generator(fp, i) for i in 1:number_of_generators(fp)]
+    gens = [generator(fp, i) for i = 1:number_of_generators(fp)]
     return FroidurePin(gens)
 end
 
@@ -823,7 +825,8 @@ hint and does not affect correctness.
 Returns `fp` for method chaining.
 """
 function reserve!(fp::FroidurePin, n::Integer)
-    @wrap_libsemigroups_call LibSemigroups.reserve!(fp.cxx_obj, UInt(n))
+    val = UInt(n)
+    @wrap_libsemigroups_call LibSemigroups.reserve!(fp.cxx_obj, val)
     return fp
 end
 
@@ -960,7 +963,8 @@ number_of_rules(fp::FroidurePin) = Int(LibSemigroups.number_of_rules(fp.cxx_obj)
 Return the number of rules discovered so far (without triggering
 further enumeration).
 """
-current_number_of_rules(fp::FroidurePin) = Int(LibSemigroups.current_number_of_rules(fp.cxx_obj))
+current_number_of_rules(fp::FroidurePin) =
+    Int(LibSemigroups.current_number_of_rules(fp.cxx_obj))
 
 """
     number_of_idempotents(fp::FroidurePin) -> Int
@@ -969,7 +973,8 @@ Return the total number of idempotent elements in the semigroup.
 
 Triggers full enumeration if not already complete.
 """
-number_of_idempotents(fp::FroidurePin) = Int(LibSemigroups.number_of_idempotents(fp.cxx_obj))
+number_of_idempotents(fp::FroidurePin) =
+    Int(LibSemigroups.number_of_idempotents(fp.cxx_obj))
 
 """
     currently_contains_one(fp::FroidurePin) -> Bool
@@ -985,7 +990,8 @@ currently_contains_one(fp::FroidurePin) = LibSemigroups.currently_contains_one(f
 Return the maximum word length of elements enumerated so far
 (without triggering further enumeration).
 """
-current_max_word_length(fp::FroidurePin) = Int(LibSemigroups.current_max_word_length(fp.cxx_obj))
+current_max_word_length(fp::FroidurePin) =
+    Int(LibSemigroups.current_max_word_length(fp.cxx_obj))
 
 """
     number_of_elements_of_length(fp::FroidurePin, len::Integer) -> Int
@@ -1004,7 +1010,9 @@ Return the number of elements whose minimal factorisation has
 length in the range `[min, max)`.
 """
 function number_of_elements_of_length(fp::FroidurePin, min::Integer, max::Integer)
-    return Int(LibSemigroups.number_of_elements_of_length_range(fp.cxx_obj, UInt(min), UInt(max)))
+    return Int(
+        LibSemigroups.number_of_elements_of_length_range(fp.cxx_obj, UInt(min), UInt(max)),
+    )
 end
 
 """
@@ -1088,7 +1096,7 @@ function rules(fp::FroidurePin)
     rhs_raw = @wrap_libsemigroups_call LibSemigroups.rules_rhs(fp.cxx_obj)
     n = length(lhs_raw)
     result = Vector{Pair{Vector{Int},Vector{Int}}}(undef, n)
-    for i in 1:n
+    for i = 1:n
         result[i] = _word_from_cpp(lhs_raw[i]) => _word_from_cpp(rhs_raw[i])
     end
     return result
@@ -1105,7 +1113,7 @@ function current_rules(fp::FroidurePin)
     rhs_raw = @wrap_libsemigroups_call LibSemigroups.current_rules_rhs(fp.cxx_obj)
     n = length(lhs_raw)
     result = Vector{Pair{Vector{Int},Vector{Int}}}(undef, n)
-    for i in 1:n
+    for i = 1:n
         result[i] = _word_from_cpp(lhs_raw[i]) => _word_from_cpp(rhs_raw[i])
     end
     return result
@@ -1210,7 +1218,10 @@ without triggering further enumeration.
 """
 function current_minimal_factorisation(fp::FroidurePin, i::Integer)
     idx = _to_cpp(i, UInt32)
-    raw = @wrap_libsemigroups_call LibSemigroups.current_minimal_factorisation(fp.cxx_obj, idx)
+    raw = @wrap_libsemigroups_call LibSemigroups.current_minimal_factorisation(
+        fp.cxx_obj,
+        idx,
+    )
     return _word_from_cpp(raw)
 end
 
@@ -1270,7 +1281,8 @@ right_cayley_graph(fp::FroidurePin) = LibSemigroups.right_cayley_graph(fp.cxx_ob
 
 Return the right Cayley graph for elements enumerated so far.
 """
-current_right_cayley_graph(fp::FroidurePin) = LibSemigroups.current_right_cayley_graph(fp.cxx_obj)
+current_right_cayley_graph(fp::FroidurePin) =
+    LibSemigroups.current_right_cayley_graph(fp.cxx_obj)
 
 """
     left_cayley_graph(fp::FroidurePin) -> WordGraph
@@ -1286,7 +1298,8 @@ left_cayley_graph(fp::FroidurePin) = LibSemigroups.left_cayley_graph(fp.cxx_obj)
 
 Return the left Cayley graph for elements enumerated so far.
 """
-current_left_cayley_graph(fp::FroidurePin) = LibSemigroups.current_left_cayley_graph(fp.cxx_obj)
+current_left_cayley_graph(fp::FroidurePin) =
+    LibSemigroups.current_left_cayley_graph(fp.cxx_obj)
 
 # ============================================================================
 # Word-element conversion
@@ -1320,7 +1333,11 @@ S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
 equal_to(S, [1, 1], [1])  # does gen1*gen1 == gen1?
 ```
 """
-function equal_to(fp::FroidurePin, w1::AbstractVector{<:Integer}, w2::AbstractVector{<:Integer})
+function equal_to(
+    fp::FroidurePin,
+    w1::AbstractVector{<:Integer},
+    w2::AbstractVector{<:Integer},
+)
     cw1 = _word_to_cpp(w1)
     cw2 = _word_to_cpp(w2)
     return @wrap_libsemigroups_call LibSemigroups.equal_to(fp.cxx_obj, cw1, cw2)
