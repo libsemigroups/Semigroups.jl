@@ -130,25 +130,34 @@ _fp_element_type(::Type{T}) where {T<:BMat8} = BMat8
 """
     FroidurePin{E}
 
-A Froidure-Pin semigroup over elements of type `E`.
+Type implementing the Froidure-Pin algorithm.
 
-The Froidure-Pin algorithm is used to enumerate all elements of a finitely
-generated semigroup. This type wraps the C++ `FroidurePin<E>` class from
-libsemigroups.
+A `FroidurePin{E}` instance is defined by a generating set of elements of
+type `E`, and the main function is [`run!`](@ref), which implements the
+Froidure-Pin algorithm as described by Froidure and Pin. If [`run!`](@ref)
+is invoked and [`finished`](@ref) returns `true`, then the size
+[`length`](@ref), the left and right Cayley graphs
+[`left_cayley_graph`](@ref) and [`right_cayley_graph`](@ref) are
+determined, and a confluent terminating presentation for the semigroup is
+known.
 
 Supported element types:
-- `Transf{UInt8}`, `Transf{UInt16}`, `Transf{UInt32}` (transformations)
-- `PPerm{UInt8}`, `PPerm{UInt16}`, `PPerm{UInt32}` (partial permutations)
-- `Perm{UInt8}`, `Perm{UInt16}`, `Perm{UInt32}` (permutations)
-- `BMat8` (boolean matrices up to 8x8)
+- [`Transf{UInt8}`](@ref Semigroups.Transf), [`Transf{UInt16}`](@ref Semigroups.Transf), [`Transf{UInt32}`](@ref Semigroups.Transf) (transformations)
+- [`PPerm{UInt8}`](@ref Semigroups.PPerm), [`PPerm{UInt16}`](@ref Semigroups.PPerm), [`PPerm{UInt32}`](@ref Semigroups.PPerm) (partial permutations)
+- [`Perm{UInt8}`](@ref Semigroups.Perm), [`Perm{UInt16}`](@ref Semigroups.Perm), [`Perm{UInt32}`](@ref Semigroups.Perm) (permutations)
+- [`BMat8`](@ref Semigroups.BMat8) (boolean matrices up to 8x8)
 
 # Example
 ```julia
 using Semigroups
 
 S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
-length(S)  # 6 (S_3)
+length(S)  # 6 (symmetric group S_3)
 ```
+
+# See also
+- [`FroidurePinBase`](@ref Semigroups.FroidurePinBase)
+- [`Runner`](@ref Semigroups.Runner)
 """
 mutable struct FroidurePin{E}
     cxx_obj::_FroidurePinCxx
@@ -161,7 +170,21 @@ end
 """
     FroidurePin(gens::Vector{E}) where {E}
 
-Construct a `FroidurePin{E}` from a vector of generators.
+Construct a [`FroidurePin{E}`](@ref Semigroups.FroidurePin) from a
+container of generators.
+
+This function constructs a `FroidurePin{E}` instance from the vector of
+generators `gens`, after verifying that the proposed generators all have
+equal degree.
+
+# Arguments
+- `gens::Vector{E}`: a non-empty vector of generators. All generators
+  must have the same degree.
+
+# Throws
+- `ErrorException`: if `gens` is empty.
+- `LibsemigroupsError`: if `degree(x) != degree(y)` for any `x` and `y`
+  in `gens`.
 
 # Example
 ```julia
@@ -170,6 +193,9 @@ using Semigroups
 S = FroidurePin([Transf([2, 1, 3]), Transf([2, 3, 1])])
 length(S)  # 6
 ```
+
+# See also
+- [`FroidurePin(x::E, xs::E...)`](@ref)
 """
 function FroidurePin(gens::Vector{E}) where {E}
     isempty(gens) && error("At least one generator is required")
@@ -208,7 +234,19 @@ end
 """
     FroidurePin(x::E, xs::E...) where {E}
 
-Construct a `FroidurePin{E}` from one or more generators (variadic).
+Construct a [`FroidurePin{E}`](@ref Semigroups.FroidurePin) from one or
+more generators given as positional arguments.
+
+This is a convenience constructor equivalent to
+`FroidurePin(E[x, xs...])`.
+
+# Arguments
+- `x::E`: the first generator.
+- `xs::E...`: zero or more additional generators of the same type.
+
+# Throws
+- `LibsemigroupsError`: if `degree(x) != degree(y)` for any generators
+  `x` and `y`.
 
 # Example
 ```julia
@@ -217,6 +255,9 @@ using Semigroups
 S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
 length(S)  # 6
 ```
+
+# See also
+- [`FroidurePin(gens::Vector{E})`](@ref)
 """
 function FroidurePin(x::E, xs::E...) where {E}
     return FroidurePin(E[x, xs...])
@@ -229,9 +270,17 @@ end
 """
     Base.length(fp::FroidurePin) -> Int
 
-Return the total number of elements in the semigroup.
+Return the size of a [`FroidurePin`](@ref Semigroups.FroidurePin) instance.
 
-Triggers full enumeration if not already complete.
+This function fully enumerates `fp` and then returns the number of
+elements.
+
+# Complexity
+At worst ``O(|S| n)`` where ``S`` is the semigroup represented by `fp`
+and ``n`` is [`number_of_generators`](@ref)`(fp)`.
+
+!!! note
+    This function triggers a full enumeration.
 
 # Example
 ```julia
@@ -240,14 +289,24 @@ using Semigroups
 S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
 length(S)  # 6
 ```
+
+# See also
+- [`current_size`](@ref)
 """
 Base.length(fp::FroidurePin) = Int(LibSemigroups.size(fp.cxx_obj))
 
 """
     current_size(fp::FroidurePin) -> Int
 
-Return the number of elements enumerated so far (without triggering
-further enumeration).
+Return the number of elements so far enumerated.
+
+This is only the actual size of the semigroup if `fp` is fully enumerated.
+
+# Complexity
+Constant.
+
+!!! note
+    This function does not trigger any enumeration.
 
 # Example
 ```julia
@@ -256,13 +315,25 @@ using Semigroups
 S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
 current_size(S)  # 2 (only generators known)
 ```
+
+# See also
+- [`length`](@ref Base.length)
 """
 current_size(fp::FroidurePin) = Int(LibSemigroups.current_size(fp.cxx_obj))
 
 """
     degree(fp::FroidurePin) -> Int
 
-Return the degree of the elements in the semigroup.
+Return the degree of any and all elements.
+
+This function returns the degree of any (and hence all) elements of the
+semigroup represented by `fp`.
+
+# Complexity
+Constant.
+
+!!! note
+    This function does not trigger any enumeration.
 
 # Example
 ```julia
@@ -277,7 +348,13 @@ degree(fp::FroidurePin) = Int(LibSemigroups.degree(fp.cxx_obj))
 """
     number_of_generators(fp::FroidurePin) -> Int
 
-Return the number of generators of the semigroup.
+Return the number of generators.
+
+This function returns the number of generators of the semigroup
+represented by `fp`.
+
+!!! note
+    This function does not trigger any enumeration.
 
 # Example
 ```julia
@@ -286,16 +363,43 @@ using Semigroups
 S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
 number_of_generators(S)  # 2
 ```
+
+# See also
+- [`generator`](@ref)
 """
 number_of_generators(fp::FroidurePin) = Int(LibSemigroups.number_of_generators(fp.cxx_obj))
 
 """
-    enumerate!(fp::FroidurePin, limit::Integer)
+    enumerate!(fp::FroidurePin, limit::Integer) -> FroidurePin
 
-Enumerate elements until at least `limit` elements have been found.
+Enumerate until at least a specified number of elements are found.
 
-This partially enumerates the semigroup. After calling this, `current_size`
-will be at least `min(limit, length(fp))`.
+If `fp` is already fully enumerated, or the number of elements
+previously enumerated exceeds `limit`, then calling this function does
+nothing. Otherwise, [`run!`](@ref) attempts to find at least the maximum
+of `limit` and [`batch_size`](@ref) additional elements of the semigroup.
+
+# Arguments
+- `fp::FroidurePin`: the FroidurePin instance.
+- `limit::Integer`: the approximate limit for
+  [`current_size`](@ref)`(fp)`.
+
+# Complexity
+At worst ``O(m n)`` where ``m`` equals `limit` and ``n`` is
+[`number_of_generators`](@ref)`(fp)`.
+
+# Example
+```julia
+using Semigroups
+
+S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
+enumerate!(S, 4)
+current_size(S)  # >= 4
+```
+
+# See also
+- [`run!`](@ref)
+- [`current_size`](@ref)
 """
 function enumerate!(fp::FroidurePin, limit::Integer)
     lim = UInt(limit)
@@ -314,7 +418,13 @@ end
 
 Run the Froidure-Pin algorithm until [`finished`](@ref).
 
-Returns `fp` for method chaining.
+At the end of this call `fp` is either [`finished`](@ref) or
+[`dead`](@ref). Returns `fp` for method chaining.
+
+# See also
+- [`run_for!`](@ref)
+- [`run_until!`](@ref)
+- [`finished`](@ref)
 """
 function run!(fp::FroidurePin)
     LibSemigroups.run!(fp.cxx_obj)
@@ -326,13 +436,25 @@ end
 
 Run the Froidure-Pin algorithm for a specified amount of time.
 
-Returns `fp` for method chaining.
+At the end of this call `fp` is either [`finished`](@ref),
+[`dead`](@ref), or [`timed_out`](@ref). Returns `fp` for method
+chaining.
 
-# Examples
+# Arguments
+- `fp::FroidurePin`: the FroidurePin instance.
+- `t::TimePeriod`: the duration to run for (e.g. `Second(1)`,
+  `Millisecond(500)`).
+
+# Example
 ```julia
 run_for!(S, Second(1))
 run_for!(S, Millisecond(500))
 ```
+
+# See also
+- [`run!`](@ref)
+- [`run_until!`](@ref)
+- [`timed_out`](@ref)
 """
 function run_for!(fp::FroidurePin, t::TimePeriod)
     ns = convert(Nanosecond, t)
@@ -354,24 +476,44 @@ end
 Run the Froidure-Pin algorithm until a nullary predicate returns `true`
 or [`finished`](@ref).
 
-Returns `fp` for method chaining.
+At the end of this call `fp` is either [`finished`](@ref),
+[`dead`](@ref), or [`stopped_by_predicate`](@ref). Returns `fp` for
+method chaining.
+
+# Arguments
+- `fp::FroidurePin`: the FroidurePin instance.
+- `f::Function`: a nullary predicate (a callable taking no arguments and
+  returning `Bool`).
 
 Supports do-block syntax:
 
 ```julia
 run_until!(S) do
-    some_condition(S)
+    current_size(S) >= 10
 end
 ```
+
+# See also
+- [`run!`](@ref)
+- [`run_for!`](@ref)
+- [`stopped_by_predicate`](@ref)
 """
 run_until!(fp::FroidurePin, f::Function) = run_until!(f, fp)
 
 """
     init!(fp::FroidurePin) -> FroidurePin
 
-Initialize an existing FroidurePin object, resetting it to its default state.
+Initialize an existing [`FroidurePin`](@ref Semigroups.FroidurePin)
+object.
 
-Returns `fp` for method chaining.
+This function puts `fp` back into the same state as if it had been newly
+default constructed. Returns `fp` for method chaining.
+
+!!! warning
+    This function is not thread-safe.
+
+# See also
+- [`FroidurePin`](@ref Semigroups.FroidurePin)
 """
 function init!(fp::FroidurePin)
     LibSemigroups.init!(fp.cxx_obj)
@@ -381,77 +523,170 @@ end
 """
     kill!(fp::FroidurePin)
 
-Stop the Froidure-Pin algorithm from running (thread-safe).
+Stop [`run!`](@ref) from running (thread-safe).
+
+This function can be used to terminate [`run!`](@ref) from another
+thread. After [`kill!`](@ref) has been called, `fp` may no longer be in a
+valid state, but will return `true` from [`dead`](@ref).
+
+# See also
+- [`dead`](@ref)
+- [`finished`](@ref)
 """
 kill!(fp::FroidurePin) = LibSemigroups.kill!(fp.cxx_obj)
 
 """
     finished(fp::FroidurePin) -> Bool
 
-Check if the Froidure-Pin algorithm has been run to completion.
+Check if [`run!`](@ref) has been run to completion.
+
+Returns `true` if [`run!`](@ref) has been run to completion and `false`
+otherwise.
+
+# See also
+- [`started`](@ref)
+- [`stopped`](@ref)
 """
 finished(fp::FroidurePin) = LibSemigroups.finished(fp.cxx_obj)
 
 """
     Base.success(fp::FroidurePin) -> Bool
 
-Check if the Froidure-Pin algorithm has been run to completion successfully.
+Check if [`run!`](@ref) has been run to completion successfully.
+
+Returns `true` if [`run!`](@ref) has been run to completion and it was
+successful. The default implementation is equivalent to calling
+[`finished`](@ref).
+
+# See also
+- [`finished`](@ref)
 """
 Base.success(fp::FroidurePin) = LibSemigroups.success(fp.cxx_obj)
 
 """
     started(fp::FroidurePin) -> Bool
 
-Check if the Froidure-Pin algorithm has been started.
+Check if [`run!`](@ref) has been called at least once.
+
+Returns `true` if [`run!`](@ref) has started to run (it can be
+currently running or not).
+
+# See also
+- [`finished`](@ref)
+- [`running`](@ref)
 """
 started(fp::FroidurePin) = LibSemigroups.started(fp.cxx_obj)
 
 """
     running(fp::FroidurePin) -> Bool
 
-Check if the Froidure-Pin algorithm is currently running.
+Check if currently running.
+
+Returns `true` if [`run!`](@ref) is in the process of running and
+`false` otherwise.
+
+# See also
+- [`finished`](@ref)
+- [`started`](@ref)
 """
 running(fp::FroidurePin) = LibSemigroups.running(fp.cxx_obj)
 
 """
     timed_out(fp::FroidurePin) -> Bool
 
-Check if the last `run_for!` call timed out.
+Check if the amount of time passed to [`run_for!`](@ref) has elapsed.
+
+Returns `true` if the last [`run_for!`](@ref) call timed out and `false`
+otherwise.
+
+# See also
+- [`run_for!`](@ref)
+- [`stopped`](@ref)
 """
 timed_out(fp::FroidurePin) = LibSemigroups.timed_out(fp.cxx_obj)
 
 """
     stopped(fp::FroidurePin) -> Bool
 
-Check if the Froidure-Pin algorithm is stopped for any reason.
+Check if the runner is stopped.
+
+This function can be used to check whether or not [`run!`](@ref) has
+been stopped for whatever reason. In other words, it checks if
+[`timed_out`](@ref), [`finished`](@ref), or [`dead`](@ref).
+
+# See also
+- [`timed_out`](@ref)
+- [`finished`](@ref)
+- [`dead`](@ref)
 """
 stopped(fp::FroidurePin) = LibSemigroups.stopped(fp.cxx_obj)
 
 """
     dead(fp::FroidurePin) -> Bool
 
-Check if the Froidure-Pin algorithm has been killed by another thread.
+Check if the runner is dead.
+
+This function can be used to check if [`run!`](@ref) should terminate
+because it has been killed by another thread via [`kill!`](@ref).
+
+# See also
+- [`kill!`](@ref)
+- [`stopped`](@ref)
 """
 dead(fp::FroidurePin) = LibSemigroups.dead(fp.cxx_obj)
 
 """
     stopped_by_predicate(fp::FroidurePin) -> Bool
 
-Check if the algorithm was stopped by the predicate passed to `run_until!`.
+Check if the runner was stopped by the predicate passed to
+[`run_until!`](@ref).
+
+If `fp` is running, then the nullary predicate is called and its return
+value is returned. If `fp` is not running, then `true` is returned if
+and only if the last time `fp` was running it was stopped by the
+predicate passed to [`run_until!`](@ref).
+
+# Complexity
+Constant.
+
+# See also
+- [`run_until!`](@ref)
+- [`stopped`](@ref)
 """
 stopped_by_predicate(fp::FroidurePin) = LibSemigroups.stopped_by_predicate(fp.cxx_obj)
 
 """
     running_for(fp::FroidurePin) -> Bool
 
-Check if the algorithm is currently running for a particular length of time.
+Check if currently running for a particular length of time.
+
+If `fp` is currently running because [`run_for!`](@ref) has been
+invoked, then this function returns `true`. Otherwise, `false` is
+returned.
+
+# Complexity
+Constant.
+
+# See also
+- [`run_for!`](@ref)
+- [`running_for_how_long`](@ref)
 """
 running_for(fp::FroidurePin) = LibSemigroups.running_for(fp.cxx_obj)
 
 """
     running_for_how_long(fp::FroidurePin) -> Nanosecond
 
-Return the duration of the most recent `run_for!` call as a `Dates.Nanosecond`.
+Return the last value passed to [`run_for!`](@ref).
+
+This function returns the last value passed as an argument to
+[`run_for!`](@ref) (if any) as a `Dates.Nanosecond`.
+
+# Complexity
+Constant.
+
+# See also
+- [`run_for!`](@ref)
+- [`running_for`](@ref)
 """
 running_for_how_long(fp::FroidurePin) =
     Nanosecond(LibSemigroups.running_for_how_long(fp.cxx_obj))
@@ -459,28 +694,60 @@ running_for_how_long(fp::FroidurePin) =
 """
     running_until(fp::FroidurePin) -> Bool
 
-Check if the algorithm is currently running until a predicate returns `true`.
+Check if currently running until a nullary predicate returns `true`.
+
+If `fp` is currently running because [`run_until!`](@ref) has been
+invoked, then this function returns `true`. Otherwise, `false` is
+returned.
+
+# Complexity
+Constant.
+
+# See also
+- [`run_until!`](@ref)
+- [`stopped_by_predicate`](@ref)
 """
 running_until(fp::FroidurePin) = LibSemigroups.running_until(fp.cxx_obj)
 
 """
     current_state(fp::FroidurePin) -> RunnerState
 
-Return the current state of the Froidure-Pin algorithm.
+Return the current state of the runner.
+
+Returns the current state of `fp` as a [`RunnerState`](@ref Semigroups.RunnerState)
+value.
+
+# Complexity
+Constant.
+
+# See also
+- [`RunnerState`](@ref Semigroups.RunnerState)
 """
 current_state(fp::FroidurePin) = LibSemigroups.current_state(fp.cxx_obj)
 
 """
     report_why_we_stopped(fp::FroidurePin)
 
-Report why the Froidure-Pin algorithm stopped.
+Report why [`run!`](@ref) stopped.
+
+Reports whether [`run!`](@ref) was stopped because it is
+[`finished`](@ref), [`timed_out`](@ref), or [`dead`](@ref).
+
+# See also
+- [`string_why_we_stopped`](@ref)
 """
 report_why_we_stopped(fp::FroidurePin) = LibSemigroups.report_why_we_stopped(fp.cxx_obj)
 
 """
     string_why_we_stopped(fp::FroidurePin) -> String
 
-Return a human-readable string describing why the algorithm stopped.
+Return a human-readable string describing why [`run!`](@ref) stopped.
+
+Returns a string indicating whether [`run!`](@ref) was stopped because
+it is [`finished`](@ref), [`timed_out`](@ref), or [`dead`](@ref).
+
+# See also
+- [`report_why_we_stopped`](@ref)
 """
 string_why_we_stopped(fp::FroidurePin) = LibSemigroups.string_why_we_stopped(fp.cxx_obj)
 
@@ -491,9 +758,21 @@ string_why_we_stopped(fp::FroidurePin) = LibSemigroups.string_why_we_stopped(fp.
 """
     Base.getindex(fp::FroidurePin{E}, i::Integer) -> E
 
-Return the `i`-th element of the semigroup (1-based indexing).
+Access the element with index `i`.
 
-Triggers full enumeration if not already complete.
+This function attempts to enumerate until at least `i` elements have
+been found, then returns the element at position `i`.
+
+# Arguments
+- `fp::FroidurePin{E}`: the FroidurePin instance.
+- `i::Integer`: the 1-based index of the element to access.
+
+# Throws
+- `BoundsError`: if `i` is less than `1` or greater than
+  [`length`](@ref Base.length)`(fp)`.
+
+!!! note
+    This function triggers a full enumeration.
 
 # Example
 ```julia
@@ -501,8 +780,9 @@ S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
 S[1]  # first element
 ```
 
-# Throws
-- `BoundsError` if `i` is out of range.
+# See also
+- [`sorted_at`](@ref)
+- [`generator`](@ref)
 """
 function Base.getindex(fp::FroidurePin{E}, i::Integer) where {E}
     if i < 1 || i > length(fp)
@@ -516,13 +796,36 @@ end
 """
     generator(fp::FroidurePin{E}, i::Integer) -> E
 
-Return the `i`-th generator of the semigroup (1-based indexing).
+Return the generator with the specified index.
+
+This function returns the generator with index `i`, where the order is
+that in which the generators were added at construction, or via
+[`push!`](@ref Base.push!), [`closure!`](@ref),
+[`copy_closure`](@ref), or [`copy_add_generators`](@ref).
+
+# Arguments
+- `fp::FroidurePin{E}`: the FroidurePin instance.
+- `i::Integer`: the 1-based index of a generator.
+
+# Throws
+- `LibsemigroupsError`: if `i` is greater than
+  [`number_of_generators`](@ref)`(fp)`.
+
+!!! note
+    `generator(fp, j)` is in general not in position `j`.
+
+!!! note
+    This function does not trigger any enumeration.
 
 # Example
 ```julia
 S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
 generator(S, 1)  # first generator
 ```
+
+# See also
+- [`getindex`](@ref Base.getindex)
+- [`sorted_at`](@ref)
 """
 function generator(fp::FroidurePin{E}, i::Integer) where {E}
     idx = _to_cpp(i, UInt)
@@ -533,13 +836,31 @@ end
 """
     sorted_at(fp::FroidurePin{E}, i::Integer) -> E
 
-Return the `i`-th element in sorted order (1-based indexing).
+Access the element with the specified sorted index.
+
+This function triggers a full enumeration, and returns the element
+at position `i` when the elements are sorted.
+
+# Arguments
+- `fp::FroidurePin{E}`: the FroidurePin instance.
+- `i::Integer`: the 1-based sorted index of the element to access.
+
+# Throws
+- `LibsemigroupsError`: if `i` is greater than
+  [`length`](@ref Base.length)`(fp)`.
+
+!!! note
+    This function triggers a full enumeration.
 
 # Example
 ```julia
 S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
 sorted_at(S, 1)  # first element in sorted order
 ```
+
+# See also
+- [`getindex`](@ref Base.getindex)
+- [`sorted_position`](@ref)
 """
 function sorted_at(fp::FroidurePin{E}, i::Integer) where {E}
     idx = _to_cpp(i, UInt)
@@ -552,9 +873,17 @@ end
 # ============================================================================
 
 """
-    Base.iterate(fp::FroidurePin, state=1)
+    Base.iterate(fp::FroidurePin{E}[, state]) -> Union{Tuple{E, Int}, Nothing}
 
 Iterate over all elements of the semigroup.
+
+This function allows a [`FroidurePin{E}`](@ref Semigroups.FroidurePin)
+instance to be used in `for` loops and with `collect`. Elements are
+yielded in the order they were enumerated by the Froidure-Pin algorithm.
+
+!!! note
+    This function triggers a full enumeration on the first call
+    (via [`length`](@ref Base.length)).
 
 # Example
 ```julia
@@ -564,6 +893,10 @@ for x in S
 end
 elts = collect(S)  # Vector{Transf{UInt8}} of length 6
 ```
+
+# See also
+- [`getindex`](@ref Base.getindex)
+- [`length`](@ref Base.length)
 """
 function Base.iterate(fp::FroidurePin, state::Int = 1)
     if state > length(fp)
@@ -573,9 +906,12 @@ function Base.iterate(fp::FroidurePin, state::Int = 1)
 end
 
 """
-    Base.eltype(::Type{FroidurePin{E}}) where E
+    Base.eltype(::Type{FroidurePin{E}}) where E -> Type
 
-Return the element type `E` of a `FroidurePin{E}`.
+Return the element type `E` of a [`FroidurePin{E}`](@ref Semigroups.FroidurePin).
+
+# Complexity
+Constant.
 """
 Base.eltype(::Type{FroidurePin{E}}) where {E} = E
 
@@ -588,8 +924,25 @@ Base.IteratorSize(::Type{<:FroidurePin}) = Base.HasLength()
 """
     Base.copy(fp::FroidurePin{E}) -> FroidurePin{E}
 
-Create an independent copy of the semigroup by reconstructing it from
-its generators.
+Create an independent copy of the [`FroidurePin{E}`](@ref Semigroups.FroidurePin) instance.
+
+This function constructs a new [`FroidurePin{E}`](@ref Semigroups.FroidurePin) from the
+generators of `fp`. The returned instance is fully independent of `fp`
+and can be enumerated or modified without affecting the original.
+
+!!! note
+    This function does not trigger any enumeration of `fp`.
+
+# Example
+```julia
+S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
+T = copy(S)
+length(T)  # 6, independently computed
+```
+
+# See also
+- [`copy_closure`](@ref)
+- [`copy_add_generators`](@ref)
 """
 function Base.copy(fp::FroidurePin{E}) where {E}
     gens = [generator(fp, i) for i = 1:number_of_generators(fp)]
@@ -603,7 +956,11 @@ end
 """
     Base.show(io::IO, fp::FroidurePin)
 
-Display a human-readable representation of the semigroup.
+Display a human-readable summary of the [`FroidurePin`](@ref Semigroups.FroidurePin)
+instance `fp` to the I/O stream `io`.
+
+!!! note
+    This function does not trigger any enumeration.
 """
 function Base.show(io::IO, fp::FroidurePin)
     print(io, @wrap_libsemigroups_call LibSemigroups.to_human_readable_repr(fp.cxx_obj))
@@ -616,9 +973,17 @@ end
 """
     Base.in(x::E, fp::FroidurePin{E}) where E -> Bool
 
-Check whether the element `x` belongs to the semigroup `fp`.
+Test membership of an element.
 
-Triggers full enumeration if not already complete.
+This function returns `true` if `x` belongs to `fp` and `false` if it
+does not.
+
+# Arguments
+- `x::E`: an element to test for membership.
+- `fp::FroidurePin{E}`: the FroidurePin instance.
+
+!!! note
+    This function may trigger a (partial) enumeration.
 
 # Example
 ```julia
@@ -626,6 +991,10 @@ S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
 Transf([2, 1, 3]) in S   # true
 Transf([1, 1, 1]) in S   # false
 ```
+
+# See also
+- [`position`](@ref)
+- [`current_position`](@ref)
 """
 function Base.in(x::E, fp::FroidurePin{E}) where {E}
     cxx_x = _cxx_element(x)
@@ -639,17 +1008,30 @@ function Base.in(x::BMat8, fp::FroidurePin{BMat8})
 end
 
 """
-    position(fp::FroidurePin{E}, x::E) where E -> Int
+    position(fp::FroidurePin{E}, x::E) where E -> Union{Int, UNDEFINED}
 
-Return the 1-based position of element `x` in the semigroup `fp`.
+Find the position of an element with enumeration if necessary.
 
-Triggers full enumeration if not already complete.
+This function returns the 1-based position of `x` in `fp`, or
+[`UNDEFINED`](@ref Semigroups.UNDEFINED) if `x` is not an element of `fp`.
+
+# Arguments
+- `fp::FroidurePin{E}`: the FroidurePin instance.
+- `x::E`: an element whose position is sought.
+
+!!! note
+    This function triggers a full enumeration.
 
 # Example
 ```julia
 S = FroidurePin(Transf([2, 1, 3]), Transf([2, 3, 1]))
 position(S, Transf([2, 1, 3]))  # 1-based index
 ```
+
+# See also
+- [`current_position`](@ref)
+- [`sorted_position`](@ref)
+- [`in`](@ref Base.in)
 """
 function position(fp::FroidurePin{E}, x::E) where {E}
     cxx_x = _cxx_element(x)
@@ -664,11 +1046,26 @@ function position(fp::FroidurePin{BMat8}, x::BMat8)
 end
 
 """
-    sorted_position(fp::FroidurePin{E}, x::E) where E -> Int
+    sorted_position(fp::FroidurePin{E}, x::E) where E -> Union{Int, UNDEFINED}
 
-Return the 1-based sorted position of element `x` in the semigroup `fp`.
+Return the sorted index of an element.
 
-Triggers full enumeration if not already complete.
+This function returns the 1-based position of `x` in the elements of
+`fp` when they are sorted, or [`UNDEFINED`](@ref Semigroups.UNDEFINED)
+if `x` is not an element of `fp`.
+
+# Arguments
+- `fp::FroidurePin{E}`: the FroidurePin instance.
+- `x::E`: an element whose sorted position is sought.
+
+!!! note
+    This function triggers a full enumeration.
+
+# See also
+- [`current_position`](@ref)
+- [`position`](@ref)
+- [`to_sorted_position`](@ref)
+- [`sorted_at`](@ref)
 """
 function sorted_position(fp::FroidurePin{E}, x::E) where {E}
     cxx_x = _cxx_element(x)
@@ -683,11 +1080,24 @@ function sorted_position(fp::FroidurePin{BMat8}, x::BMat8)
 end
 
 """
-    to_sorted_position(fp::FroidurePin, i::Integer) -> Int
+    to_sorted_position(fp::FroidurePin, i::Integer) -> Union{Int, UNDEFINED}
 
-Convert a 1-based element position to its 1-based sorted position.
+Return the sorted index of an element via its index.
 
-Triggers full enumeration if not already complete.
+This function returns the 1-based position of the element with index `i`
+when the elements are sorted, or [`UNDEFINED`](@ref Semigroups.UNDEFINED)
+if `i` is greater than [`length`](@ref Base.length)`(fp)`.
+
+# Arguments
+- `fp::FroidurePin`: the FroidurePin instance.
+- `i::Integer`: the 1-based index of the element.
+
+!!! note
+    This function triggers a full enumeration.
+
+# See also
+- [`sorted_position`](@ref)
+- [`sorted_at`](@ref)
 """
 function to_sorted_position(fp::FroidurePin, i::Integer)
     idx = _to_cpp(i, UInt)
@@ -696,12 +1106,26 @@ function to_sorted_position(fp::FroidurePin, i::Integer)
 end
 
 """
-    current_position(fp::FroidurePin{E}, x::E) where E -> Int
+    current_position(fp::FroidurePin{E}, x::E) where E -> Union{Int, UNDEFINED}
 
-Return the 1-based position of element `x` among the elements
-enumerated so far (without triggering further enumeration).
+Find the position of an element with no enumeration.
 
-Returns `UNDEFINED` if `x` has not yet been enumerated.
+This function returns the 1-based position of the element `x` in `fp`
+if it is already known to belong to `fp`, or
+[`UNDEFINED`](@ref Semigroups.UNDEFINED) if not. If `fp` is not yet
+fully enumerated, then this function may return
+[`UNDEFINED`](@ref Semigroups.UNDEFINED) even when `x` does belong to `fp`.
+
+# Arguments
+- `fp::FroidurePin{E}`: the FroidurePin instance.
+- `x::E`: an element whose position is sought.
+
+!!! note
+    This function does not trigger any enumeration.
+
+# See also
+- [`position`](@ref)
+- [`sorted_position`](@ref)
 """
 function current_position(fp::FroidurePin{E}, x::E) where {E}
     cxx_x = _cxx_element(x)
@@ -716,13 +1140,33 @@ function current_position(fp::FroidurePin{BMat8}, x::BMat8)
 end
 
 """
-    current_position(fp::FroidurePin, w::AbstractVector{<:Integer}) -> Int
+    current_position(fp::FroidurePin, w::AbstractVector{<:Integer}) -> Union{Int, UNDEFINED}
 
-Return the 1-based position of the element represented by the 1-based
-generator-index word `w` among the elements enumerated so far
-(without triggering further enumeration).
+Return the position corresponding to a word.
 
-Returns `UNDEFINED` if the element has not yet been enumerated.
+This function returns the 1-based position of the element corresponding
+to the word `w` (a vector of 1-based generator indices). No enumeration
+is performed, and [`UNDEFINED`](@ref Semigroups.UNDEFINED) is returned
+if the word does not currently correspond to an element.
+
+# Arguments
+- `fp::FroidurePin`: the FroidurePin instance.
+- `w::AbstractVector{<:Integer}`: a word in the generators (1-based
+  generator indices).
+
+# Throws
+- `LibsemigroupsError`: if any letter in `w` is out of range (exceeds
+  [`number_of_generators`](@ref)`(fp)`).
+
+# Complexity
+``O(n)`` where ``n`` is the length of the word `w`.
+
+!!! note
+    This function does not trigger any enumeration.
+
+# See also
+- [`position`](@ref)
+- [`current_position`](@ref current_position(::FroidurePin{E}, ::E) where E)
 """
 function current_position(fp::FroidurePin, w::AbstractVector{<:Integer})
     cw = _word_to_cpp(w)
@@ -837,16 +1281,46 @@ end
 """
     batch_size(fp::FroidurePin) -> Int
 
-Return the current batch size used for partial enumeration.
+Return the current value of the batch size.
+
+The batch size is the minimum number of new elements to be found by any
+call to [`run!`](@ref). This is used by, for example,
+[`position`](@ref) so that it is possible to find the position of an
+element after only partially enumerating the semigroup.
+
+The default value of the batch size is `8192`.
+
+# Complexity
+Constant.
+
+# See also
+- [`set_batch_size!`](@ref)
 """
 batch_size(fp::FroidurePin) = Int(LibSemigroups.batch_size(fp.cxx_obj))
 
 """
     set_batch_size!(fp::FroidurePin, n::Integer) -> FroidurePin
 
-Set the batch size for partial enumeration.
+Set a new value for the batch size.
+
+The *batch size* is the number of new elements to be found by any call
+to [`run!`](@ref). This is used by, for example,
+[`position`](@ref) so that it is possible to find the position of an
+element after only partially enumerating the semigroup.
+
+The default value of the batch size is `8192`.
 
 Returns `fp` for method chaining.
+
+# Arguments
+- `fp::FroidurePin`: the FroidurePin instance.
+- `n::Integer`: the new value for the batch size.
+
+# Complexity
+Constant.
+
+# See also
+- [`batch_size`](@ref)
 """
 function set_batch_size!(fp::FroidurePin, n::Integer)
     LibSemigroups.set_batch_size!(fp.cxx_obj, UInt(n))
@@ -860,19 +1334,42 @@ end
 """
     contains_one(fp::FroidurePin) -> Bool
 
-Check whether the semigroup contains the identity element.
+Check if the multiplicative identity is an element of `fp`.
 
-Triggers full enumeration if not already complete.
+This function returns `true` if the identity element (as returned by the
+`One` adapter for the element type) is an element of the semigroup
+represented by `fp`.
+
+# Complexity
+At worst ``O(|S| n)`` where ``S`` is the semigroup represented by `fp`
+and ``n`` is the number of generators.
+
+!!! note
+    This function triggers a full enumeration.
+
+# See also
+- [`currently_contains_one`](@ref)
 """
 contains_one(fp::FroidurePin) = LibSemigroups.contains_one(fp.cxx_obj)
 
 """
     is_idempotent(fp::FroidurePin, i::Integer) -> Bool
 
-Check whether the element at 1-based position `i` is an idempotent
-(i.e., `x * x == x`).
+Check if the element at 1-based position `i` is an idempotent.
 
-Triggers full enumeration if not already complete.
+This function returns `true` if the element in position `i` is an
+idempotent (i.e., `x * x == x`) and `false` if it is not.
+
+# Arguments
+- `fp::FroidurePin`: the FroidurePin instance.
+- `i::Integer`: the 1-based index of the element.
+
+# Throws
+- `LibsemigroupsError`: if `i` is less than `1` or greater than the
+  size of `fp`.
+
+!!! note
+    This function triggers a full enumeration.
 """
 function is_idempotent(fp::FroidurePin, i::Integer)
     idx = _to_cpp(i, UInt)
@@ -886,9 +1383,29 @@ end
 """
     prefix(fp::FroidurePin, i::Integer) -> Int
 
-Return the 1-based position of the prefix of the element at 1-based
-position `i`. The prefix is the element obtained by removing the last
-letter of the factorisation.
+Return the position of the longest proper prefix.
+
+This function returns the 1-based position of the prefix of the element
+`x` at 1-based position `i`, where the prefix is the element of length
+one less than `x` obtained by removing the last letter of the
+factorisation.
+
+For generators (elements of length 1), the prefix is
+[`UNDEFINED`](@ref).
+
+# Arguments
+- `fp::FroidurePin`: the FroidurePin instance.
+- `i::Integer`: the 1-based position of the element.
+
+# Throws
+- `LibsemigroupsError`: if `i` is less than `1` or greater than or
+  equal to [`current_size`](@ref).
+
+# Complexity
+Constant.
+
+!!! note
+    This function does not trigger any enumeration.
 """
 function prefix(fp::FroidurePin, i::Integer)
     idx = _to_cpp(i, UInt32)
@@ -899,9 +1416,29 @@ end
 """
     suffix(fp::FroidurePin, i::Integer) -> Int
 
-Return the 1-based position of the suffix of the element at 1-based
-position `i`. The suffix is the element obtained by removing the first
-letter of the factorisation.
+Return the position of the longest proper suffix.
+
+This function returns the 1-based position of the suffix of the element
+`x` at 1-based position `i`, where the suffix is the element of length
+one less than `x` obtained by removing the first letter of the
+factorisation.
+
+For generators (elements of length 1), the suffix is
+[`UNDEFINED`](@ref).
+
+# Arguments
+- `fp::FroidurePin`: the FroidurePin instance.
+- `i::Integer`: the 1-based position of the element.
+
+# Throws
+- `LibsemigroupsError`: if `i` is less than `1` or greater than or
+  equal to [`current_size`](@ref).
+
+# Complexity
+Constant.
+
+!!! note
+    This function does not trigger any enumeration.
 """
 function suffix(fp::FroidurePin, i::Integer)
     idx = _to_cpp(i, UInt32)
@@ -912,8 +1449,28 @@ end
 """
     first_letter(fp::FroidurePin, i::Integer) -> Int
 
-Return the 1-based position of the first letter (generator) in the
-factorisation of the element at 1-based position `i`.
+Return the first letter of the element with specified index.
+
+This function returns the 1-based index of the generator corresponding
+to the first letter of the element in position `i`.
+
+# Arguments
+- `fp::FroidurePin`: the FroidurePin instance.
+- `i::Integer`: the 1-based position of the element.
+
+# Throws
+- `LibsemigroupsError`: if `i` is less than `1` or greater than or
+  equal to [`current_size`](@ref).
+
+# Complexity
+Constant.
+
+!!! note
+    `generator(fp, first_letter(fp, i))` is only equal to `fp[first_letter(fp, i)]`
+    if there are no duplicate generators.
+
+!!! note
+    This function does not trigger any enumeration.
 """
 function first_letter(fp::FroidurePin, i::Integer)
     idx = _to_cpp(i, UInt32)
@@ -924,8 +1481,28 @@ end
 """
     final_letter(fp::FroidurePin, i::Integer) -> Int
 
-Return the 1-based position of the final letter (generator) in the
-factorisation of the element at 1-based position `i`.
+Return the last letter of the element with specified index.
+
+This function returns the 1-based index of the generator corresponding
+to the final letter of the element in position `i`.
+
+# Arguments
+- `fp::FroidurePin`: the FroidurePin instance.
+- `i::Integer`: the 1-based position of the element.
+
+# Throws
+- `LibsemigroupsError`: if `i` is less than `1` or greater than or
+  equal to [`current_size`](@ref).
+
+# Complexity
+Constant.
+
+!!! note
+    `generator(fp, final_letter(fp, i))` is only equal to `fp[final_letter(fp, i)]`
+    if there are no duplicate generators.
+
+!!! note
+    This function does not trigger any enumeration.
 """
 function final_letter(fp::FroidurePin, i::Integer)
     idx = _to_cpp(i, UInt32)
