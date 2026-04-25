@@ -9,14 +9,17 @@ module Semigroups
 using CxxWrap
 using AbstractAlgebra
 import Dates
+import Libdl
 using Dates: TimePeriod, Nanosecond
 using libsemigroups_jll
+using libsemigroups_julia_jll
 
 # ============================================================================
 # Debug mode
 # ============================================================================
 
 const _debug_mode = Ref(false)
+const VERSION_NUMBER = Base.pkgversion(@__MODULE__)
 
 """
     enable_debug(val::Bool=true)
@@ -49,7 +52,8 @@ is_debug() = _debug_mode[]
 include("setup.jl")
 
 # Get the library path - this will build if necessary during precompilation
-const _libsemigroups_julia_path = Setup.locate_library()
+const _libsemigroups_julia = Ref(Setup.locate_library())
+libsemigroups_julia() = _libsemigroups_julia[]
 
 # Low-level CxxWrap bindings
 include("LibSemigroups.jl")
@@ -80,10 +84,138 @@ include("transf.jl")
 # Algorithm types (must come after element types)
 include("froidure-pin.jl")
 
+function _version_string(v::Union{Nothing, VersionNumber})
+    return isnothing(v) ? "unknown" : string(v)
+end
+
+function _path_is_within(path::AbstractString, root::AbstractString)
+    try
+        rel = relpath(realpath(path), realpath(root))
+        return rel == "." || first(splitpath(rel)) != ".."
+    catch
+        return false
+    end
+end
+
+function _loaded_libsemigroups_path()
+    for path in Libdl.dllist()
+        base = basename(path)
+        occursin("libsemigroups_julia", base) && continue
+        if startswith(base, "libsemigroups.") ||
+           base == "libsemigroups.dylib" ||
+           base == "libsemigroups.so" ||
+           startswith(base, "libsemigroups-")
+            return path
+        end
+    end
+    return nothing
+end
+
+function _loaded_libsemigroups_version()
+    if isdefined(LibSemigroups, :libsemigroups_version)
+        try
+            return LibSemigroups.libsemigroups_version()
+        catch
+        end
+    end
+
+    path = _loaded_libsemigroups_path()
+    if path !== nothing && _path_is_within(path, libsemigroups_jll.artifact_dir)
+        return replace(string(Base.pkgversion(libsemigroups_jll)), r"\+.*$" => "")
+    end
+
+    try
+        return readchomp(`pkg-config --modversion libsemigroups`)
+    catch
+        return "unknown"
+    end
+end
+
+function _loaded_libsemigroups_source()
+    path = _loaded_libsemigroups_path()
+    if path === nothing
+        return "unknown"
+    elseif _path_is_within(path, libsemigroups_jll.artifact_dir)
+        return "JLL"
+    else
+        return "dev/system"
+    end
+end
+
+function _libsemigroups_julia_source()
+    path = libsemigroups_julia()
+    if _path_is_within(path, libsemigroups_julia_jll.find_artifact_dir())
+        return "JLL"
+    elseif _path_is_within(path, Setup.build_dir())
+        return "dev/local"
+    else
+        return "unknown"
+    end
+end
+
+function _libsemigroups_julia_version()
+    source = _libsemigroups_julia_source()
+    if source == "JLL"
+        return string(Base.pkgversion(libsemigroups_julia_jll))
+    else
+        return _version_string(VERSION_NUMBER)
+    end
+end
+
+function _version_line(name::AbstractString, version::AbstractString, source::AbstractString)
+    return rpad(name, 21) * " v" * version * " (" * source * ")"
+end
+
+function _compact_version_line(name::AbstractString, version::AbstractString, source::AbstractString)
+    return name * " v" * version * " (" * source * ")"
+end
+
+function _print_banner()
+    semigroups_version = _version_string(VERSION_NUMBER)
+    libsemigroups_version = _loaded_libsemigroups_version()
+    libsemigroups_source = _loaded_libsemigroups_source()
+    bindings_version = _libsemigroups_julia_version()
+    bindings_source = _libsemigroups_julia_source()
+
+    if displaysize(stdout)[2] >= 80
+        println(raw"  ____                 _                              ")
+        println(raw" / ___|  ___ _ __ ___ (_) __ _ _ __ ___  _   _ _ __  ___")
+        println(raw" \___ \ / _ \ '_ ` _ \| |/ _` | '__/ _ \| | | | '_ \/ __|")
+        println("  ___) |  __/ | | | | | | (_| | | | (_) | |_| | |_) \\__ \\")
+        println(raw" |____/ \___|_| |_| |_|_|\__, |_|  \___/ \__,_| .__/|___/")
+        println(raw"                         |___/                |_|")
+        println("  Semigroups.jl v$semigroups_version")
+        println("  " * _version_line("libsemigroups", libsemigroups_version, libsemigroups_source))
+        println("  " * _version_line("libsemigroups_julia", bindings_version, bindings_source))
+    else
+        println(
+            "Semigroups.jl v$semigroups_version | " *
+            _compact_version_line("libsemigroups", libsemigroups_version, libsemigroups_source) *
+            " | " *
+            _compact_version_line("libsemigroups_julia", bindings_version, bindings_source),
+        )
+    end
+end
+
+function versioninfo(io::IO = stdout)
+    semigroups_version = _version_string(VERSION_NUMBER)
+    println(io, "Semigroups.jl version $semigroups_version")
+    println(io, "  loaded:")
+    println(io, "    " * _version_line("libsemigroups", _loaded_libsemigroups_version(), _loaded_libsemigroups_source()))
+    println(io, "    " * _version_line("libsemigroups_julia", _libsemigroups_julia_version(), _libsemigroups_julia_source()))
+end
+
 # Module initialization
 function __init__()
+    # Re-check at runtime because Julia precompilation does not track deps/src.
+    _libsemigroups_julia[] = Setup.locate_library()
+
     # Initialize the CxxWrap module
     LibSemigroups.__init__()
+
+    if AbstractAlgebra.should_show_banner()
+        _print_banner()
+    end
 end
 
 # ============================================================================

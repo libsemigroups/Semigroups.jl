@@ -17,11 +17,11 @@ module LibSemigroups
 
 using CxxWrap
 
-import ..Semigroups: _libsemigroups_julia_path
+import ..Semigroups: libsemigroups_julia
 
 # Load the C++ module - this creates all the wrapped types and functions
-# The library path is computed during precompilation by setup.jl
-@wrapmodule(() -> _libsemigroups_julia_path, :define_julia_module)
+# The library path is resolved by setup.jl and may be updated in __init__.
+@wrapmodule(libsemigroups_julia, :define_julia_module)
 
 function __init__()
     @initcxx

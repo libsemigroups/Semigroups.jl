@@ -16,6 +16,8 @@ module Setup
 
 using CxxWrap
 using libsemigroups_jll
+using libsemigroups_julia_jll
+import Pkg
 
 # Get the path to the deps directory
 function deps_dir()
@@ -43,8 +45,40 @@ function library_path()
     end
 end
 
+function local_treehash_path()
+    return joinpath(build_dir(), "libsemigroups_julia.treehash")
+end
+
+function source_tree_hash()
+    return bytes2hex(Pkg.GitTools.tree_hash(src_dir()))
+end
+
+function jll_tree_hashes()
+    path = joinpath(libsemigroups_julia_jll.find_artifact_dir(), "lib", "libsemigroups_julia.treehash")
+    isfile(path) || return String[]
+    return split(read(path, String))
+end
+
+function package_is_from_registry()
+    pkginfo = get(Pkg.dependencies(), Base.PkgId(parentmodule(Setup)).uuid, nothing)
+    return pkginfo !== nothing && pkginfo.is_tracking_registry
+end
+
+function use_jll_library(src_hash::AbstractString)
+    return src_hash in jll_tree_hashes() || package_is_from_registry()
+end
+
+function local_library_is_current(lib_path::AbstractString, src_hash::AbstractString)
+    isfile(lib_path) || return false
+    try
+        return chomp(read(local_treehash_path(), String)) == src_hash
+    catch
+        return false
+    end
+end
+
 # Build the C++ library from source
-function build_library()
+function build_library(src_hash::AbstractString = source_tree_hash())
     @info "Building libsemigroups_julia library..."
 
     # Create build directory
@@ -76,17 +110,26 @@ function build_library()
         run(`cmake --build . --config Release`)
     end
 
+    write(local_treehash_path(), src_hash)
+
     @info "Build complete: $(library_path())"
     return library_path()
 end
 
 # Locate the library, building if necessary
 function locate_library()
+    src_hash = source_tree_hash()
+    if use_jll_library(src_hash)
+        path = libsemigroups_julia_jll.libsemigroups_julia
+        @debug "Using libsemigroups_julia from JLL" path
+        return path
+    end
+
     lib_path = library_path()
 
-    if !isfile(lib_path)
-        @info "Library not found at $lib_path, building from source..."
-        build_library()
+    if !local_library_is_current(lib_path, src_hash)
+        @info "Local libsemigroups_julia is missing or out of date, building from source..."
+        build_library(src_hash)
     end
 
     if !isfile(lib_path)
