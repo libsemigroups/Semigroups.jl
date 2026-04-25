@@ -23,5 +23,6 @@ using Semigroups
     include("test_presentation_examples.jl")
     include("test_word_range.jl")
     include("test_froidure_pin_transf.jl")
-    include("test_knuth_bendix.jl")
+    include("test_knuth_bendix_1.jl")
+    include("test_knuth_bendix_6.jl")
 end
