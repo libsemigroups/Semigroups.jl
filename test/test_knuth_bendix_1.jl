@@ -52,12 +52,17 @@ end
 function _kb1_words_of_length(n::Integer, len::Integer)
     len == 0 && return [Int[]]
     prev = _kb1_words_of_length(n, len - 1)
-    return [[word; a] for word in prev for a in 1:n]
+    return [[word; a] for word in prev for a = 1:n]
 end
 
-function _kb1_normal_forms_between(kb::KnuthBendix, alphabet_size::Integer, min_len::Integer, max_len::Integer)
+function _kb1_normal_forms_between(
+    kb::KnuthBendix,
+    alphabet_size::Integer,
+    min_len::Integer,
+    max_len::Integer,
+)
     result = Vector{Int}[]
-    for len in min_len:max_len
+    for len = min_len:max_len
         for w in _kb1_words_of_length(alphabet_size, len)
             Semigroups.reduce(kb, w) == w && push!(result, w)
         end
@@ -65,7 +70,13 @@ function _kb1_normal_forms_between(kb::KnuthBendix, alphabet_size::Integer, min_
     return result
 end
 
-function _kb1_expect_normal_forms(kb::KnuthBendix, alphabet::AbstractString, min_len::Integer, max_len::Integer, expected)
+function _kb1_expect_normal_forms(
+    kb::KnuthBendix,
+    alphabet::AbstractString,
+    min_len::Integer,
+    max_len::Integer,
+    expected,
+)
     @test _kb1_normal_forms_between(kb, length(collect(alphabet)), min_len, max_len) ==
           _kb1_words(alphabet, expected)
 end
@@ -78,7 +89,7 @@ end
 
 function _kb1_number_of_edges(g)
     count = 0
-    for source in 1:number_of_nodes(g), label in 1:out_degree(g)
+    for source = 1:number_of_nodes(g), label = 1:out_degree(g)
         is_undefined(target(g, source, label)) || (count += 1)
     end
     return count
@@ -91,7 +102,7 @@ function _kb1_is_acyclic(g)
         state[v] == 1 && return false
         state[v] == 2 && return true
         state[v] = 1
-        for label in 1:out_degree(g)
+        for label = 1:out_degree(g)
             t = target(g, v, label)
             if !is_undefined(t) && !visit(t)
                 return false
@@ -109,11 +120,11 @@ function _kb1_path_count(g, min_len::Integer, max_len::Integer; source::Integer 
     counts[source] = 1
     total = min_len == 0 ? big(1) : big(0)
 
-    for len in 1:max_len
+    for len = 1:max_len
         next_counts = zeros(BigInt, number_of_nodes(g))
-        for v in 1:number_of_nodes(g)
+        for v = 1:number_of_nodes(g)
             iszero(counts[v]) && continue
-            for label in 1:out_degree(g)
+            for label = 1:out_degree(g)
                 t = target(g, v, label)
                 is_undefined(t) || (next_counts[t] += counts[v])
             end
@@ -125,7 +136,12 @@ function _kb1_path_count(g, min_len::Integer, max_len::Integer; source::Integer 
     return total
 end
 
-function _kb1_paths_take_from_successors(successors, n::Integer; source::Integer = 1, skip_empty::Bool = true)
+function _kb1_paths_take_from_successors(
+    successors,
+    n::Integer;
+    source::Integer = 1,
+    skip_empty::Bool = true,
+)
     nodes = [source]
     words = [Int[]]
     result = Vector{Int}[]
@@ -154,7 +170,7 @@ end
 function _kb1_paths_take(g, n::Integer; source::Integer = 1, skip_empty::Bool = true)
     return _kb1_paths_take_from_successors(n; source, skip_empty) do v
         edges = Tuple{Int,Int}[]
-        for label in 1:out_degree(g)
+        for label = 1:out_degree(g)
             t = target(g, v, label)
             is_undefined(t) || push!(edges, (label, Int(t)))
         end
@@ -162,12 +178,17 @@ function _kb1_paths_take(g, n::Integer; source::Integer = 1, skip_empty::Bool = 
     end
 end
 
-function _kb1_paths_take_rows(rows, n::Integer; source::Integer = 1, skip_empty::Bool = true)
+function _kb1_paths_take_rows(
+    rows,
+    n::Integer;
+    source::Integer = 1,
+    skip_empty::Bool = true,
+)
     degree = maximum(length, rows)
     return _kb1_paths_take_from_successors(n; source, skip_empty) do v
         row = rows[v]
         edges = Tuple{Int,Int}[]
-        for label in 1:degree
+        for label = 1:degree
             if label <= length(row)
                 t = row[label]
                 t === nothing || push!(edges, (label, Int(t) + 1))
@@ -270,8 +291,20 @@ end
             alphabet,
             1,
             11,
-            ["0", "2", "22", "222", "2222", "22222", "222222", "2222222",
-             "22222222", "222222222", "2222222222", "22222222222"],
+            [
+                "0",
+                "2",
+                "22",
+                "222",
+                "2222",
+                "22222",
+                "222222",
+                "2222222",
+                "22222222",
+                "222222222",
+                "2222222222",
+                "22222222222",
+            ],
         )
     end
 
@@ -301,9 +334,29 @@ end
             alphabet,
             0,
             4,
-            ["", "0", "1", "00", "01", "10", "11", "001", "010", "011",
-             "100", "101", "110", "0010", "0011", "0100", "0101", "0110",
-             "1001", "1011", "1101"],
+            [
+                "",
+                "0",
+                "1",
+                "00",
+                "01",
+                "10",
+                "11",
+                "001",
+                "010",
+                "011",
+                "100",
+                "101",
+                "110",
+                "0010",
+                "0011",
+                "0100",
+                "0101",
+                "0110",
+                "1001",
+                "1011",
+                "1101",
+            ],
         )
         nfs = _kb1_normal_forms_between(kb, length(alphabet), 0, 10)
         @test all(w -> Semigroups.reduce(kb, w) == w, nfs)
@@ -329,11 +382,49 @@ end
             alphabet,
             0,
             4,
-            ["", "a", "b", "c", "d", "aa", "ac", "ad", "bb", "bc", "bd",
-             "cc", "dd", "aaa", "aac", "aad", "acc", "add", "bbb", "bbc",
-             "bbd", "bcc", "bdd", "ccc", "ddd", "aaaa", "aaac", "aaad",
-             "aacc", "aadd", "accc", "addd", "bbbb", "bbbc", "bbbd",
-             "bbcc", "bbdd", "bccc", "bddd", "cccc", "dddd"],
+            [
+                "",
+                "a",
+                "b",
+                "c",
+                "d",
+                "aa",
+                "ac",
+                "ad",
+                "bb",
+                "bc",
+                "bd",
+                "cc",
+                "dd",
+                "aaa",
+                "aac",
+                "aad",
+                "acc",
+                "add",
+                "bbb",
+                "bbc",
+                "bbd",
+                "bcc",
+                "bdd",
+                "ccc",
+                "ddd",
+                "aaaa",
+                "aaac",
+                "aaad",
+                "aacc",
+                "aadd",
+                "accc",
+                "addd",
+                "bbbb",
+                "bbbc",
+                "bbbd",
+                "bbcc",
+                "bbdd",
+                "bccc",
+                "bddd",
+                "cccc",
+                "dddd",
+            ],
         )
         nfs = _kb1_normal_forms_between(kb, length(alphabet), 0, 6)
         @test all(w -> Semigroups.reduce(kb, w) == w, nfs)
@@ -359,11 +450,49 @@ end
             alphabet,
             0,
             4,
-            ["", "a", "A", "b", "B", "aa", "ab", "aB", "AA", "Ab", "AB",
-             "bb", "BB", "aaa", "aab", "aaB", "abb", "aBB", "AAA", "AAb",
-             "AAB", "Abb", "ABB", "bbb", "BBB", "aaaa", "aaab", "aaaB",
-             "aabb", "aaBB", "abbb", "aBBB", "AAAA", "AAAb", "AAAB",
-             "AAbb", "AABB", "Abbb", "ABBB", "bbbb", "BBBB"],
+            [
+                "",
+                "a",
+                "A",
+                "b",
+                "B",
+                "aa",
+                "ab",
+                "aB",
+                "AA",
+                "Ab",
+                "AB",
+                "bb",
+                "BB",
+                "aaa",
+                "aab",
+                "aaB",
+                "abb",
+                "aBB",
+                "AAA",
+                "AAb",
+                "AAB",
+                "Abb",
+                "ABB",
+                "bbb",
+                "BBB",
+                "aaaa",
+                "aaab",
+                "aaaB",
+                "aabb",
+                "aaBB",
+                "abbb",
+                "aBBB",
+                "AAAA",
+                "AAAb",
+                "AAAB",
+                "AAbb",
+                "AABB",
+                "Abbb",
+                "ABBB",
+                "bbbb",
+                "BBBB",
+            ],
         )
         nfs = _kb1_normal_forms_between(kb, length(alphabet), 0, 6)
         @test all(w -> Semigroups.reduce(kb, w) == w, nfs)
@@ -387,8 +516,7 @@ end
         @test length(normal_forms(kb)) == 12
         @test normal_forms(kb) == _kb1_words(
             alphabet,
-            ["", "a", "b", "ab", "ba", "bb", "aba", "abb", "bab", "bba",
-             "babb", "bbab"],
+            ["", "a", "b", "ab", "ba", "bb", "aba", "abb", "bab", "bba", "babb", "bbab"],
         )
         nfs = _kb1_normal_forms_between(kb, length(alphabet), 0, 6)
         @test all(w -> Semigroups.reduce(kb, w) == w, nfs)
@@ -445,18 +573,35 @@ end
             alphabet,
             1,
             4,
-            ["a", "b", "c", "ab", "ac", "ba", "ca", "aba", "aca", "bab",
-             "bac", "cab", "cac", "abab", "abac", "acab", "acac", "baba",
-             "baca", "caba", "caca"],
+            [
+                "a",
+                "b",
+                "c",
+                "ab",
+                "ac",
+                "ba",
+                "ca",
+                "aba",
+                "aca",
+                "bab",
+                "bac",
+                "cab",
+                "cac",
+                "abab",
+                "abac",
+                "acab",
+                "acac",
+                "baba",
+                "baca",
+                "caba",
+                "caca",
+            ],
         )
     end
 
     @testset "009: random example" begin
         alphabet = "012"
-        p = _kb1_presentation(
-            alphabet,
-            [("000", "2"), ("111", "2"), ("010101", "2")],
-        )
+        p = _kb1_presentation(alphabet, [("000", "2"), ("111", "2"), ("010101", "2")])
         add_identity_rules!(p, _kb1_word(alphabet, "2")[1])
 
         kb = KnuthBendix(twosided, p)
@@ -475,9 +620,29 @@ end
             alphabet,
             1,
             4,
-            ["0", "1", "2", "00", "01", "10", "11", "001", "010", "011",
-             "100", "101", "110", "0010", "0011", "0100", "0101", "0110",
-             "1001", "1011", "1101"],
+            [
+                "0",
+                "1",
+                "2",
+                "00",
+                "01",
+                "10",
+                "11",
+                "001",
+                "010",
+                "011",
+                "100",
+                "101",
+                "110",
+                "0010",
+                "0011",
+                "0100",
+                "0101",
+                "0110",
+                "1001",
+                "1011",
+                "1101",
+            ],
         )
     end
 
@@ -697,7 +862,8 @@ end
         init!(kb1, twosided, p)
         add_generating_pair!(kb1, _kb1_word(alphabet, "ab"), _kb1_word(alphabet, "ba"))
         @test number_of_generating_pairs(kb1) == 1
-        @test generating_pairs(kb1) == [(_kb1_word(alphabet, "ab"), _kb1_word(alphabet, "ba"))]
+        @test generating_pairs(kb1) ==
+              [(_kb1_word(alphabet, "ab"), _kb1_word(alphabet, "ba"))]
 
         init!(kb1, twosided, p)
         @test number_of_generating_pairs(kb1) == 0
@@ -851,31 +1017,16 @@ end
         end
 
         kb1 = KnuthBendix(twosided, p)
-        rows1 = [
-            [1, 2, 3, 4, 5],
-            [],
-            [],
-            [],
-            [],
-            [nothing, nothing, nothing, nothing, 5],
-        ]
+        rows1 = [[1, 2, 3, 4, 5], [], [], [], [], [nothing, nothing, nothing, nothing, 5]]
         @test number_of_classes(kb1) == POSITIVE_INFINITY
-        @test _kb1_paths_take(gilman_graph(kb1), 1000) ==
-              _kb1_paths_take_rows(rows1, 1000)
+        @test _kb1_paths_take(gilman_graph(kb1), 1000) == _kb1_paths_take_rows(rows1, 1000)
 
         _kb1_add_cpp_rule!(p, [1], [2])
         kb2 = KnuthBendix(twosided, p)
-        rows2 = [
-            [1, 2, nothing, 3, 4],
-            [],
-            [],
-            [],
-            [nothing, nothing, nothing, nothing, 4],
-        ]
+        rows2 = [[1, 2, nothing, 3, 4], [], [], [], [nothing, nothing, nothing, nothing, 4]]
 
         @test number_of_classes(kb1) == POSITIVE_INFINITY
-        @test _kb1_paths_take(gilman_graph(kb2), 1000) ==
-              _kb1_paths_take_rows(rows2, 1000)
+        @test _kb1_paths_take(gilman_graph(kb2), 1000) == _kb1_paths_take_rows(rows2, 1000)
         @test Semigroups.contains(kb2, [2], [3])
 
         ntc = non_trivial_classes(kb1, kb2)
@@ -1073,7 +1224,19 @@ end
         @test number_of_nodes(gilman_graph(kb1)) == 16
 
         rows1 = [
-            [3, 1, nothing, 2, nothing, nothing, nothing, nothing, nothing, nothing, nothing],
+            [
+                3,
+                1,
+                nothing,
+                2,
+                nothing,
+                nothing,
+                nothing,
+                nothing,
+                nothing,
+                nothing,
+                nothing,
+            ],
             [6, nothing, nothing, 12],
             [7, nothing],
             [4, 5, nothing, 9],
@@ -1095,7 +1258,19 @@ end
         _kb1_add_cpp_rule!(p, [1], [3])
         kb2 = KnuthBendix(twosided, p)
         rows2 = [
-            [2, 1, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing],
+            [
+                2,
+                1,
+                nothing,
+                nothing,
+                nothing,
+                nothing,
+                nothing,
+                nothing,
+                nothing,
+                nothing,
+                nothing,
+            ],
             [],
             [3],
             [],

@@ -41,12 +41,17 @@ end
 function _kb6_words_of_length(n::Integer, len::Integer)
     len == 0 && return [Int[]]
     prev = _kb6_words_of_length(n, len - 1)
-    return [[word; a] for word in prev for a in 1:n]
+    return [[word; a] for word in prev for a = 1:n]
 end
 
-function _kb6_normal_forms_count(kb::KnuthBendix, alphabet_size::Integer, min_len::Integer, max_len::Integer)
+function _kb6_normal_forms_count(
+    kb::KnuthBendix,
+    alphabet_size::Integer,
+    min_len::Integer,
+    max_len::Integer,
+)
     count = 0
-    for len in min_len:max_len
+    for len = min_len:max_len
         for w in _kb6_words_of_length(alphabet_size, len)
             Semigroups.reduce(kb, w) == w && (count += 1)
         end
