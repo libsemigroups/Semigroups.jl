@@ -170,12 +170,12 @@ export overlap_policy, overlap_policy!
 export number_of_active_rules, number_of_inactive_rules
 export number_of_pending_rules, total_rules
 export confluent, confluent_known, number_of_classes
-export kind, number_of_generating_pairs, presentation
+export kind, number_of_generating_pairs, generating_pairs, presentation
 export reduce_no_run, currently_contains
 export add_generating_pair!
 export active_rules, gilman_graph, gilman_graph_node_labels
 export by_overlap_length!, is_reduced, redundant_rule
-export normal_forms, non_trivial_classes
+export normal_forms, partition, non_trivial_classes
 
 # Transformation types and functions
 export Transf, PPerm, Perm

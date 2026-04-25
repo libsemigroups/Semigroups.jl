@@ -31,13 +31,22 @@ _w(xs...) = UInt[UInt(x) for x in xs]
 
     @testset "Layer 1: binding surface" begin
 
-        @testset "type exists and inherits from Runner" begin
+        @testset "type exists and follows libsemigroups inheritance chain" begin
             @test isdefined(LS, :KnuthBendixRewriteTrie)
+            @test isdefined(LS, :KnuthBendixImplRewriteTrie)
+            @test isdefined(LS, :CongruenceCommon)
             KBType = LS.KnuthBendixRewriteTrie
+            KBImplType = LS.KnuthBendixImplRewriteTrie
+            CongruenceCommonType = LS.CongruenceCommon
+            @test supertype(KBType) === KBImplType
+            @test supertype(KBImplType) === CongruenceCommonType
+            @test supertype(CongruenceCommonType) === Runner
             # Build a minimal instance to check supertype
             p = Presentation()
             set_alphabet!(p, 2)
             kb = KBType(twosided, p)
+            @test kb isa KBImplType
+            @test kb isa CongruenceCommonType
             @test kb isa Runner
         end
 
@@ -49,7 +58,7 @@ _w(xs...) = UInt[UInt(x) for x in xs]
 
         @testset "constructor methods" begin
             KBType = LS.KnuthBendixRewriteTrie
-            @test hasmethod(KBType, Tuple{congruence_kind, Presentation})
+            @test hasmethod(KBType, Tuple{congruence_kind,Presentation})
             # Copy constructor
             p = Presentation()
             set_alphabet!(p, 2)
@@ -89,7 +98,9 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             @test hasmethod(LS.number_of_classes, Tuple{KBType})
             @test hasmethod(LS.kind, Tuple{KBType})
             @test hasmethod(LS.number_of_generating_pairs, Tuple{KBType})
+            @test hasmethod(LS.generating_pairs, Tuple{KBType})
             @test hasmethod(LS.presentation, Tuple{KBType})
+            @test hasmethod(LS.init!, Tuple{KBType,congruence_kind,Presentation})
         end
 
         @testset "word operation free functions" begin
@@ -117,6 +128,7 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             @test isdefined(LS, :kb_is_reduced)
             @test isdefined(LS, :kb_redundant_rule)
             @test isdefined(LS, :kb_normal_forms)
+            @test isdefined(LS, :kb_partition)
             @test isdefined(LS, :kb_non_trivial_classes)
         end
     end
@@ -412,21 +424,25 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             @test LS.number_of_active_rules(kb1) == 8
 
             p2 = Presentation()
-            set_contains_empty_word!(p2, true)
             set_alphabet!(p2, 2)
-            add_rule!(p2, [1, 1, 1], Int[])
-            add_rule!(p2, [2, 2, 2], Int[])
-            add_rule!(p2, [1, 2, 1, 2, 1, 2], Int[])
+            add_rule!(p2, [1, 1, 1], [1])
+            add_rule!(p2, [1], [2, 2])
 
-            # Re-init with a different presentation
-            kb2 = KBType(twosided, p2)
-            @test !LS.confluent(kb2)
-            @test !finished(kb2)
-            run!(kb2)
-            @test finished(kb2)
-            @test LS.confluent(kb2)
-            @test LS.confluent_known(kb2)
-            @test LS.number_of_active_rules(kb2) == 4
+            LS.init!(kb1, twosided, p2)
+            @test !finished(kb1)
+            @test number_of_rules(LS.presentation(kb1)) == 2
+            @test LS.number_of_active_rules(kb1) == 0
+            @test LS.number_of_pending_rules(kb1) == 2
+
+            run!(kb1)
+            @test LS.number_of_classes(kb1) == 5
+            @test LS.number_of_active_rules(kb1) == 3
+
+            LS.init!(kb1)
+            @test !finished(kb1)
+            @test number_of_rules(LS.presentation(kb1)) == 0
+            @test LS.number_of_active_rules(kb1) == 0
+            @test LS.number_of_pending_rules(kb1) == 0
         end
 
         # ----------------------------------------------------------------
@@ -601,6 +617,23 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             @test LS.number_of_generating_pairs(kb) == 1
         end
 
+        @testset "generating_pairs collection" begin
+            KBType = LS.KnuthBendixRewriteTrie
+            p = Presentation()
+            set_alphabet!(p, 2)
+            kb = KBType(twosided, p)
+
+            LS.kb_add_generating_pair!(kb, _w(0), _w(1))
+            LS.kb_add_generating_pair!(kb, _w(1, 0), _w(1, 1))
+
+            flat = LS.generating_pairs(kb)
+            @test length(flat) == 4
+            @test flat[1] == _w(0)
+            @test flat[2] == _w(1)
+            @test flat[3] == _w(1, 0)
+            @test flat[4] == _w(1, 1)
+        end
+
         # ----------------------------------------------------------------
         # redundant_rule
         # ----------------------------------------------------------------
@@ -610,7 +643,11 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             # C++: add_rule(p, 0_w, 011_w)  → Julia 1-based via add_rule!
             add_rule!(p, [1], [1, 2, 2])
             add_rule!(p, [2], [2, 1, 1])
-            add_rule!(p, [3], [1, 2, 2, 1, 2, 1, 2, 1, 1, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1])
+            add_rule!(
+                p,
+                [3],
+                [1, 2, 2, 1, 2, 1, 2, 1, 1, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1],
+            )
 
             # timeout in nanoseconds: 100ms = 100_000_000 ns
             idx = LS.kb_redundant_rule(p, Int64(100_000_000))
@@ -666,6 +703,24 @@ _w(xs...) = UInt[UInt(x) for x in xs]
 
             ntc = LS.kb_non_trivial_classes(kb1, kb2)
             @test isempty(ntc)
+        end
+
+        @testset "partition helper" begin
+            KBType = LS.KnuthBendixRewriteTrie
+            p = Presentation()
+            set_alphabet!(p, 2)
+            add_rule!(p, [1, 1, 1], [1])
+            add_rule!(p, [1], [2, 2])
+
+            kb = KBType(twosided, p)
+            classes = LS.kb_partition(kb, Any[_w(0), _w(1, 1), _w(0, 0, 0), _w(0, 0, 1)])
+
+            canon(x) = sort(
+                [sort([UInt64.(word) for word in cls], by = repr) for cls in x],
+                by = repr,
+            )
+            expected = [[_w(0), _w(1, 1), _w(0, 0, 0)], [_w(0, 0, 1)]]
+            @test canon(classes) == canon(expected)
         end
 
         # ----------------------------------------------------------------
@@ -786,10 +841,12 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             kb = KBType(twosided, p)
             @test !finished(kb)
             @test !started(kb)
+            @test current_state(kb) == STATE_NEVER_RUN
 
             run!(kb)
             @test finished(kb)
             @test started(kb)
+            @test current_state(kb) == STATE_NOT_RUNNING
             @test !timed_out(kb)
         end
     end
@@ -871,6 +928,16 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             @test ar isa Vector{Tuple{Vector{Int},Vector{Int}}}
         end
 
+        @testset "generating_pairs returns 1-based tuples" begin
+            p = Presentation()
+            set_alphabet!(p, 2)
+            kb = KnuthBendix(twosided, p)
+            add_generating_pair!(kb, [1], [2])
+            add_generating_pair!(kb, [2, 1], [2, 2])
+
+            @test generating_pairs(kb) == [([1], [2]), ([2, 1], [2, 2])]
+        end
+
         @testset "normal_forms returns 1-based words" begin
             p = Presentation()
             set_alphabet!(p, 2)
@@ -880,6 +947,41 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             nf = normal_forms(kb)
             @test length(nf) == 5
             @test all(w -> all(x -> x >= 1, w), nf)
+        end
+
+        @testset "partition returns 1-based classes" begin
+            p = Presentation()
+            set_alphabet!(p, 2)
+            add_rule!(p, [1, 1, 1], [1])
+            add_rule!(p, [1], [2, 2])
+            kb = KnuthBendix(twosided, p)
+
+            classes = Semigroups.partition(kb, [[1], [2, 2], [1, 1, 1], [1, 1, 2]])
+            canon(x) = sort([sort(repr.(cls)) for cls in x])
+            expected = [[[1], [2, 2], [1, 1, 1]], [[1, 1, 2]]]
+            @test canon(classes) == canon(expected)
+        end
+
+        @testset "init! dispatches to KnuthBendix reinitializers" begin
+            p1 = Presentation()
+            set_alphabet!(p1, 2)
+            add_rule!(p1, [1, 1, 1], [1])
+            add_rule!(p1, [1], [2, 2])
+            kb = KnuthBendix(twosided, p1)
+            @test number_of_classes(kb) == 5
+
+            init!(kb)
+            @test number_of_rules(presentation(kb)) == 0
+            @test number_of_active_rules(kb) == 0
+            @test number_of_pending_rules(kb) == 0
+
+            p2 = Presentation()
+            set_alphabet!(p2, 2)
+            add_rule!(p2, [1, 2], [2])
+            init!(kb, twosided, p2)
+            @test number_of_rules(presentation(kb)) == 1
+            @test number_of_active_rules(kb) == 0
+            @test number_of_pending_rules(kb) == 1
         end
 
         @testset "integration with presentation examples" begin

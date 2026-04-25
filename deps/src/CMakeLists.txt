@@ -45,6 +45,7 @@ message(STATUS "libsemigroups libraries: ${LIBSEMIGROUPS_LIBRARIES}")
 add_library(libsemigroups_julia SHARED
     libsemigroups_julia.cpp
     bmat8.cpp
+    cong-common.cpp
     constants.cpp
     froidure-pin-base.cpp
     froidure-pin.cpp

@@ -57,6 +57,7 @@ namespace libsemigroups_julia {
   void define_constants(jl::Module& mod);
   void define_report(jl::Module& mod);
   void define_runner(jl::Module& mod);
+  void define_cong_common(jl::Module& mod);
   void define_transf(jl::Module& mod);
   void define_bmat8(jl::Module& mod);
   void define_order(jl::Module& mod);

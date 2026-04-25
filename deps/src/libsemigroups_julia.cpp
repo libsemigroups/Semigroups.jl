@@ -32,6 +32,7 @@ namespace libsemigroups_julia {
 
     // Define base types (must be registered before derived types)
     define_runner(mod);
+    define_cong_common(mod);
 
     // Define element types
     define_transf(mod);
