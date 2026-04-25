@@ -66,10 +66,16 @@ makedocs(;
                 "main-algorithms/core-classes/index.md",
                 "main-algorithms/core-classes/runner.md",
             ],
+            "Common congruence helpers" => "main-algorithms/cong-common-helpers.md",
             "Froidure-Pin" => [
                 "Overview" => "main-algorithms/froidure-pin/index.md",
                 "The FroidurePin type" => "main-algorithms/froidure-pin/froidure-pin.md",
                 "Helper functions" => "main-algorithms/froidure-pin/helpers.md",
+            ],
+            "Knuth-Bendix" => [
+                "Overview" => "main-algorithms/knuth-bendix/index.md",
+                "The KnuthBendix type" => "main-algorithms/knuth-bendix/knuth-bendix.md",
+                "Helper functions" => "main-algorithms/knuth-bendix/helpers.md",
             ],
         ],
     ],
