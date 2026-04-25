@@ -70,6 +70,7 @@ include("word-range.jl")
 include("word-graph.jl")
 include("presentation.jl")
 include("presentation-examples.jl")
+include("cong-common.jl")
 include("knuth-bendix.jl")
 
 # High-level element types
@@ -92,6 +93,7 @@ end
 export enable_debug, is_debug, LibsemigroupsError, ReportGuard
 export UNDEFINED, POSITIVE_INFINITY, NEGATIVE_INFINITY, LIMIT_MAX
 export Runner, RunnerState
+export CongruenceCommon
 export STATE_NEVER_RUN, STATE_RUNNING_TO_FINISH, STATE_RUNNING_FOR
 export STATE_RUNNING_UNTIL, STATE_TIMED_OUT, STATE_STOPPED_BY_PREDICATE
 export STATE_NOT_RUNNING, STATE_DEAD

@@ -104,11 +104,11 @@ _w(xs...) = UInt[UInt(x) for x in xs]
         end
 
         @testset "word operation free functions" begin
-            @test isdefined(LS, :kb_reduce)
-            @test isdefined(LS, :kb_reduce_no_run)
-            @test isdefined(LS, :kb_contains)
-            @test isdefined(LS, :kb_currently_contains)
-            @test isdefined(LS, Symbol("kb_add_generating_pair!"))
+            @test isdefined(LS, :cong_common_reduce)
+            @test isdefined(LS, :cong_common_reduce_no_run)
+            @test isdefined(LS, :cong_common_contains)
+            @test isdefined(LS, :cong_common_currently_contains)
+            @test isdefined(LS, Symbol("cong_common_add_generating_pair!"))
         end
 
         @testset "rules and graph access" begin
@@ -127,9 +127,9 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             @test isdefined(LS, Symbol("kb_by_overlap_length!"))
             @test isdefined(LS, :kb_is_reduced)
             @test isdefined(LS, :kb_redundant_rule)
-            @test isdefined(LS, :kb_normal_forms)
-            @test isdefined(LS, :kb_partition)
-            @test isdefined(LS, :kb_non_trivial_classes)
+            @test isdefined(LS, :cong_common_normal_forms)
+            @test isdefined(LS, :cong_common_partition)
+            @test isdefined(LS, :cong_common_non_trivial_classes)
         end
     end
 
@@ -158,13 +158,13 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             @test finished(kb)
 
             # reduce tests — raw C++ binding takes UInt[] (0-based)
-            @test LS.kb_reduce(kb, _w(0, 0, 1)) == _w(0, 0, 1)
-            @test LS.kb_reduce(kb, _w(0, 0, 0, 0, 1)) == _w(0, 0, 1)
-            @test LS.kb_reduce(kb, _w(0, 1, 1, 0, 0, 1)) == _w(0, 0, 1)
+            @test LS.cong_common_reduce(kb, _w(0, 0, 1)) == _w(0, 0, 1)
+            @test LS.cong_common_reduce(kb, _w(0, 0, 0, 0, 1)) == _w(0, 0, 1)
+            @test LS.cong_common_reduce(kb, _w(0, 1, 1, 0, 0, 1)) == _w(0, 0, 1)
 
             # contains tests
-            @test !LS.kb_contains(kb, _w(0, 0, 0), _w(1))
-            @test !LS.kb_contains(kb, _w(0, 0, 0, 0), _w(0, 0, 0))
+            @test !LS.cong_common_contains(kb, _w(0, 0, 0), _w(1))
+            @test !LS.cong_common_contains(kb, _w(0, 0, 0, 0), _w(0, 0, 0))
         end
 
         # ----------------------------------------------------------------
@@ -195,7 +195,7 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             kb = KBType(twosided, p)
 
             @test LS.number_of_classes(kb) == 6
-            @test LS.kb_contains(kb, _w(1), _w(2))
+            @test LS.cong_common_contains(kb, _w(1), _w(2))
         end
 
         # ----------------------------------------------------------------
@@ -232,7 +232,7 @@ _w(xs...) = UInt[UInt(x) for x in xs]
 
             @test LS.number_of_classes(kb) == 16
             @test LS.number_of_active_rules(kb) == 18
-            @test LS.kb_contains(kb, _w(2), _w(3))
+            @test LS.cong_common_contains(kb, _w(2), _w(3))
         end
 
         # ----------------------------------------------------------------
@@ -296,14 +296,14 @@ _w(xs...) = UInt[UInt(x) for x in xs]
 
             kb = KBType(twosided, p)
             @test LS.number_of_classes(kb) == 16
-            @test LS.kb_contains(kb, _w(0), _w(5))
-            @test LS.kb_contains(kb, _w(0), _w(10))
-            @test LS.kb_contains(kb, _w(1), _w(2))
-            @test LS.kb_contains(kb, _w(1), _w(7))
-            @test LS.kb_contains(kb, _w(3), _w(4))
-            @test LS.kb_contains(kb, _w(3), _w(6))
-            @test LS.kb_contains(kb, _w(3), _w(8))
-            @test LS.kb_contains(kb, _w(3), _w(9))
+            @test LS.cong_common_contains(kb, _w(0), _w(5))
+            @test LS.cong_common_contains(kb, _w(0), _w(10))
+            @test LS.cong_common_contains(kb, _w(1), _w(2))
+            @test LS.cong_common_contains(kb, _w(1), _w(7))
+            @test LS.cong_common_contains(kb, _w(3), _w(4))
+            @test LS.cong_common_contains(kb, _w(3), _w(6))
+            @test LS.cong_common_contains(kb, _w(3), _w(8))
+            @test LS.cong_common_contains(kb, _w(3), _w(9))
         end
 
         # ----------------------------------------------------------------
@@ -527,12 +527,12 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             kb = KBType(twosided, p)
 
             # After running, reduced forms are canonical
-            r1 = LS.kb_reduce(kb, _w(0, 0, 1))
-            r2 = LS.kb_reduce(kb, _w(0, 0, 0, 0, 1))
+            r1 = LS.cong_common_reduce(kb, _w(0, 0, 1))
+            r2 = LS.cong_common_reduce(kb, _w(0, 0, 0, 0, 1))
             @test r1 == r2
 
             # reduce_no_run should also work after the KB is finished
-            r3 = LS.kb_reduce_no_run(kb, _w(0, 0, 1))
+            r3 = LS.cong_common_reduce_no_run(kb, _w(0, 0, 1))
             @test r1 == r3
         end
 
@@ -548,12 +548,12 @@ _w(xs...) = UInt[UInt(x) for x in xs]
 
             kb = KBType(twosided, p)
             # Before running, currently_contains may return tril_unknown
-            result = LS.kb_currently_contains(kb, _w(0, 0, 0), _w(0))
+            result = LS.cong_common_currently_contains(kb, _w(0, 0, 0), _w(0))
             @test result isa tril
 
             # After running, should give definitive answer
             run!(kb)
-            result2 = LS.kb_currently_contains(kb, _w(0, 0, 0), _w(0))
+            result2 = LS.cong_common_currently_contains(kb, _w(0, 0, 0), _w(0))
             @test result2 == tril_TRUE
         end
 
@@ -613,7 +613,7 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             @test LS.number_of_generating_pairs(kb) == 0
 
             # Add a generating pair and check
-            LS.kb_add_generating_pair!(kb, _w(0), _w(1))
+            LS.cong_common_add_generating_pair!(kb, _w(0), _w(1))
             @test LS.number_of_generating_pairs(kb) == 1
         end
 
@@ -623,8 +623,8 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             set_alphabet!(p, 2)
             kb = KBType(twosided, p)
 
-            LS.kb_add_generating_pair!(kb, _w(0), _w(1))
-            LS.kb_add_generating_pair!(kb, _w(1, 0), _w(1, 1))
+            LS.cong_common_add_generating_pair!(kb, _w(0), _w(1))
+            LS.cong_common_add_generating_pair!(kb, _w(1, 0), _w(1, 1))
 
             flat = LS.generating_pairs(kb)
             @test length(flat) == 4
@@ -672,7 +672,7 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             add_rule!(p, [1], [2, 2])
 
             kb = KBType(twosided, p)
-            nf = LS.kb_normal_forms(kb)
+            nf = LS.cong_common_normal_forms(kb)
             @test length(nf) == 5   # 5 classes
         end
 
@@ -701,7 +701,7 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             kb2 = KBType(twosided, p)
             @test LS.number_of_classes(kb2) == 27
 
-            ntc = LS.kb_non_trivial_classes(kb1, kb2)
+            ntc = LS.cong_common_non_trivial_classes(kb1, kb2)
             @test isempty(ntc)
         end
 
@@ -713,7 +713,7 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             add_rule!(p, [1], [2, 2])
 
             kb = KBType(twosided, p)
-            classes = LS.kb_partition(kb, Any[_w(0), _w(1, 1), _w(0, 0, 0), _w(0, 0, 1)])
+            classes = LS.cong_common_partition(kb, Any[_w(0), _w(1, 1), _w(0, 0, 0), _w(0, 0, 1)])
 
             canon(x) = sort(
                 [sort([UInt64.(word) for word in cls], by = repr) for cls in x],
@@ -782,7 +782,7 @@ _w(xs...) = UInt[UInt(x) for x in xs]
             @test LS.confluent(kb)
             @test LS.number_of_classes(kb) == 12
 
-            nf = LS.kb_normal_forms(kb)
+            nf = LS.cong_common_normal_forms(kb)
             @test length(nf) == 12
         end
 

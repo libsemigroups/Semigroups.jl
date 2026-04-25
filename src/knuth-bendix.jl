@@ -56,13 +56,6 @@ Overlap policy constant: consider overlaps of the form MAX_AB_BC.
 const overlap_MAX_AB_BC = LibSemigroups.overlap_MAX_AB_BC
 
 # ============================================================================
-# Private helpers
-# ============================================================================
-
-_words_to_cpp(words::AbstractVector{<:AbstractVector{<:Integer}}) =
-    Any[_word_to_cpp(word) for word in words]
-
-# ============================================================================
 # Initialization
 # ============================================================================
 
@@ -269,91 +262,6 @@ Return a copy of the presentation used by `kb`.
 presentation(kb::KnuthBendix) = LibSemigroups.presentation(kb)
 
 # ============================================================================
-# Word operations — 1-based boundary
-# ============================================================================
-
-"""
-    reduce(kb::KnuthBendix, w::AbstractVector{<:Integer}) -> Vector{Int}
-
-Reduce a word using the rewriting system. Triggers a full run if needed.
-
-Words are given as 1-based `Vector{Int}` letter indices. The returned
-word is also 1-based.
-"""
-function reduce(kb::KnuthBendix, w::AbstractVector{<:Integer})
-    cpp_w = _word_to_cpp(w)
-    result = @wrap_libsemigroups_call LibSemigroups.kb_reduce(kb, cpp_w)
-    return _word_from_cpp(result)
-end
-
-"""
-    reduce_no_run(kb::KnuthBendix, w::AbstractVector{<:Integer}) -> Vector{Int}
-
-Reduce a word using only the current rules (no full run).
-
-Words are given as 1-based `Vector{Int}` letter indices.
-"""
-function reduce_no_run(kb::KnuthBendix, w::AbstractVector{<:Integer})
-    cpp_w = _word_to_cpp(w)
-    result = @wrap_libsemigroups_call LibSemigroups.kb_reduce_no_run(kb, cpp_w)
-    return _word_from_cpp(result)
-end
-
-"""
-    contains(kb::KnuthBendix, u::AbstractVector{<:Integer}, v::AbstractVector{<:Integer}) -> Bool
-
-Check if two words are equivalent under the congruence. Triggers a full run.
-
-Words are given as 1-based `Vector{Int}` letter indices.
-"""
-function contains(
-    kb::KnuthBendix,
-    u::AbstractVector{<:Integer},
-    v::AbstractVector{<:Integer},
-)
-    cpp_u = _word_to_cpp(u)
-    cpp_v = _word_to_cpp(v)
-    return @wrap_libsemigroups_call LibSemigroups.kb_contains(kb, cpp_u, cpp_v)
-end
-
-"""
-    currently_contains(kb::KnuthBendix, u::AbstractVector{<:Integer}, v::AbstractVector{<:Integer}) -> tril
-
-Check if two words are equivalent using only the current rules (no run).
-
-Returns a [`tril`](@ref) value: `tril_TRUE`, `tril_FALSE`, or `tril_unknown`.
-
-Words are given as 1-based `Vector{Int}` letter indices.
-"""
-function currently_contains(
-    kb::KnuthBendix,
-    u::AbstractVector{<:Integer},
-    v::AbstractVector{<:Integer},
-)
-    cpp_u = _word_to_cpp(u)
-    cpp_v = _word_to_cpp(v)
-    return @wrap_libsemigroups_call LibSemigroups.kb_currently_contains(kb, cpp_u, cpp_v)
-end
-
-"""
-    add_generating_pair!(kb::KnuthBendix, u::AbstractVector{<:Integer}, v::AbstractVector{<:Integer}) -> KnuthBendix
-
-Add a generating pair to the congruence.
-
-Words are given as 1-based `Vector{Int}` letter indices.
-"""
-function add_generating_pair!(
-    kb::KnuthBendix,
-    u::AbstractVector{<:Integer},
-    v::AbstractVector{<:Integer},
-)
-    cpp_u = _word_to_cpp(u)
-    cpp_v = _word_to_cpp(v)
-    @wrap_libsemigroups_call LibSemigroups.kb_add_generating_pair!(kb, cpp_u, cpp_v)
-    return kb
-end
-
-# ============================================================================
 # Rules access
 # ============================================================================
 
@@ -464,38 +372,4 @@ function redundant_rule(p::Presentation, timeout::TimePeriod)
     end
     # Convert from 0-based flat index to 1-based rule-pair index
     return div(Int(idx), 2) + 1
-end
-
-"""
-    normal_forms(kb::KnuthBendix) -> Vector{Vector{Int}}
-
-Return all normal forms as 1-based words.
-"""
-function normal_forms(kb::KnuthBendix)
-    nf = @wrap_libsemigroups_call LibSemigroups.kb_normal_forms(kb)
-    return [_word_from_cpp(w) for w in nf]
-end
-
-"""
-    partition(kb::KnuthBendix, words::AbstractVector{<:AbstractVector{<:Integer}}) -> Vector{Vector{Vector{Int}}}
-
-Partition `words` into congruence classes.
-
-This function returns the partition of the input words induced by `kb`.
-Words are given and returned as 1-based `Vector{Int}` letter indices.
-Calling this function may trigger a full run of `kb`.
-"""
-function partition(kb::KnuthBendix, words::AbstractVector{<:AbstractVector{<:Integer}})
-    classes = @wrap_libsemigroups_call LibSemigroups.kb_partition(kb, _words_to_cpp(words))
-    return [[_word_from_cpp(word) for word in cls] for cls in classes]
-end
-
-"""
-    non_trivial_classes(kb1::KnuthBendix, kb2::KnuthBendix) -> Vector{Vector{Vector{Int}}}
-
-Return the non-trivial classes as nested vectors of 1-based words.
-"""
-function non_trivial_classes(kb1::KnuthBendix, kb2::KnuthBendix)
-    classes = @wrap_libsemigroups_call LibSemigroups.kb_non_trivial_classes(kb1, kb2)
-    return [[_word_from_cpp(w) for w in cls] for cls in classes]
 end

@@ -19,13 +19,10 @@
 // CRITICAL: libsemigroups_julia.hpp MUST be included first (fmt consteval fix)
 #include "libsemigroups_julia.hpp"
 
-#include <libsemigroups/cong-common-helpers.hpp>
 #include <libsemigroups/knuth-bendix-class.hpp>
 #include <libsemigroups/knuth-bendix-helpers.hpp>
 #include <libsemigroups/presentation.hpp>
 #include <libsemigroups/word-graph.hpp>
-
-#include <jlcxx/array.hpp>
 
 #include <chrono>
 #include <cstddef>
@@ -194,53 +191,6 @@ namespace libsemigroups_julia {
     });
 
     ////////////////////////////////////////////////////////////////////////
-    // Word operations (ArrayRef<size_t> for word inputs)
-    ////////////////////////////////////////////////////////////////////////
-
-    // reduce (triggers full enumeration)
-    m.method("kb_reduce", [](KB& self, jlcxx::ArrayRef<size_t> w) -> word_type {
-      word_type input(w.begin(), w.end());
-      return libsemigroups::knuth_bendix::reduce(self, input);
-    });
-
-    // reduce_no_run (no enumeration)
-    m.method("kb_reduce_no_run",
-             [](KB const& self, jlcxx::ArrayRef<size_t> w) -> word_type {
-               word_type input(w.begin(), w.end());
-               return libsemigroups::knuth_bendix::reduce_no_run(self, input);
-             });
-
-    // contains (triggers full enumeration)
-    m.method("kb_contains",
-             [](KB&                     self,
-                jlcxx::ArrayRef<size_t> u,
-                jlcxx::ArrayRef<size_t> v) -> bool {
-               word_type uw(u.begin(), u.end());
-               word_type vw(v.begin(), v.end());
-               return libsemigroups::knuth_bendix::contains(self, uw, vw);
-             });
-
-    // currently_contains (no enumeration, returns tril)
-    m.method("kb_currently_contains",
-             [](KB const&               self,
-                jlcxx::ArrayRef<size_t> u,
-                jlcxx::ArrayRef<size_t> v) -> libsemigroups::tril {
-               word_type uw(u.begin(), u.end());
-               word_type vw(v.begin(), v.end());
-               return libsemigroups::knuth_bendix::currently_contains(
-                   self, uw, vw);
-             });
-
-    // add_generating_pair!
-    m.method(
-        "kb_add_generating_pair!",
-        [](KB& self, jlcxx::ArrayRef<size_t> u, jlcxx::ArrayRef<size_t> v) {
-          word_type uw(u.begin(), u.end());
-          word_type vw(v.begin(), v.end());
-          libsemigroups::knuth_bendix::add_generating_pair(self, uw, vw);
-        });
-
-    ////////////////////////////////////////////////////////////////////////
     // Rules access
     ////////////////////////////////////////////////////////////////////////
 
@@ -307,38 +257,6 @@ namespace libsemigroups_julia {
                return static_cast<size_t>(std::distance(p.rules.cbegin(), it));
              });
 
-    // normal_forms — collect to vector<word_type>
-    // normal_forms() returns an rx-style range — use .at_end()/.get()/.next()
-    m.method("kb_normal_forms", [](KB& self) -> std::vector<word_type> {
-      std::vector<word_type> result;
-      auto range = libsemigroups::knuth_bendix::normal_forms(self);
-      while (!range.at_end()) {
-        result.push_back(range.get());
-        range.next();
-      }
-      return result;
-    });
-
-    // non_trivial_classes — takes two KB objects
-    m.method("kb_non_trivial_classes",
-             [](KB& kb1, KB& kb2) -> std::vector<std::vector<word_type>> {
-               return libsemigroups::knuth_bendix::non_trivial_classes(kb1,
-                                                                       kb2);
-             });
-
-    m.method("kb_partition",
-             [](KB& self, jlcxx::ArrayRef<jl_value_t*> words)
-                 -> std::vector<std::vector<word_type>> {
-               std::vector<word_type> input;
-               input.reserve(words.size());
-               for (jl_value_t* word_value : words) {
-                 auto word = jlcxx::ArrayRef<size_t>(
-                     reinterpret_cast<jl_array_t*>(word_value));
-                 input.emplace_back(word.begin(), word.end());
-               }
-               return libsemigroups::congruence_common::partition(
-                   self, input.begin(), input.end());
-             });
   }
 
 }  // namespace libsemigroups_julia
