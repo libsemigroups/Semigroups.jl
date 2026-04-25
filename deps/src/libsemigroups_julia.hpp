@@ -57,6 +57,7 @@ namespace libsemigroups_julia {
   void define_constants(jl::Module& mod);
   void define_report(jl::Module& mod);
   void define_runner(jl::Module& mod);
+  void define_cong_common(jl::Module& mod);
   void define_transf(jl::Module& mod);
   void define_bmat8(jl::Module& mod);
   void define_order(jl::Module& mod);
@@ -66,6 +67,8 @@ namespace libsemigroups_julia {
   void define_froidure_pin(jl::Module& mod);
   void define_presentation(jl::Module& mod);
   void define_presentation_examples(jl::Module& mod);
+  void define_knuth_bendix(jl::Module& mod);
+  void define_knuth_bendix_cong_common_helpers(jl::Module& mod);
 
 }  // namespace libsemigroups_julia
 

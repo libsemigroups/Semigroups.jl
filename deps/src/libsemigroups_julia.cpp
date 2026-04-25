@@ -32,6 +32,7 @@ namespace libsemigroups_julia {
 
     // Define base types (must be registered before derived types)
     define_runner(mod);
+    define_cong_common(mod);
 
     // Define element types
     define_transf(mod);
@@ -44,6 +45,8 @@ namespace libsemigroups_julia {
     define_froidure_pin(mod);
     define_presentation(mod);
     define_presentation_examples(mod);
+    define_knuth_bendix(mod);
+    define_knuth_bendix_cong_common_helpers(mod);
   }
 
 }  // namespace libsemigroups_julia

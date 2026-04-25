@@ -57,6 +57,14 @@ namespace libsemigroups_julia {
     m.method("NEGATIVE_INFINITY_Int64",
              []() -> int64_t { return libsemigroups::NEGATIVE_INFINITY; });
 
+    // congruence_kind enum for sided-ness of a congruence
+    m.add_bits<libsemigroups::congruence_kind>("congruence_kind",
+                                               jl::julia_type("CppEnum"));
+    m.set_const("congruence_kind_onesided",
+                libsemigroups::congruence_kind::onesided);
+    m.set_const("congruence_kind_twosided",
+                libsemigroups::congruence_kind::twosided);
+
     // tril enum for three-valued logic (true, false, unknown)
     m.add_bits<libsemigroups::tril>("tril", jl::julia_type("CppEnum"));
     m.set_const("tril_FALSE", libsemigroups::tril::FALSE);
