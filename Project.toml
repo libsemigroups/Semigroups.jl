@@ -12,6 +12,7 @@ libsemigroups_jll = "99c76e05-e2a6-5e47-b69a-d74ec2f0d12c"
 [compat]
 AbstractAlgebra = "0.43, 0.48"
 CxxWrap = "0.17"
+libsemigroups_jll = "=3.5.5"
 julia = "1.9"
 
 [extras]
