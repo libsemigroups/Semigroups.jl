@@ -21,6 +21,10 @@ using libsemigroups_julia_jll
 const _debug_mode = Ref(false)
 const VERSION_NUMBER = Base.pkgversion(@__MODULE__)
 
+# Set this to false once the registry has a libsemigroups_julia_jll built from
+# the bundled deps/src sources for this Semigroups.jl release.
+const FORCE_LOCAL_LIBSEMIGROUPS_JULIA_BUILD = true
+
 """
     enable_debug(val::Bool=true)
 
@@ -52,7 +56,11 @@ is_debug() = _debug_mode[]
 include("setup.jl")
 
 # Get the library path - this will build if necessary during precompilation
-const _libsemigroups_julia = Ref(Setup.locate_library())
+const _libsemigroups_julia = Ref(
+    Setup.locate_library(;
+        force_local_build = FORCE_LOCAL_LIBSEMIGROUPS_JULIA_BUILD,
+    ),
+)
 libsemigroups_julia() = _libsemigroups_julia[]
 
 # Low-level CxxWrap bindings
@@ -208,7 +216,9 @@ end
 # Module initialization
 function __init__()
     # Re-check at runtime because Julia precompilation does not track deps/src.
-    _libsemigroups_julia[] = Setup.locate_library()
+    _libsemigroups_julia[] = Setup.locate_library(;
+        force_local_build = FORCE_LOCAL_LIBSEMIGROUPS_JULIA_BUILD,
+    )
 
     # Initialize the CxxWrap module
     LibSemigroups.__init__()
