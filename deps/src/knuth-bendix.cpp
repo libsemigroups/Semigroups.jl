@@ -256,7 +256,6 @@ namespace libsemigroups_julia {
                    p, std::chrono::nanoseconds(ns));
                return static_cast<size_t>(std::distance(p.rules.cbegin(), it));
              });
-
   }
 
 }  // namespace libsemigroups_julia

@@ -66,19 +66,18 @@ namespace libsemigroups_julia {
 
       // contains (triggers full enumeration)
       m.method("cong_common_contains",
-               [](Thing& self,
+               [](Thing&                  self,
                   jlcxx::ArrayRef<size_t> u,
                   jlcxx::ArrayRef<size_t> v) -> bool {
                  Word uw(u.begin(), u.end());
                  Word vw(v.begin(), v.end());
-                 return libsemigroups::congruence_common::contains(self,
-                                                                   uw,
-                                                                   vw);
+                 return libsemigroups::congruence_common::contains(
+                     self, uw, vw);
                });
 
       // currently_contains (no enumeration, returns tril)
       m.method("cong_common_currently_contains",
-               [](Thing const& self,
+               [](Thing const&            self,
                   jlcxx::ArrayRef<size_t> u,
                   jlcxx::ArrayRef<size_t> v) -> libsemigroups::tril {
                  Word uw(u.begin(), u.end());
@@ -88,13 +87,15 @@ namespace libsemigroups_julia {
                });
 
       // add_generating_pair!
-      m.method(
-          "cong_common_add_generating_pair!",
-          [](Thing& self, jlcxx::ArrayRef<size_t> u, jlcxx::ArrayRef<size_t> v) {
-            Word uw(u.begin(), u.end());
-            Word vw(v.begin(), v.end());
-            libsemigroups::congruence_common::add_generating_pair(self, uw, vw);
-          });
+      m.method("cong_common_add_generating_pair!",
+               [](Thing&                  self,
+                  jlcxx::ArrayRef<size_t> u,
+                  jlcxx::ArrayRef<size_t> v) {
+                 Word uw(u.begin(), u.end());
+                 Word vw(v.begin(), v.end());
+                 libsemigroups::congruence_common::add_generating_pair(
+                     self, uw, vw);
+               });
 
       m.method("cong_common_partition",
                [](Thing& self, jlcxx::ArrayRef<jl_value_t*> words)
@@ -117,17 +118,16 @@ namespace libsemigroups_julia {
 
       // normal_forms() returns an rx-style range; use
       // .at_end()/.get()/.next().
-      m.method("cong_common_normal_forms",
-               [](Thing& self) -> std::vector<Word> {
-                 std::vector<Word> result;
-                 auto range = libsemigroups::congruence_common::normal_forms(
-                     self);
-                 while (!range.at_end()) {
-                   result.push_back(range.get());
-                   range.next();
-                 }
-                 return result;
-               });
+      m.method(
+          "cong_common_normal_forms", [](Thing& self) -> std::vector<Word> {
+            std::vector<Word> result;
+            auto range = libsemigroups::congruence_common::normal_forms(self);
+            while (!range.at_end()) {
+              result.push_back(range.get());
+              range.next();
+            }
+            return result;
+          });
     }
 
     template <typename Thing>
