@@ -806,3 +806,55 @@ Base.copy(tc::ToddCoxeter) = LibSemigroups.ToddCoxeterWord(tc)
 
 Base.deepcopy_internal(tc::ToddCoxeter, ::IdDict) =
     LibSemigroups.ToddCoxeterWord(tc)
+
+# ============================================================================
+# Free functions (todd_coxeter:: namespace)
+# ============================================================================
+
+"""
+    is_non_trivial(tc::ToddCoxeter;
+                   tries::Integer = 10,
+                   try_for::TimePeriod = Dates.Millisecond(100),
+                   threshold::Real = 0.99) -> tril
+
+Heuristically check whether the congruence represented by `tc` is
+non-trivial.
+
+Repeatedly runs the algorithm for at most `try_for` time, with a random
+subset of the generating pairs removed, up to `tries` times. If the ratio
+of the number of classes in the modified system to the number in `tc` is
+at most `threshold`, the function returns [`tril_TRUE`](@ref
+Semigroups.tril_TRUE) (the congruence is likely non-trivial). If after
+`tries` attempts no such ratio is observed, returns
+[`tril_FALSE`](@ref Semigroups.tril_FALSE). Returns
+[`tril_unknown`](@ref Semigroups.tril_unknown) if the function cannot
+decide.
+
+# Arguments
+
+- `tc::ToddCoxeter`: the `ToddCoxeter` instance to check.
+- `tries::Integer`: number of attempts (default `10`).
+- `try_for::TimePeriod`: time budget per attempt (default
+  `Millisecond(100)`).
+- `threshold::Real`: ratio threshold (default `0.99`).
+
+!!! note
+    The libsemigroups helper takes `std::chrono::milliseconds` internally;
+    the C++ binding receives nanoseconds and casts down, truncating
+    sub-millisecond values to zero. The default of `Millisecond(100)` is
+    safely above this precision boundary.
+"""
+function is_non_trivial(
+    tc::ToddCoxeter;
+    tries::Integer = 10,
+    try_for::TimePeriod = Dates.Millisecond(100),
+    threshold::Real = 0.99,
+)
+    ns = convert(Nanosecond, try_for)
+    return @wrap_libsemigroups_call LibSemigroups.tc_is_non_trivial(
+        tc,
+        UInt(tries),
+        Int64(Dates.value(ns)),
+        Float32(threshold),
+    )
+end
