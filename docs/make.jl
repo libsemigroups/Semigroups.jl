@@ -58,6 +58,7 @@ makedocs(;
                 "Examples" => "data-structures/presentations/examples.md",
             ],
             "Word Graphs" => "data-structures/word-graph.md",
+            "Paths" => "data-structures/paths.md",
             "Words" => "data-structures/word-range.md",
         ],
         "Main Algorithms" => [
