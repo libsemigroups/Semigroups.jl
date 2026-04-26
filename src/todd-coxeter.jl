@@ -711,3 +711,98 @@ function current_word_of(tc::ToddCoxeter, i::Integer)
     out = @wrap_libsemigroups_call LibSemigroups.current_word_of(tc, cpp_i)
     return _word_from_cpp(out)
 end
+
+# ============================================================================
+# Query methods
+# ============================================================================
+
+"""
+    number_of_classes(tc::ToddCoxeter) -> UInt64
+
+Compute the number of congruence classes, triggering a full run if
+needed.
+
+Returns [`POSITIVE_INFINITY`](@ref Semigroups.POSITIVE_INFINITY) if the
+congruence has infinitely many classes.
+
+!!! warning
+    This function may not terminate if the congruence has infinitely many
+    classes and the algorithm cannot detect this.
+"""
+number_of_classes(tc::ToddCoxeter) = LibSemigroups.number_of_classes(tc)
+
+"""
+    kind(tc::ToddCoxeter) -> congruence_kind
+
+Return the kind of the congruence represented by `tc` — either
+[`twosided`](@ref Semigroups.twosided) or
+[`onesided`](@ref Semigroups.onesided).
+"""
+kind(tc::ToddCoxeter) = LibSemigroups.kind(tc)
+
+"""
+    number_of_generating_pairs(tc::ToddCoxeter) -> Int
+
+Return the number of generating pairs added to `tc`.
+
+This equals the length of [`generating_pairs`](@ref
+Semigroups.generating_pairs).
+"""
+number_of_generating_pairs(tc::ToddCoxeter) =
+    Int(LibSemigroups.number_of_generating_pairs(tc))
+
+"""
+    generating_pairs(tc::ToddCoxeter) -> Vector{Tuple{Vector{Int}, Vector{Int}}}
+
+Return the generating pairs of `tc` as 1-based word pairs.
+
+These are the pairs added via [`add_generating_pair!`](@ref
+Semigroups.add_generating_pair!). Words are returned as 1-based
+`Vector{Int}` letter indices.
+"""
+function generating_pairs(tc::ToddCoxeter)
+    flat = LibSemigroups.generating_pairs(tc)
+    result = Tuple{Vector{Int},Vector{Int}}[]
+    for i = 1:2:length(flat)
+        push!(result, (_word_from_cpp(flat[i]), _word_from_cpp(flat[i+1])))
+    end
+    return result
+end
+
+"""
+    presentation(tc::ToddCoxeter) -> Presentation
+
+Return a copy of the presentation used by `tc`.
+"""
+presentation(tc::ToddCoxeter) = LibSemigroups.presentation(tc)
+
+# ============================================================================
+# Base.* overloads
+# ============================================================================
+
+"""
+    Base.length(tc::ToddCoxeter) -> UInt64
+
+Return the number of congruence classes. Equivalent to
+[`number_of_classes`](@ref Semigroups.number_of_classes).
+"""
+Base.length(tc::ToddCoxeter) = number_of_classes(tc)
+
+"""
+    Base.show(io::IO, tc::ToddCoxeter)
+
+Print a human-readable representation of `tc`.
+"""
+function Base.show(io::IO, tc::ToddCoxeter)
+    print(io, LibSemigroups.to_human_readable_repr(tc))
+end
+
+"""
+    Base.copy(tc::ToddCoxeter) -> ToddCoxeter
+
+Create an independent copy of `tc`.
+"""
+Base.copy(tc::ToddCoxeter) = LibSemigroups.ToddCoxeterWord(tc)
+
+Base.deepcopy_internal(tc::ToddCoxeter, ::IdDict) =
+    LibSemigroups.ToddCoxeterWord(tc)
