@@ -139,7 +139,7 @@ This getter is not exported; call as `Semigroups.min(p)` or `Base.min(p)`.
 
 See also [`min!`](@ref).
 """
-Base.min(p::Paths) = Int(LibSemigroups.min(p.cxx))
+Base.min(p::Paths) = _length_from_cpp(LibSemigroups.min(p.cxx))
 
 """
     Base.max(p::Paths) -> Union{Int, PositiveInfinityType}
@@ -251,10 +251,18 @@ Set the minimum path length of `p` to `n`.
 # Arguments
 - `n::Integer`: the new minimum length (non-negative).
 
+# Throws
+- `InexactError`: if `n` is negative (the unsigned-cast guard fires before
+  the call reaches C++).
+
 See also [`Base.min`](@ref).
 """
 function min!(p::Paths, n::Integer)
     v = _length_to_cpp(n)
+    # No `@wrap_libsemigroups_call`: the underlying C++ setter is `noexcept`
+    # (paths.hpp:1014), so wrapping would hide nothing. The asymmetry with
+    # `source!` / `target!` / `order!` mirrors the libsemigroups noexcept
+    # annotations.
     GC.@preserve p begin
         LibSemigroups.min!(p.cxx, v)
     end
@@ -272,10 +280,15 @@ passing [`POSITIVE_INFINITY`](@ref Semigroups.POSITIVE_INFINITY).
 - `n`: the new maximum length, or
   [`POSITIVE_INFINITY`](@ref Semigroups.POSITIVE_INFINITY).
 
+# Throws
+- `InexactError`: if `n` is negative (the unsigned-cast guard fires before
+  the call reaches C++).
+
 See also [`Base.max`](@ref).
 """
 function max!(p::Paths, n::Integer)
     v = _length_to_cpp(n)
+    # See `min!` re: noexcept setter; no `@wrap_libsemigroups_call` needed.
     GC.@preserve p begin
         LibSemigroups.max!(p.cxx, v)
     end
@@ -429,7 +442,7 @@ end
 Base.IteratorSize(::Type{Paths}) = Base.SizeUnknown()
 Base.eltype(::Type{Paths}) = Vector{Int}
 
-function Base.iterate(p::Paths, _ = nothing)
+function Base.iterate(p::Paths, state = nothing)
     at_end(p) && return nothing
     w = Base.get(p)
     next!(p)
