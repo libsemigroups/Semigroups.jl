@@ -36,16 +36,6 @@ makedocs(;
         ],
         "Data Structures" => [
             "Constants" => "data-structures/constants/index.md",
-            "Orders" => "data-structures/order.md",
-            "Words" => "data-structures/word-range.md",
-            "Word Graphs" => "data-structures/word-graph.md",
-            "Presentations" => [
-                "Overview" => "data-structures/presentations/index.md",
-                "Presentation" => "data-structures/presentations/presentation.md",
-                "InversePresentation" => "data-structures/presentations/inverse-presentation.md",
-                "Helper functions" => "data-structures/presentations/helpers.md",
-                "Examples" => "data-structures/presentations/examples.md",
-            ],
             "Elements" => [
                 "Overview" => "data-structures/elements/index.md",
                 "Transformations" => [
@@ -59,14 +49,24 @@ makedocs(;
                     "The BMat8 type" => "data-structures/elements/matrix/bmat8.md",
                 ],
             ],
+            "Orders" => "data-structures/order.md",
+            "Presentations" => [
+                "Overview" => "data-structures/presentations/index.md",
+                "Presentation" => "data-structures/presentations/presentation.md",
+                "InversePresentation" => "data-structures/presentations/inverse-presentation.md",
+                "Helper functions" => "data-structures/presentations/helpers.md",
+                "Examples" => "data-structures/presentations/examples.md",
+            ],
+            "Word Graphs" => "data-structures/word-graph.md",
+            "Words" => "data-structures/word-range.md",
         ],
         "Main Algorithms" => [
             "Overview" => "main-algorithms/index.md",
+            "Common congruence helpers" => "main-algorithms/cong-common-helpers.md",
             "Core classes" => [
                 "main-algorithms/core-classes/index.md",
                 "main-algorithms/core-classes/runner.md",
             ],
-            "Common congruence helpers" => "main-algorithms/cong-common-helpers.md",
             "Froidure-Pin" => [
                 "Overview" => "main-algorithms/froidure-pin/index.md",
                 "The FroidurePin type" => "main-algorithms/froidure-pin/froidure-pin.md",
