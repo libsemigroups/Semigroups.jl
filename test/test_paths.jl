@@ -35,6 +35,17 @@ function _cycle(n::Integer)
     return g
 end
 
+# Linear chain of n nodes, out_degree 1: node i has its label-1 edge
+# pointing to node (i + 1), for i in 1..n-1. Node n has no outgoing edge.
+# Mirrors libsemigroups' `chain(n)` (used by test 009).
+function _chain(n::Integer)
+    g = WordGraph(n, 1)
+    for i in 1:(n-1)
+        target!(g, i, 1, i + 1)
+    end
+    return g
+end
+
 # Test 001 graph: 9 nodes, out_degree 3.
 # C++ targets (0-based): {{1,2,UNDEF}, {}, {3,4,6}, {}, {UNDEF,5}, {},
 #                         {UNDEF,7}, {8}, {}}
@@ -267,8 +278,8 @@ end
             next!(p)
             @test at_end(p)
 
-            # Cycle of 5: source==target, with various min/max bounds.
-            g = _cycle(5)
+            # Chain of 5: source==target=1 yields only the empty path.
+            g = _chain(5)
             p = paths(g; source = 1, target = 1, min = 0, max = 100,
                       order = ORDER_LEX)
             @test count(p) == 1
@@ -276,8 +287,10 @@ end
             min!(p, 4)
             @test count(p) == 0
 
-            # Same cycle but smaller bounds again.
-            min!(p, 0); max!(p, 6)
+            # Cycle of 5: source==target, with various min/max bounds.
+            g = _cycle(5)
+            p = paths(g; source = 1, target = 1, min = 0, max = 6,
+                      order = ORDER_LEX)
             @test count(p) == 2
 
             max!(p, 100)
