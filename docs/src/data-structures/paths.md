@@ -15,6 +15,25 @@ protocol or the manual `get` / [`next!`](@ref Semigroups.next!) /
 Semigroups.Paths
 ```
 
+## Usage
+
+```jldoctest
+julia> using Semigroups
+
+julia> g = WordGraph(3, 2);
+
+julia> target!(g, 1, 1, 2); target!(g, 1, 2, 3); target!(g, 2, 1, 3);
+
+julia> p = paths(g; source = 1, max = 3);
+
+julia> collect(p)
+4-element Vector{Vector{Int64}}:
+ []
+ [1]
+ [2]
+ [1, 1]
+```
+
 ## Contents
 
 | Function                                                                                          | Description                                                          |
