@@ -49,8 +49,11 @@ const def_version_two = Semigroups.def_version_two
 
 # ---- Word conversion helpers (1-based Julia <-> 0-based C++ in libsemigroups) ----
 
-# Mirror the KB pattern: `_tc_cword(0, 0, 1)` builds the Julia word `[1, 1, 2]`.
-_tc_cword(xs::Integer...) = [Int(x) + 1 for x in xs]
+# Mirror the KB pattern: `_test_todd_coxeter_cword(0, 0, 1)` builds the Julia
+# word `[1, 1, 2]`. Use a long prefix matching the file name so other test
+# files included into the same module by `runtests.jl` cannot accidentally
+# shadow this helper.
+_test_todd_coxeter_cword(xs::Integer...) = [Int(x) + 1 for x in xs]
 
 # ============================================================================
 # Layer 1 — binding-surface tests
@@ -73,11 +76,11 @@ _tc_cword(xs::Integer...) = [Int(x) + 1 for x in xs]
 
     # Settings (8 getter / 8 setter pairs)
     @test hasmethod(Semigroups.strategy, Tuple{ToddCoxeter})
-    @test hasmethod(Semigroups.strategy!, Tuple{ToddCoxeter, Any})
+    @test hasmethod(Semigroups.strategy!, Tuple{ToddCoxeter, typeof(strategy_hlt)})
     @test hasmethod(Semigroups.lookahead_extent, Tuple{ToddCoxeter})
-    @test hasmethod(Semigroups.lookahead_extent!, Tuple{ToddCoxeter, Any})
+    @test hasmethod(Semigroups.lookahead_extent!, Tuple{ToddCoxeter, typeof(lookahead_extent_full)})
     @test hasmethod(Semigroups.lookahead_style, Tuple{ToddCoxeter})
-    @test hasmethod(Semigroups.lookahead_style!, Tuple{ToddCoxeter, Any})
+    @test hasmethod(Semigroups.lookahead_style!, Tuple{ToddCoxeter, typeof(lookahead_style_hlt)})
     @test hasmethod(Semigroups.save, Tuple{ToddCoxeter})
     @test hasmethod(Semigroups.save!, Tuple{ToddCoxeter, Bool})
     @test hasmethod(Semigroups.use_relations_in_extra, Tuple{ToddCoxeter})
@@ -85,9 +88,9 @@ _tc_cword(xs::Integer...) = [Int(x) + 1 for x in xs]
     @test hasmethod(Semigroups.lower_bound, Tuple{ToddCoxeter})
     @test hasmethod(Semigroups.lower_bound!, Tuple{ToddCoxeter, Integer})
     @test hasmethod(Semigroups.def_version, Tuple{ToddCoxeter})
-    @test hasmethod(Semigroups.def_version!, Tuple{ToddCoxeter, Any})
+    @test hasmethod(Semigroups.def_version!, Tuple{ToddCoxeter, typeof(def_version_one)})
     @test hasmethod(Semigroups.def_policy, Tuple{ToddCoxeter})
-    @test hasmethod(Semigroups.def_policy!, Tuple{ToddCoxeter, Any})
+    @test hasmethod(Semigroups.def_policy!, Tuple{ToddCoxeter, typeof(def_policy_purge_all)})
 
     # Standardize and word-graph access
     @test hasmethod(standardize!, Tuple{ToddCoxeter, Order})
@@ -137,9 +140,9 @@ end
     # 2-generator semigroup, rules: 000 = 0, 1111 = 1, 0101 = 00.
     p = Presentation()
     set_alphabet!(p, 2)
-    add_rule_no_checks!(p, _tc_cword(0, 0, 0), _tc_cword(0))
-    add_rule_no_checks!(p, _tc_cword(1, 1, 1, 1), _tc_cword(1))
-    add_rule_no_checks!(p, _tc_cword(0, 1, 0, 1), _tc_cword(0, 0))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0, 0, 0), _test_todd_coxeter_cword(0))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(1, 1, 1, 1), _test_todd_coxeter_cword(1))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0, 1, 0, 1), _test_todd_coxeter_cword(0, 0))
 
     tc = ToddCoxeter(twosided, p)
     @test number_of_classes(tc) == 27
@@ -156,8 +159,8 @@ end
     # 2-generator semigroup, rules: 000 = 0, 0 = 11.
     p = Presentation()
     set_alphabet!(p, 2)
-    add_rule_no_checks!(p, _tc_cword(0, 0, 0), _tc_cword(0))
-    add_rule_no_checks!(p, _tc_cword(0), _tc_cword(1, 1))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0, 0, 0), _test_todd_coxeter_cword(0))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0), _test_todd_coxeter_cword(1, 1))
 
     tc = ToddCoxeter(twosided, p)
     run!(tc)
@@ -165,18 +168,18 @@ end
     @test finished(tc)
 
     # Index-of: 001 == 00001 (1-based: [1,1,2] == [1,1,1,1,2])
-    @test Semigroups.index_of(tc, _tc_cword(0, 0, 1)) ==
-          Semigroups.index_of(tc, _tc_cword(0, 0, 0, 0, 1))
-    @test Semigroups.index_of(tc, _tc_cword(0, 1, 1, 0, 0, 1)) ==
-          Semigroups.index_of(tc, _tc_cword(0, 0, 0, 0, 1))
-    @test Semigroups.index_of(tc, _tc_cword(0, 0, 0)) !=
-          Semigroups.index_of(tc, _tc_cword(1))
+    @test Semigroups.index_of(tc, _test_todd_coxeter_cword(0, 0, 1)) ==
+          Semigroups.index_of(tc, _test_todd_coxeter_cword(0, 0, 0, 0, 1))
+    @test Semigroups.index_of(tc, _test_todd_coxeter_cword(0, 1, 1, 0, 0, 1)) ==
+          Semigroups.index_of(tc, _test_todd_coxeter_cword(0, 0, 0, 0, 1))
+    @test Semigroups.index_of(tc, _test_todd_coxeter_cword(0, 0, 0)) !=
+          Semigroups.index_of(tc, _test_todd_coxeter_cword(1))
 
     # Standardize for shortlex (TC001 lines 371-374)
     standardize!(tc, ORDER_SHORTLEX)
-    @test Semigroups.word_of(tc, 1) == _tc_cword(0)        # C++ index 0
-    @test Semigroups.word_of(tc, 2) == _tc_cword(1)        # C++ index 1
-    @test Semigroups.word_of(tc, 3) == _tc_cword(0, 0)     # C++ index 2
+    @test Semigroups.word_of(tc, 1) == _test_todd_coxeter_cword(0)        # C++ index 0
+    @test Semigroups.word_of(tc, 2) == _test_todd_coxeter_cword(1)        # C++ index 1
+    @test Semigroups.word_of(tc, 3) == _test_todd_coxeter_cword(0, 0)     # C++ index 2
 
     # Standardize for lex (TC001 lines 375-391)
     standardize!(tc, ORDER_LEX)
@@ -184,11 +187,11 @@ end
     @test Semigroups.is_standardized(tc)
     @test !Semigroups.is_standardized(tc, ORDER_SHORTLEX)
 
-    @test Semigroups.word_of(tc, 1) == _tc_cword(0)           # 0
-    @test Semigroups.word_of(tc, 2) == _tc_cword(0, 0)        # 00
-    @test Semigroups.word_of(tc, 3) == _tc_cword(0, 0, 1)     # 001
-    @test Semigroups.word_of(tc, 4) == _tc_cword(0, 0, 1, 0)  # 0010
-    @test Semigroups.word_of(tc, 5) == _tc_cword(1)           # 1
+    @test Semigroups.word_of(tc, 1) == _test_todd_coxeter_cword(0)           # 0
+    @test Semigroups.word_of(tc, 2) == _test_todd_coxeter_cword(0, 0)        # 00
+    @test Semigroups.word_of(tc, 3) == _test_todd_coxeter_cword(0, 0, 1)     # 001
+    @test Semigroups.word_of(tc, 4) == _test_todd_coxeter_cword(0, 0, 1, 0)  # 0010
+    @test Semigroups.word_of(tc, 5) == _test_todd_coxeter_cword(1)           # 1
 
     # word_of/index_of round-trip (1-based on the Julia side)
     for i in 1:5
@@ -199,11 +202,11 @@ end
     standardize!(tc, ORDER_SHORTLEX)
     @test Semigroups.is_standardized(tc, ORDER_SHORTLEX)
     @test normal_forms(tc) == [
-        _tc_cword(0),
-        _tc_cword(1),
-        _tc_cword(0, 0),
-        _tc_cword(0, 1),
-        _tc_cword(0, 0, 1),
+        _test_todd_coxeter_cword(0),
+        _test_todd_coxeter_cword(1),
+        _test_todd_coxeter_cword(0, 0),
+        _test_todd_coxeter_cword(0, 1),
+        _test_todd_coxeter_cword(0, 0, 1),
     ]
 end
 
@@ -211,31 +214,39 @@ end
     # Port of libsemigroups TC025 (test-todd-coxeter.cpp:1447-1468), reduced.
     p = Presentation()
     set_alphabet!(p, 2)
-    add_rule_no_checks!(p, _tc_cword(0, 0, 0), _tc_cword(0))
-    add_rule_no_checks!(p, _tc_cword(0), _tc_cword(1, 1))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0, 0, 0), _test_todd_coxeter_cword(0))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0), _test_todd_coxeter_cword(1, 1))
 
     tc1 = ToddCoxeter(twosided, p)
     @test number_of_classes(tc1) == 5
 
     tc2 = ToddCoxeter(onesided, tc1)
-    add_generating_pair!(tc2, _tc_cword(0), _tc_cword(0, 0))
+    add_generating_pair!(tc2, _test_todd_coxeter_cword(0), _test_todd_coxeter_cword(0, 0))
     @test number_of_classes(tc2) == 3
 end
 
 @testset "TC024 - constructor from WordGraph" begin
     # Port of libsemigroups TC024 (test-todd-coxeter.cpp:1435-1445).
+    # Upstream only requires the constructor not to throw, so mirror that and
+    # add a couple of cheap positive observations about the resulting object's
+    # state. The 1-node, 2-out-degree WordGraph has all-UNDEFINED targets, so
+    # the only thing safe to assert about `number_of_classes` is that it is a
+    # non-negative integer.
     wg = WordGraph(1, 2)
     @test out_degree(wg) == 2
     @test number_of_nodes(wg) == 1
     tc = ToddCoxeter(twosided, wg)
     @test tc isa ToddCoxeter
+    @test kind(tc) == twosided
+    # Runner-state queries should not throw on a freshly constructed object.
+    @test (finished(tc); started(tc); true)
 end
 
 @testset "TC settings round-trip (8 pairs)" begin
     p = Presentation()
     set_alphabet!(p, 2)
-    add_rule_no_checks!(p, _tc_cword(0, 0, 0), _tc_cword(0))
-    add_rule_no_checks!(p, _tc_cword(0), _tc_cword(1, 1))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0, 0, 0), _test_todd_coxeter_cword(0))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0), _test_todd_coxeter_cword(1, 1))
     tc = ToddCoxeter(twosided, p)
 
     Semigroups.strategy!(tc, strategy_felsch)
@@ -269,8 +280,8 @@ end
     # (the +1 accounts for the inactive "absorbing" node).
     p = Presentation()
     set_alphabet!(p, 2)
-    add_rule_no_checks!(p, _tc_cword(0, 0, 0), _tc_cword(0))
-    add_rule_no_checks!(p, _tc_cword(0), _tc_cword(1, 1))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0, 0, 0), _test_todd_coxeter_cword(0))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0), _test_todd_coxeter_cword(1, 1))
 
     tc = ToddCoxeter(twosided, p)
     run!(tc)
@@ -293,12 +304,12 @@ end
     # cannot be redundant).
     p = Presentation()
     set_alphabet!(p, 2)
-    add_rule_no_checks!(p, _tc_cword(0, 0, 0), _tc_cword(0))
-    add_rule_no_checks!(p, _tc_cword(0), _tc_cword(1, 1))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0, 0, 0), _test_todd_coxeter_cword(0))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0), _test_todd_coxeter_cword(1, 1))
     @test Semigroups.tc_redundant_rule(p, Millisecond(50)) === nothing
 
     # Trivially redundant: add a duplicate rule.
-    add_rule_no_checks!(p, _tc_cword(0, 0, 0), _tc_cword(0))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0, 0, 0), _test_todd_coxeter_cword(0))
     idx = Semigroups.tc_redundant_rule(p, Millisecond(100))
     @test idx isa Integer
     @test 1 <= idx <= number_of_rules(p)
@@ -307,19 +318,19 @@ end
 @testset "TC - cong-common helpers (reduce, contains, currently_contains, normal_forms)" begin
     p = Presentation()
     set_alphabet!(p, 2)
-    add_rule_no_checks!(p, _tc_cword(0, 0, 0), _tc_cword(0))
-    add_rule_no_checks!(p, _tc_cword(0), _tc_cword(1, 1))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0, 0, 0), _test_todd_coxeter_cword(0))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0), _test_todd_coxeter_cword(1, 1))
     tc = ToddCoxeter(twosided, p)
 
     # contains triggers a run; should agree with index_of equality
-    @test contains(tc, _tc_cword(0, 0, 1), _tc_cword(0, 0, 0, 0, 1))
-    @test currently_contains(tc, _tc_cword(0, 0, 1), _tc_cword(0, 0, 0, 0, 1)) ==
+    @test contains(tc, _test_todd_coxeter_cword(0, 0, 1), _test_todd_coxeter_cword(0, 0, 0, 0, 1))
+    @test currently_contains(tc, _test_todd_coxeter_cword(0, 0, 1), _test_todd_coxeter_cword(0, 0, 0, 0, 1)) ==
           tril_TRUE
 
     # reduce returns the standardized representative
-    r = Semigroups.reduce(tc, _tc_cword(0, 0, 0, 0, 1))
+    r = Semigroups.reduce(tc, _test_todd_coxeter_cword(0, 0, 0, 0, 1))
     @test r isa Vector{Int}
-    @test contains(tc, r, _tc_cword(0, 0, 0, 0, 1))
+    @test contains(tc, r, _test_todd_coxeter_cword(0, 0, 0, 0, 1))
 
     # normal_forms count == number_of_classes
     nfs = normal_forms(tc)
@@ -329,8 +340,8 @@ end
 @testset "TC - non_trivial_classes(tc1, tc2) for a quotient pair" begin
     p = Presentation()
     set_alphabet!(p, 2)
-    add_rule_no_checks!(p, _tc_cword(0, 0, 0), _tc_cword(0))
-    add_rule_no_checks!(p, _tc_cword(0), _tc_cword(1, 1))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0, 0, 0), _test_todd_coxeter_cword(0))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0), _test_todd_coxeter_cword(1, 1))
 
     tc1 = ToddCoxeter(twosided, p)
     @test number_of_classes(tc1) == 5
@@ -338,7 +349,7 @@ end
     # tc2 is a quotient of tc1 collapsing 0 ~ 1; should produce a smaller
     # number_of_classes.
     tc2 = ToddCoxeter(twosided, p)
-    add_generating_pair!(tc2, _tc_cword(0), _tc_cword(1))
+    add_generating_pair!(tc2, _test_todd_coxeter_cword(0), _test_todd_coxeter_cword(1))
     @test number_of_classes(tc2) < number_of_classes(tc1)
 
     classes = non_trivial_classes(tc1, tc2)
@@ -352,8 +363,8 @@ end
 @testset "ToddCoxeter high-level Julia API" begin
     p = Presentation()
     set_alphabet!(p, 2)
-    add_rule_no_checks!(p, _tc_cword(0, 0, 0), _tc_cword(0))
-    add_rule_no_checks!(p, _tc_cword(0), _tc_cword(1, 1))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0, 0, 0), _test_todd_coxeter_cword(0))
+    add_rule_no_checks!(p, _test_todd_coxeter_cword(0), _test_todd_coxeter_cword(1, 1))
 
     tc = ToddCoxeter(twosided, p)
     @test length(tc) == number_of_classes(tc)
