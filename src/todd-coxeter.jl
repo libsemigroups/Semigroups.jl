@@ -211,3 +211,54 @@ const def_version_two = LibSemigroups.def_version_two
 @inline _index_to_cpp(i::Integer) = UInt(i - 1)
 @inline _index_from_cpp(i::Integer) =
     i == typemax(UInt) ? UNDEFINED : Int(i) + 1
+
+# ============================================================================
+# Initialization
+# ============================================================================
+
+"""
+    init!(tc::ToddCoxeter) -> ToddCoxeter
+    init!(tc::ToddCoxeter, kind::congruence_kind, p::Presentation) -> ToddCoxeter
+    init!(tc::ToddCoxeter, kind::congruence_kind, other::ToddCoxeter) -> ToddCoxeter
+    init!(tc::ToddCoxeter, kind::congruence_kind, wg::WordGraph) -> ToddCoxeter
+
+Re-initialize `tc`.
+
+The one-argument form clears the underlying word graph, presentation,
+generating pairs, settings, and statistics from `tc`, putting it back into
+the same state as a newly default-constructed [`ToddCoxeter`](@ref
+Semigroups.ToddCoxeter).
+
+The three-argument forms reinitialize `tc` as if it had just been
+constructed from the corresponding arguments — `(kind, p)` for a
+[`Presentation`](@ref Semigroups.Presentation), `(kind, other)` for a
+quotient construction from another `ToddCoxeter`, or `(kind, wg)` for a
+construction from a [`WordGraph`](@ref Semigroups.WordGraph).
+
+Returns `tc` for chaining.
+
+# Throws
+
+- `LibsemigroupsError` if `p` is not valid (Presentation form).
+- `LibsemigroupsError` if `kind` and `other.kind()` are incompatible
+  (ToddCoxeter form).
+"""
+function init!(tc::ToddCoxeter)
+    @wrap_libsemigroups_call LibSemigroups.init!(tc)
+    return tc
+end
+
+function init!(tc::ToddCoxeter, kind::congruence_kind, p::Presentation)
+    @wrap_libsemigroups_call LibSemigroups.init!(tc, kind, p)
+    return tc
+end
+
+function init!(tc::ToddCoxeter, kind::congruence_kind, other::ToddCoxeter)
+    @wrap_libsemigroups_call LibSemigroups.init!(tc, kind, other)
+    return tc
+end
+
+function init!(tc::ToddCoxeter, kind::congruence_kind, wg::WordGraph)
+    @wrap_libsemigroups_call LibSemigroups.init!(tc, kind, wg)
+    return tc
+end
