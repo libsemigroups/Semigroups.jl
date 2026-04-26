@@ -262,3 +262,252 @@ function init!(tc::ToddCoxeter, kind::congruence_kind, wg::WordGraph)
     @wrap_libsemigroups_call LibSemigroups.init!(tc, kind, wg)
     return tc
 end
+
+# ============================================================================
+# Settings — getter / setter pairs
+# ============================================================================
+
+"""
+    strategy(tc::ToddCoxeter)
+
+Return the current coset enumeration strategy of `tc`.
+
+The returned value is one of [`strategy_hlt`](@ref Semigroups.strategy_hlt),
+[`strategy_felsch`](@ref Semigroups.strategy_felsch),
+[`strategy_CR`](@ref Semigroups.strategy_CR),
+[`strategy_R_over_C`](@ref Semigroups.strategy_R_over_C),
+[`strategy_Cr`](@ref Semigroups.strategy_Cr), or
+[`strategy_Rc`](@ref Semigroups.strategy_Rc).
+
+# See also
+
+[`strategy!`](@ref Semigroups.strategy!)
+"""
+strategy(tc::ToddCoxeter) = LibSemigroups.strategy(tc)
+
+"""
+    strategy!(tc::ToddCoxeter, val) -> ToddCoxeter
+
+Set the coset enumeration strategy of `tc` to `val`. Returns `tc` for
+chaining. `val` must be one of the `strategy_*` enum constants.
+
+# See also
+
+[`strategy`](@ref Semigroups.strategy)
+"""
+function strategy!(tc::ToddCoxeter, val)
+    LibSemigroups.set_strategy!(tc, val)
+    return tc
+end
+
+"""
+    lookahead_extent(tc::ToddCoxeter)
+
+Return the current lookahead extent of `tc`.
+
+The returned value is one of
+[`lookahead_extent_full`](@ref Semigroups.lookahead_extent_full) or
+[`lookahead_extent_partial`](@ref Semigroups.lookahead_extent_partial).
+
+# See also
+
+[`lookahead_extent!`](@ref Semigroups.lookahead_extent!)
+"""
+lookahead_extent(tc::ToddCoxeter) = LibSemigroups.lookahead_extent(tc)
+
+"""
+    lookahead_extent!(tc::ToddCoxeter, val) -> ToddCoxeter
+
+Set the lookahead extent of `tc` to `val`. Returns `tc` for chaining.
+
+# See also
+
+[`lookahead_extent`](@ref Semigroups.lookahead_extent)
+"""
+function lookahead_extent!(tc::ToddCoxeter, val)
+    LibSemigroups.set_lookahead_extent!(tc, val)
+    return tc
+end
+
+"""
+    lookahead_style(tc::ToddCoxeter)
+
+Return the current lookahead style of `tc`.
+
+The returned value is one of
+[`lookahead_style_hlt`](@ref Semigroups.lookahead_style_hlt) or
+[`lookahead_style_felsch`](@ref Semigroups.lookahead_style_felsch).
+
+# See also
+
+[`lookahead_style!`](@ref Semigroups.lookahead_style!)
+"""
+lookahead_style(tc::ToddCoxeter) = LibSemigroups.lookahead_style(tc)
+
+"""
+    lookahead_style!(tc::ToddCoxeter, val) -> ToddCoxeter
+
+Set the lookahead style of `tc` to `val`. Returns `tc` for chaining.
+
+# See also
+
+[`lookahead_style`](@ref Semigroups.lookahead_style)
+"""
+function lookahead_style!(tc::ToddCoxeter, val)
+    LibSemigroups.set_lookahead_style!(tc, val)
+    return tc
+end
+
+"""
+    save(tc::ToddCoxeter) -> Bool
+
+Return whether deductions made during HLT enumeration are processed in
+the same way as those made during Felsch enumeration.
+
+# See also
+
+[`save!`](@ref Semigroups.save!)
+"""
+save(tc::ToddCoxeter) = LibSemigroups.save(tc)
+
+"""
+    save!(tc::ToddCoxeter, val::Bool) -> ToddCoxeter
+
+Set the value of the `save` setting on `tc`. Returns `tc` for chaining.
+
+If `val` is `true`, deductions made during HLT enumeration are processed
+in the same way as those made during Felsch enumeration. This typically
+slows down HLT enumeration but may reduce the size of the underlying word
+graph.
+
+# See also
+
+[`save`](@ref Semigroups.save)
+"""
+function save!(tc::ToddCoxeter, val::Bool)
+    LibSemigroups.set_save!(tc, val)
+    return tc
+end
+
+"""
+    use_relations_in_extra(tc::ToddCoxeter) -> Bool
+
+Return whether the relations of the underlying presentation are used in
+the Felsch part of the algorithm when applied to the generating pairs.
+
+# See also
+
+[`use_relations_in_extra!`](@ref Semigroups.use_relations_in_extra!)
+"""
+use_relations_in_extra(tc::ToddCoxeter) =
+    LibSemigroups.use_relations_in_extra(tc)
+
+"""
+    use_relations_in_extra!(tc::ToddCoxeter, val::Bool) -> ToddCoxeter
+
+Set whether the relations of the underlying presentation are used in
+the Felsch part of the algorithm when applied to the generating pairs.
+Returns `tc` for chaining.
+
+# See also
+
+[`use_relations_in_extra`](@ref Semigroups.use_relations_in_extra)
+"""
+function use_relations_in_extra!(tc::ToddCoxeter, val::Bool)
+    LibSemigroups.set_use_relations_in_extra!(tc, val)
+    return tc
+end
+
+"""
+    lower_bound(tc::ToddCoxeter) -> Int
+
+Return the current lower bound on the number of classes of the congruence
+represented by `tc`. A value of `0` means no bound has been set.
+
+# See also
+
+[`lower_bound!`](@ref Semigroups.lower_bound!)
+"""
+lower_bound(tc::ToddCoxeter) = Int(LibSemigroups.lower_bound(tc))
+
+"""
+    lower_bound!(tc::ToddCoxeter, val::Integer) -> ToddCoxeter
+
+Set a lower bound on the number of classes of the congruence represented
+by `tc` to `val`. Returns `tc` for chaining.
+
+If the number of currently active nodes during enumeration reaches `val`
+and the word graph is complete, the algorithm can stop early. A value of
+`0` indicates no lower bound.
+
+# See also
+
+[`lower_bound`](@ref Semigroups.lower_bound)
+"""
+function lower_bound!(tc::ToddCoxeter, val::Integer)
+    LibSemigroups.set_lower_bound!(tc, UInt(val))
+    return tc
+end
+
+"""
+    def_version(tc::ToddCoxeter)
+
+Return the current definition-routine version of `tc`.
+
+The returned value is one of
+[`def_version_one`](@ref Semigroups.def_version_one) or
+[`def_version_two`](@ref Semigroups.def_version_two).
+
+# See also
+
+[`def_version!`](@ref Semigroups.def_version!)
+"""
+def_version(tc::ToddCoxeter) = LibSemigroups.def_version(tc)
+
+"""
+    def_version!(tc::ToddCoxeter, val) -> ToddCoxeter
+
+Set the definition-routine version of `tc` to `val`. Returns `tc` for
+chaining.
+
+# See also
+
+[`def_version`](@ref Semigroups.def_version)
+"""
+function def_version!(tc::ToddCoxeter, val)
+    LibSemigroups.set_def_version!(tc, val)
+    return tc
+end
+
+"""
+    def_policy(tc::ToddCoxeter)
+
+Return the current definition-stack policy of `tc`.
+
+The returned value is one of
+[`def_policy_no_stack_if_no_space`](@ref Semigroups.def_policy_no_stack_if_no_space),
+[`def_policy_purge_from_top`](@ref Semigroups.def_policy_purge_from_top),
+[`def_policy_purge_all`](@ref Semigroups.def_policy_purge_all),
+[`def_policy_discard_all_if_no_space`](@ref Semigroups.def_policy_discard_all_if_no_space),
+or [`def_policy_unlimited`](@ref Semigroups.def_policy_unlimited).
+
+# See also
+
+[`def_policy!`](@ref Semigroups.def_policy!)
+"""
+def_policy(tc::ToddCoxeter) = LibSemigroups.def_policy(tc)
+
+"""
+    def_policy!(tc::ToddCoxeter, val) -> ToddCoxeter
+
+Set the definition-stack policy of `tc` to `val`. Returns `tc` for
+chaining.
+
+# See also
+
+[`def_policy`](@ref Semigroups.def_policy)
+"""
+function def_policy!(tc::ToddCoxeter, val)
+    LibSemigroups.set_def_policy!(tc, val)
+    return tc
+end
