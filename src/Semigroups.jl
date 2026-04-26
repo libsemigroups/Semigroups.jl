@@ -82,6 +82,7 @@ include("presentation.jl")
 include("presentation-examples.jl")
 include("cong-common.jl")
 include("knuth-bendix.jl")
+include("todd-coxeter.jl")
 
 # High-level element types
 include("bmat8.jl")
