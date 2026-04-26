@@ -858,3 +858,44 @@ function is_non_trivial(
         Float32(threshold),
     )
 end
+
+"""
+    tc_redundant_rule(p::Presentation, timeout::TimePeriod) -> Union{Int, Nothing}
+
+Find a redundant rule in `p` using the Todd-Coxeter algorithm, with the
+given timeout.
+
+Starting with the last rule in `p`, this function attempts to run
+Todd-Coxeter on the rules of `p` with each rule omitted in turn. For each
+omitted rule, Todd-Coxeter is run for at most `timeout`, then it checks
+whether the omitted rule follows from the remaining rules. Returns the
+1-based rule-pair index of the first redundant rule found, or `nothing`
+if no redundant rule is identified within the timeout.
+
+!!! warning
+    This function is non-deterministic: results may differ between calls
+    with identical parameters.
+
+# Arguments
+
+- `p::Presentation`: the presentation to search.
+- `timeout::TimePeriod`: maximum time per omitted rule (e.g.
+  `Millisecond(100)`, `Second(5)`).
+
+# See also
+
+[`redundant_rule`](@ref Semigroups.redundant_rule) — the analogous
+Knuth-Bendix-based helper.
+"""
+function tc_redundant_rule(p::Presentation, timeout::TimePeriod)
+    ns = convert(Nanosecond, timeout)
+    idx = @wrap_libsemigroups_call LibSemigroups.tc_redundant_rule(
+        p,
+        Int64(Dates.value(ns)),
+    )
+    n_flat = 2 * number_of_rules(p)
+    if idx >= n_flat
+        return nothing
+    end
+    return div(Int(idx), 2) + 1
+end
