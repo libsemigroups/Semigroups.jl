@@ -117,8 +117,8 @@ namespace libsemigroups_julia {
     m.set_const("def_policy_unlimited",
                 TCImpl::options::def_policy::unlimited);
 
-    // def_version (lives on FelschGraphSettings::options, inherited via
-    // TCImpl::options)
+    // def_version (re-exported into TCImpl::options via a using-declaration
+    // from FelschGraphSettings::options)
     m.add_bits<TCImpl::options::def_version>("def_version",
                                              jl::julia_type("CppEnum"));
     m.set_const("def_version_one", TCImpl::options::def_version::one);

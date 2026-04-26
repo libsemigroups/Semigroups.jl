@@ -23,6 +23,19 @@
 // once a derived algorithm registers these shims for its type, all common
 // helpers (`reduce`, `contains`, `normal_forms`, `partition`,
 // `non_trivial_classes`, ...) work on it for free.
+//
+// INCLUDE-ORDER REQUIREMENT (silent runtime bug if violated):
+// Translation units that instantiate these templates MUST include the
+// algorithm-specific helpers header (e.g.
+// `<libsemigroups/knuth-bendix-helpers.hpp>` or
+// `<libsemigroups/todd-coxeter-helpers.hpp>`) BEFORE including this file.
+// The calls to `congruence_common::reduce`, `non_trivial_classes`, etc. are
+// resolved by ADL at template-instantiation time; if the algorithm-specific
+// overload isn't visible in the TU, the call silently binds to the generic
+// base in `<libsemigroups/cong-common-helpers.hpp>`. The link succeeds and
+// the wrong code runs at runtime. See `cong-common.cpp` (KnuthBendix) and
+// `todd-coxeter.cpp` (ToddCoxeter) for the established pattern; future
+// bindings (Kambites, Congruence, ...) must follow it.
 
 #ifndef LIBSEMIGROUPS_JULIA_CONG_COMMON_HPP_
 #define LIBSEMIGROUPS_JULIA_CONG_COMMON_HPP_
