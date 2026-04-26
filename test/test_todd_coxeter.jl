@@ -124,7 +124,7 @@ _test_todd_coxeter_cword(xs::Integer...) = [Int(x) + 1 for x in xs]
     # Inherited from CongruenceCommon (already wrapped in src/cong-common.jl)
     @test hasmethod(add_generating_pair!, Tuple{Semigroups.CongruenceCommon, AbstractVector{<:Integer}, AbstractVector{<:Integer}})
     @test hasmethod(currently_contains, Tuple{Semigroups.CongruenceCommon, AbstractVector{<:Integer}, AbstractVector{<:Integer}})
-    @test hasmethod(contains, Tuple{Semigroups.CongruenceCommon, AbstractVector{<:Integer}, AbstractVector{<:Integer}})
+    @test hasmethod(Semigroups.contains, Tuple{Semigroups.CongruenceCommon, AbstractVector{<:Integer}, AbstractVector{<:Integer}})
     @test hasmethod(Semigroups.reduce, Tuple{Semigroups.CongruenceCommon, AbstractVector{<:Integer}})
     @test hasmethod(reduce_no_run, Tuple{Semigroups.CongruenceCommon, AbstractVector{<:Integer}})
     @test hasmethod(normal_forms, Tuple{Semigroups.CongruenceCommon})
@@ -275,9 +275,11 @@ end
 end
 
 @testset "TC - current_word_graph after run!" begin
-    # TC1 (5 classes). Presentation does NOT contain the empty word, so
-    # number_of_nodes(current_word_graph(tc)) == number_of_classes(tc) + 1
-    # (the +1 accounts for the inactive "absorbing" node).
+    # TC1 (5 classes). After run!, current_word_graph may include inactive
+    # allocation slots, so it has at least number_of_classes(tc) + 1 nodes
+    # (the +1 accounts for the inactive node 0 that is not a real class
+    # representative when the presentation does NOT contain the empty word).
+    # word_graph(tc) standardizes and prunes, giving exactly that count.
     p = Presentation()
     set_alphabet!(p, 2)
     add_rule_no_checks!(p, _test_todd_coxeter_cword(0, 0, 0), _test_todd_coxeter_cword(0))
@@ -285,9 +287,15 @@ end
 
     tc = ToddCoxeter(twosided, p)
     run!(tc)
-    wg = Semigroups.current_word_graph(tc)
-    @test wg isa WordGraph
-    @test number_of_nodes(wg) == number_of_classes(tc) + 1
+    cwg = Semigroups.current_word_graph(tc)
+    # current_word_graph returns a CxxBaseRef{WordGraph}; check usability via
+    # number_of_nodes (which accepts either WordGraph or its CxxBaseRef).
+    @test number_of_nodes(cwg) >= number_of_classes(tc) + 1
+
+    # word_graph(tc) returns the standardized, pruned graph; for a
+    # presentation without the empty word, this is exactly classes + 1.
+    swg = Semigroups.word_graph(tc)
+    @test number_of_nodes(swg) == number_of_classes(tc) + 1
 end
 
 @testset "TC - is_non_trivial on free monogenic" begin
@@ -323,14 +331,14 @@ end
     tc = ToddCoxeter(twosided, p)
 
     # contains triggers a run; should agree with index_of equality
-    @test contains(tc, _test_todd_coxeter_cword(0, 0, 1), _test_todd_coxeter_cword(0, 0, 0, 0, 1))
+    @test Semigroups.contains(tc, _test_todd_coxeter_cword(0, 0, 1), _test_todd_coxeter_cword(0, 0, 0, 0, 1))
     @test currently_contains(tc, _test_todd_coxeter_cword(0, 0, 1), _test_todd_coxeter_cword(0, 0, 0, 0, 1)) ==
           tril_TRUE
 
     # reduce returns the standardized representative
     r = Semigroups.reduce(tc, _test_todd_coxeter_cword(0, 0, 0, 0, 1))
     @test r isa Vector{Int}
-    @test contains(tc, r, _test_todd_coxeter_cword(0, 0, 0, 0, 1))
+    @test Semigroups.contains(tc, r, _test_todd_coxeter_cword(0, 0, 0, 0, 1))
 
     # normal_forms count == number_of_classes
     nfs = normal_forms(tc)
