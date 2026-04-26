@@ -116,11 +116,10 @@ end
 
     @testset "Paths bindings" begin
         @test isdefined(LibSemigroups, :PathsCxx)
-        # Constructor takes a WordGraph (CxxWrap registers the constructor on
-        # the type itself; we test instantiability through the underlying C++
-        # type used in the binding).
-        @test hasmethod(LibSemigroups.PathsCxx,
-                        Tuple{LibSemigroups.WordGraph})
+        # Constructor takes a WordGraph. CxxWrap-allocated types don't expose
+        # constructors as `hasmethod`-discoverable on the type itself, so
+        # smoke-test by actually calling the constructor.
+        @test LibSemigroups.PathsCxx(WordGraph(3, 2)) isa LibSemigroups.PathsCxx
 
         # Validation
         @test hasmethod(LibSemigroups.throw_if_source_undefined,
@@ -216,7 +215,7 @@ end
             @test source(p) == 1
             @test target(p) === UNDEFINED
             @test Semigroups.min(p) == 0
-            @test Base.max(p) === 0
+            @test Base.max(p) == 0
             @test !at_end(p)
             @test count(p) == 1
 
