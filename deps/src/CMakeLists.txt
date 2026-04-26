@@ -55,6 +55,7 @@ add_library(libsemigroups_julia SHARED
     transf.cpp
     word-graph.cpp
     word-range.cpp
+    paths.cpp
     presentation.cpp
     presentation-examples.cpp
     knuth-bendix.cpp
