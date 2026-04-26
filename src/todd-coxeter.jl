@@ -815,7 +815,7 @@ Base.deepcopy_internal(tc::ToddCoxeter, ::IdDict) =
     is_non_trivial(tc::ToddCoxeter;
                    tries::Integer = 10,
                    try_for::TimePeriod = Dates.Millisecond(100),
-                   threshold::Real = 0.99) -> tril
+                   threshold::Real = 0.99) -> [`tril`](@ref Semigroups.tril)
 
 Heuristically check whether the congruence represented by `tc` is
 non-trivial.
@@ -897,5 +897,7 @@ function tc_redundant_rule(p::Presentation, timeout::TimePeriod)
     if idx >= n_flat
         return nothing
     end
+    # Convert from 0-based flat index (lhs position, always even) to
+    # 1-based rule-pair index. C++ contract guarantees lhs position.
     return div(Int(idx), 2) + 1
 end
