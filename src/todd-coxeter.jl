@@ -511,3 +511,82 @@ function def_policy!(tc::ToddCoxeter, val)
     LibSemigroups.set_def_policy!(tc, val)
     return tc
 end
+
+# ============================================================================
+# Standardize / word-graph access
+# ============================================================================
+
+"""
+    standardize!(tc::ToddCoxeter, ord::Order) -> Bool
+
+Standardize the underlying word graph of `tc` according to the order
+`ord`.
+
+Standardization renumbers the nodes of the word graph so that the words
+labelling its nodes appear in the order specified by `ord`. Returns
+`true` if the underlying word graph was modified, `false` otherwise.
+
+# Arguments
+
+- `tc::ToddCoxeter`: the `ToddCoxeter` instance to standardize.
+- `ord::Order`: the order to standardize by — typically
+  [`ORDER_SHORTLEX`](@ref Semigroups.ORDER_SHORTLEX) or
+  [`ORDER_LEX`](@ref Semigroups.ORDER_LEX).
+
+# See also
+
+[`is_standardized`](@ref Semigroups.is_standardized)
+"""
+function standardize!(tc::ToddCoxeter, ord::Order)
+    return @wrap_libsemigroups_call LibSemigroups.standardize!(tc, ord)
+end
+
+"""
+    is_standardized(tc::ToddCoxeter) -> Bool
+    is_standardized(tc::ToddCoxeter, ord::Order) -> Bool
+
+Return whether the underlying word graph of `tc` is standardized.
+
+The one-argument form returns `true` if the word graph has been
+standardized according to *some* order. The two-argument form returns
+`true` only if it has been standardized according to `ord`.
+
+# See also
+
+[`standardize!`](@ref Semigroups.standardize!)
+"""
+is_standardized(tc::ToddCoxeter) = LibSemigroups.is_standardized(tc)
+
+is_standardized(tc::ToddCoxeter, ord::Order) =
+    LibSemigroups.is_standardized(tc, ord)
+
+"""
+    current_word_graph(tc::ToddCoxeter) -> WordGraph
+
+Return the current state of the underlying word graph of `tc`, without
+triggering a run.
+
+If `tc` has not been run, the returned word graph reflects whatever
+incomplete state has been built so far.
+
+# See also
+
+[`word_graph`](@ref Semigroups.word_graph)
+"""
+@cxxdereference current_word_graph(tc::ToddCoxeter) =
+    LibSemigroups.current_word_graph(tc)
+
+"""
+    word_graph(tc::ToddCoxeter) -> WordGraph
+
+Return the underlying word graph of `tc`, after running the algorithm to
+completion and standardizing.
+
+This function triggers a full enumeration of `tc`, which may never
+terminate.
+
+# See also
+
+[`current_word_graph`](@ref Semigroups.current_word_graph)
+"""
+@cxxdereference word_graph(tc::ToddCoxeter) = LibSemigroups.word_graph(tc)
