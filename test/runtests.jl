@@ -19,6 +19,7 @@ using Semigroups
     include("test_runner.jl")
     include("test_transf.jl")
     include("test_word_graph.jl")
+    include("test_paths.jl")
     include("test_presentation.jl")
     include("test_presentation_examples.jl")
     include("test_word_range.jl")
