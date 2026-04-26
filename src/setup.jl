@@ -54,7 +54,11 @@ function source_tree_hash()
 end
 
 function jll_tree_hashes()
-    path = joinpath(libsemigroups_julia_jll.find_artifact_dir(), "lib", "libsemigroups_julia.treehash")
+    path = joinpath(
+        libsemigroups_julia_jll.find_artifact_dir(),
+        "lib",
+        "libsemigroups_julia.treehash",
+    )
     isfile(path) || return String[]
     return split(read(path, String))
 end

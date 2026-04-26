@@ -28,9 +28,8 @@
 namespace libsemigroups_julia {
 
   JLCXX_MODULE define_julia_module(jl::Module& mod) {
-    mod.method("libsemigroups_version", []() -> std::string {
-      return LIBSEMIGROUPS_VERSION;
-    });
+    mod.method("libsemigroups_version",
+               []() -> std::string { return LIBSEMIGROUPS_VERSION; });
 
     // Define constants first (UNDEFINED, POSITIVE_INFINITY, etc.)
     define_constants(mod);
@@ -49,6 +48,7 @@ namespace libsemigroups_julia {
     define_order(mod);
     define_word_range(mod);
     define_word_graph(mod);
+    define_paths(mod);
     define_froidure_pin_base(mod);
     define_froidure_pin(mod);
     define_presentation(mod);

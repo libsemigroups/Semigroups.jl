@@ -56,11 +56,8 @@ is_debug() = _debug_mode[]
 include("setup.jl")
 
 # Get the library path - this will build if necessary during precompilation
-const _libsemigroups_julia = Ref(
-    Setup.locate_library(;
-        force_local_build = FORCE_LOCAL_LIBSEMIGROUPS_JULIA_BUILD,
-    ),
-)
+const _libsemigroups_julia =
+    Ref(Setup.locate_library(; force_local_build = FORCE_LOCAL_LIBSEMIGROUPS_JULIA_BUILD))
 libsemigroups_julia() = _libsemigroups_julia[]
 
 # Low-level CxxWrap bindings
@@ -80,6 +77,7 @@ include("runner.jl")
 include("order.jl")
 include("word-range.jl")
 include("word-graph.jl")
+include("paths.jl")
 include("presentation.jl")
 include("presentation-examples.jl")
 include("cong-common.jl")
@@ -92,7 +90,7 @@ include("transf.jl")
 # Algorithm types (must come after element types)
 include("froidure-pin.jl")
 
-function _version_string(v::Union{Nothing, VersionNumber})
+function _version_string(v::Union{Nothing,VersionNumber})
     return isnothing(v) ? "unknown" : string(v)
 end
 
@@ -170,11 +168,19 @@ function _libsemigroups_julia_version()
     end
 end
 
-function _version_line(name::AbstractString, version::AbstractString, source::AbstractString)
+function _version_line(
+    name::AbstractString,
+    version::AbstractString,
+    source::AbstractString,
+)
     return rpad(name, 21) * " v" * version * " (" * source * ")"
 end
 
-function _compact_version_line(name::AbstractString, version::AbstractString, source::AbstractString)
+function _compact_version_line(
+    name::AbstractString,
+    version::AbstractString,
+    source::AbstractString,
+)
     return name * " v" * version * " (" * source * ")"
 end
 
@@ -193,12 +199,21 @@ function _print_banner()
         println(raw" |____/ \___|_| |_| |_|_|\__, |_|  \___/ \__,_| .__/|___/")
         println(raw"                         |___/                |_|")
         println("  Semigroups.jl v$semigroups_version")
-        println("  " * _version_line("libsemigroups", libsemigroups_version, libsemigroups_source))
-        println("  " * _version_line("libsemigroups_julia", bindings_version, bindings_source))
+        println(
+            "  " *
+            _version_line("libsemigroups", libsemigroups_version, libsemigroups_source),
+        )
+        println(
+            "  " * _version_line("libsemigroups_julia", bindings_version, bindings_source),
+        )
     else
         println(
             "Semigroups.jl v$semigroups_version | " *
-            _compact_version_line("libsemigroups", libsemigroups_version, libsemigroups_source) *
+            _compact_version_line(
+                "libsemigroups",
+                libsemigroups_version,
+                libsemigroups_source,
+            ) *
             " | " *
             _compact_version_line("libsemigroups_julia", bindings_version, bindings_source),
         )
@@ -209,16 +224,29 @@ function versioninfo(io::IO = stdout)
     semigroups_version = _version_string(VERSION_NUMBER)
     println(io, "Semigroups.jl version $semigroups_version")
     println(io, "  loaded:")
-    println(io, "    " * _version_line("libsemigroups", _loaded_libsemigroups_version(), _loaded_libsemigroups_source()))
-    println(io, "    " * _version_line("libsemigroups_julia", _libsemigroups_julia_version(), _libsemigroups_julia_source()))
+    println(
+        io,
+        "    " * _version_line(
+            "libsemigroups",
+            _loaded_libsemigroups_version(),
+            _loaded_libsemigroups_source(),
+        ),
+    )
+    println(
+        io,
+        "    " * _version_line(
+            "libsemigroups_julia",
+            _libsemigroups_julia_version(),
+            _libsemigroups_julia_source(),
+        ),
+    )
 end
 
 # Module initialization
 function __init__()
     # Re-check at runtime because Julia precompilation does not track deps/src.
-    _libsemigroups_julia[] = Setup.locate_library(;
-        force_local_build = FORCE_LOCAL_LIBSEMIGROUPS_JULIA_BUILD,
-    )
+    _libsemigroups_julia[] =
+        Setup.locate_library(; force_local_build = FORCE_LOCAL_LIBSEMIGROUPS_JULIA_BUILD)
 
     # Initialize the CxxWrap module
     LibSemigroups.__init__()
@@ -262,6 +290,10 @@ export next!, at_end, valid, init!, size_hint, upper_bound
 
 # WordGraph
 export WordGraph, number_of_nodes, out_degree, target, target!, add_nodes!
+
+# Paths
+export Paths, paths, source, source!, min!, max!, order!
+export current_target, word_graph, throw_if_source_undefined
 
 # Presentation
 export Presentation, alphabet, set_alphabet!, alphabet_from_rules!
