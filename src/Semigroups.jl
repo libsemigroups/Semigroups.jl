@@ -354,6 +354,26 @@ export active_rules, gilman_graph, gilman_graph_node_labels
 export by_overlap_length!, is_reduced, redundant_rule
 export normal_forms, partition, non_trivial_classes
 
+# ToddCoxeter
+export ToddCoxeter
+export strategy_hlt, strategy_felsch, strategy_CR, strategy_R_over_C, strategy_Cr, strategy_Rc
+export lookahead_extent_full, lookahead_extent_partial
+export lookahead_style_hlt, lookahead_style_felsch
+export def_policy_no_stack_if_no_space, def_policy_purge_from_top, def_policy_purge_all
+export def_policy_discard_all_if_no_space, def_policy_unlimited
+export def_version_one, def_version_two
+export strategy, strategy!
+export lookahead_extent, lookahead_extent!
+export lookahead_style, lookahead_style!
+export save, save!
+export use_relations_in_extra, use_relations_in_extra!
+export lower_bound, lower_bound!
+export def_version, def_version!
+export def_policy, def_policy!
+export standardize!, is_standardized, current_word_graph, word_graph
+export current_index_of, word_of, current_word_of
+export is_non_trivial, tc_redundant_rule
+
 # Transformation types and functions
 export Transf, PPerm, Perm
 export degree, rank, image, domain, inverse
