@@ -590,3 +590,124 @@ terminate.
 [`current_word_graph`](@ref Semigroups.current_word_graph)
 """
 @cxxdereference word_graph(tc::ToddCoxeter) = LibSemigroups.word_graph(tc)
+
+# ============================================================================
+# Word <-> class index conversions
+# ============================================================================
+
+"""
+    index_of(tc::ToddCoxeter, w::AbstractVector{<:Integer}) -> Int
+
+Return the 1-based index of the congruence class containing `w`.
+
+This function triggers a full enumeration of `tc`, which may never
+terminate.
+
+# Arguments
+
+- `tc::ToddCoxeter`: the `ToddCoxeter` instance.
+- `w::AbstractVector{<:Integer}`: a 1-based `Vector{Int}` of letter
+  indices.
+
+# Throws
+
+- `LibsemigroupsError` if any letter in `w` is not in the alphabet of the
+  underlying presentation.
+
+# See also
+
+[`current_index_of`](@ref Semigroups.current_index_of),
+[`word_of`](@ref Semigroups.word_of)
+"""
+function index_of(tc::ToddCoxeter, w::AbstractVector{<:Integer})
+    cpp_w = _word_to_cpp(w)
+    cpp_i = @wrap_libsemigroups_call LibSemigroups.index_of(tc, cpp_w)
+    return _index_from_cpp(cpp_i)
+end
+
+"""
+    current_index_of(tc::ToddCoxeter, w::AbstractVector{<:Integer}) -> Union{Int, UndefinedType}
+
+Return the 1-based index of the congruence class containing `w` if it is
+already known, without triggering a run.
+
+If the class of `w` is not currently known, returns
+[`UNDEFINED`](@ref Semigroups.UNDEFINED).
+
+# Arguments
+
+- `tc::ToddCoxeter`: the `ToddCoxeter` instance.
+- `w::AbstractVector{<:Integer}`: a 1-based `Vector{Int}` of letter
+  indices.
+
+# Throws
+
+- `LibsemigroupsError` if any letter in `w` is not in the alphabet of the
+  underlying presentation.
+
+# See also
+
+[`index_of`](@ref Semigroups.index_of),
+[`current_word_of`](@ref Semigroups.current_word_of)
+"""
+function current_index_of(tc::ToddCoxeter, w::AbstractVector{<:Integer})
+    cpp_w = _word_to_cpp(w)
+    cpp_i = @wrap_libsemigroups_call LibSemigroups.current_index_of(tc, cpp_w)
+    return _index_from_cpp(cpp_i)
+end
+
+"""
+    word_of(tc::ToddCoxeter, i::Integer) -> Vector{Int}
+
+Return a representative word for the `i`-th congruence class of `tc`
+(1-based).
+
+This function triggers a full enumeration of `tc`, which may never
+terminate.
+
+# Arguments
+
+- `tc::ToddCoxeter`: the `ToddCoxeter` instance.
+- `i::Integer`: a 1-based class index.
+
+# Throws
+
+- `LibsemigroupsError` if `i` is out of range.
+
+# See also
+
+[`current_word_of`](@ref Semigroups.current_word_of),
+[`index_of`](@ref Semigroups.index_of)
+"""
+function word_of(tc::ToddCoxeter, i::Integer)
+    cpp_i = _index_to_cpp(i)
+    out = @wrap_libsemigroups_call LibSemigroups.word_of(tc, cpp_i)
+    return _word_from_cpp(out)
+end
+
+"""
+    current_word_of(tc::ToddCoxeter, i::Integer) -> Vector{Int}
+
+Return a representative word for the `i`-th congruence class of `tc`
+(1-based), without triggering a run.
+
+# Arguments
+
+- `tc::ToddCoxeter`: the `ToddCoxeter` instance.
+- `i::Integer`: a 1-based class index.
+
+# Throws
+
+- `LibsemigroupsError` if `i` is out of range relative to the current
+  state of `tc`.
+
+# See also
+
+[`word_of`](@ref Semigroups.word_of),
+[`current_index_of`](@ref Semigroups.current_index_of)
+"""
+function current_word_of(tc::ToddCoxeter, i::Integer)
+    cpp_i = _index_to_cpp(i)
+    out = @wrap_libsemigroups_call LibSemigroups.current_word_of(tc, cpp_i)
+    return _word_from_cpp(out)
+end
