@@ -80,6 +80,7 @@ include("runner.jl")
 include("order.jl")
 include("word-range.jl")
 include("word-graph.jl")
+include("paths.jl")
 include("presentation.jl")
 include("presentation-examples.jl")
 include("cong-common.jl")
@@ -262,6 +263,10 @@ export next!, at_end, valid, init!, size_hint, upper_bound
 
 # WordGraph
 export WordGraph, number_of_nodes, out_degree, target, target!, add_nodes!
+
+# Paths
+export Paths, paths, source, source!, min!, max!, order!
+export current_target, word_graph, throw_if_source_undefined
 
 # Presentation
 export Presentation, alphabet, set_alphabet!, alphabet_from_rules!
