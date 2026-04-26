@@ -48,11 +48,25 @@ namespace libsemigroups_julia {
     // (the wrapper struct holds a `g::WordGraph` field that pins it for GC).
     type.constructor<WordGraph_ const&>();
 
+    // Reinitialize: rebind to a new WordGraph and reset all settings. The
+    // Julia wrapper's `init!` overwrites its `g` field after this call so the
+    // GC pin matches the new C++ pointer.
+    type.method("init!",
+                [](Paths_& self, WordGraph_ const& wg) { self.init(wg); });
+
+    // --- Intentionally not bound ---
+    // * `is_finite` / `is_idempotent`: compile-time `static constexpr bool`
+    //   traits for rx::ranges integration; not user-callable methods.
+    // * `size_hint()`: numerically identical to `count()` but lives only for
+    //   rx::ranges compatibility -- redundant on the Julia side.
+    // * `cbegin_pilo` / `cbegin_pislo` / `cbegin_pstilo` / `cbegin_pstislo`
+    //   (and matching `cend_*`): low-level iterator factories subsumed by
+    //   the high-level `Paths` range API (`get` / `next!` / `at_end`).
+
     // --- Validation ---
 
-    type.method("throw_if_source_undefined", [](Paths_ const& self) {
-      self.throw_if_source_undefined();
-    });
+    type.method("throw_if_source_undefined",
+                [](Paths_ const& self) { self.throw_if_source_undefined(); });
 
     // --- Range / iteration interface ---
 
@@ -75,9 +89,8 @@ namespace libsemigroups_julia {
     // setters to use the `!` suffix per Julia convention.
 
     // source
-    type.method("source", [](Paths_ const& self) -> uint32_t {
-      return self.source();
-    });
+    type.method("source",
+                [](Paths_ const& self) -> uint32_t { return self.source(); });
     type.method("source!", [](Paths_& self, uint32_t n) { self.source(n); });
 
     // target — single setter handles both regular and UNDEFINED cases. The
@@ -85,24 +98,19 @@ namespace libsemigroups_julia {
     // (paths.hpp:968-973), accepting it as "any reachable target". The Julia
     // wrapper's `target!(p, ::UndefinedType)` arm dispatches into this same
     // call after converting UNDEFINED to typemax(uint32_t).
-    type.method("target", [](Paths_ const& self) -> uint32_t {
-      return self.target();
-    });
+    type.method("target",
+                [](Paths_ const& self) -> uint32_t { return self.target(); });
     type.method("target!", [](Paths_& self, uint32_t n) { self.target(n); });
 
     // min
-    type.method("min", [](Paths_ const& self) -> std::size_t {
-      return self.min();
-    });
-    type.method("min!",
-                [](Paths_& self, std::size_t val) { self.min(val); });
+    type.method("min",
+                [](Paths_ const& self) -> std::size_t { return self.min(); });
+    type.method("min!", [](Paths_& self, std::size_t val) { self.min(val); });
 
     // max
-    type.method("max", [](Paths_ const& self) -> std::size_t {
-      return self.max();
-    });
-    type.method("max!",
-                [](Paths_& self, std::size_t val) { self.max(val); });
+    type.method("max",
+                [](Paths_ const& self) -> std::size_t { return self.max(); });
+    type.method("max!", [](Paths_& self, std::size_t val) { self.max(val); });
 
     // order
     type.method("order",
@@ -119,17 +127,16 @@ namespace libsemigroups_julia {
     // original WordGraph in its `g` field, so this is rarely needed from
     // Julia. Bound for parity / completeness. Returned as a reference (the
     // caller gets a `CxxBaseRef{WordGraph}`).
-    type.method(
-        "word_graph",
-        [](Paths_ const& self) -> WordGraph_ const& { return self.word_graph(); });
+    type.method("word_graph", [](Paths_ const& self) -> WordGraph_ const& {
+      return self.word_graph();
+    });
 
     // --- Display ---
     // `to_human_readable_repr` is a free function template in libsemigroups,
     // bound at module level (not as `type.method`).
-    m.method("to_human_readable_repr",
-             [](Paths_ const& p) -> std::string {
-               return libsemigroups::to_human_readable_repr(p);
-             });
+    m.method("to_human_readable_repr", [](Paths_ const& p) -> std::string {
+      return libsemigroups::to_human_readable_repr(p);
+    });
   }
 
 }  // namespace libsemigroups_julia

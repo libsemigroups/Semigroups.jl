@@ -40,6 +40,7 @@ julia> collect(p)
 | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | [`Paths`](@ref Semigroups.Paths(::WordGraph))                                                     | Construct a [`Paths`](@ref Semigroups.Paths) over a word graph.      |
 | [`paths`](@ref Semigroups.paths(::WordGraph))                                                     | Keyword-argument factory for a [`Paths`](@ref Semigroups.Paths).     |
+| [`init!`](@ref Semigroups.init!(::Paths, ::WordGraph))                                            | Rebind to a new [`WordGraph`](@ref Semigroups.WordGraph) and reset settings. |
 | [`source`](@ref Semigroups.source(::Paths))                                                       | Get the current source node.                                         |
 | [`source!`](@ref Semigroups.source!(::Paths, ::Integer))                                          | Set the source node.                                                 |
 | [`target`](@ref Semigroups.target(::Paths))                                                       | Get the current target node (or [`UNDEFINED`](@ref Semigroups.UNDEFINED)). |
@@ -57,14 +58,18 @@ julia> collect(p)
 | [`Base.max`](@ref Base.max(::Paths))                                                              | Get the current maximum path length (qualified-only).                |
 | [`Base.get`](@ref Base.get(::Paths))                                                              | Get the current path as a `Vector{Int}` (qualified-only).            |
 | [`Base.count`](@ref Base.count(::Paths))                                                          | Get the number of paths in the range (qualified-only).               |
-| `Base.iterate(p::Paths)`                                                                          | Julia iteration protocol (destructive — consumes the range).         |
-| `Base.show(io::IO, p::Paths)`                                                                     | Human-readable representation.                                       |
+
+[`Paths`](@ref Semigroups.Paths) also implements the standard Julia iteration
+protocol — `for w in p`, `collect(p)`, etc. — and a `Base.show` method for
+human-readable display. Iteration is *destructive*: it advances `p` itself,
+leaving `at_end(p)` true on completion.
 
 ## Full API
 
 ```@docs
 Semigroups.Paths(::WordGraph)
 Semigroups.paths(::WordGraph)
+Semigroups.init!(::Paths, ::WordGraph)
 Semigroups.source(::Paths)
 Semigroups.source!(::Paths, ::Integer)
 Semigroups.target(::Paths)

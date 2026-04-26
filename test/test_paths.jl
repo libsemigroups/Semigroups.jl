@@ -8,16 +8,16 @@ using Semigroups
 # Pull in private aliases used by Layer 1 binding-surface tests.
 const LibSemigroups = Semigroups.LibSemigroups
 
-# ---------------------------------------------------------------------------
+# ============================================================================
 # Helpers for building the small word graphs used by the ported tests.
 # These mirror the C++ test setup in libsemigroups/tests/test-paths.cpp.
-# ---------------------------------------------------------------------------
+# ============================================================================
 
 # 100-node linear path (test 000): node i has edge labelled (i mod 2 + 1)
 # pointing to node (i + 1), for i in 1..99 (in 1-based indexing).
 function _linear_100()
     g = WordGraph(100, 2)
-    for i in 1:99
+    for i = 1:99
         # C++ used i % 2 (0-based label), so 1-based label = (i-1) % 2 + 1
         label = (i - 1) % 2 + 1
         target!(g, i, label, i + 1)
@@ -28,7 +28,7 @@ end
 # Cycle of n nodes, out_degree 1 (used by tests 002 and 009).
 function _cycle(n::Integer)
     g = WordGraph(n, 1)
-    for i in 1:(n-1)
+    for i = 1:(n-1)
         target!(g, i, 1, i + 1)
     end
     target!(g, n, 1, 1)
@@ -40,7 +40,7 @@ end
 # Mirrors libsemigroups' `chain(n)` (used by test 009).
 function _chain(n::Integer)
     g = WordGraph(n, 1)
-    for i in 1:(n-1)
+    for i = 1:(n-1)
         target!(g, i, 1, i + 1)
     end
     return g
@@ -70,13 +70,20 @@ end
 # Test 003 graph: 15 nodes, out_degree 2, edges {{1,2},{3,4},...,{13,14}}.
 function _g_paths_003()
     g = WordGraph(15, 2)
-    target!(g, 1, 1, 2);  target!(g, 1, 2, 3)
-    target!(g, 2, 1, 4);  target!(g, 2, 2, 5)
-    target!(g, 3, 1, 6);  target!(g, 3, 2, 7)
-    target!(g, 4, 1, 8);  target!(g, 4, 2, 9)
-    target!(g, 5, 1, 10); target!(g, 5, 2, 11)
-    target!(g, 6, 1, 12); target!(g, 6, 2, 13)
-    target!(g, 7, 1, 14); target!(g, 7, 2, 15)
+    target!(g, 1, 1, 2)
+    target!(g, 1, 2, 3)
+    target!(g, 2, 1, 4)
+    target!(g, 2, 2, 5)
+    target!(g, 3, 1, 6)
+    target!(g, 3, 2, 7)
+    target!(g, 4, 1, 8)
+    target!(g, 4, 2, 9)
+    target!(g, 5, 1, 10)
+    target!(g, 5, 2, 11)
+    target!(g, 6, 1, 12)
+    target!(g, 6, 2, 13)
+    target!(g, 7, 1, 14)
+    target!(g, 7, 2, 15)
     return g
 end
 
@@ -85,8 +92,11 @@ end
 #                         {UNDEF,5}, {3}}
 function _g_paths_007()
     g = WordGraph(6, 3)
-    target!(g, 1, 1, 2);  target!(g, 1, 2, 3)
-    target!(g, 2, 1, 3);  target!(g, 2, 2, 1);  target!(g, 2, 3, 4)
+    target!(g, 1, 1, 2)
+    target!(g, 1, 2, 3)
+    target!(g, 2, 1, 3)
+    target!(g, 2, 2, 1)
+    target!(g, 2, 3, 4)
     target!(g, 3, 3, 4)
     target!(g, 4, 1, 5)
     target!(g, 5, 2, 6)
@@ -98,7 +108,8 @@ end
 # C++ edges {{2,1}, {}, {3}, {4}, {2}}.
 function _g_paths_009_small()
     g = WordGraph(5, 2)
-    target!(g, 1, 1, 3);  target!(g, 1, 2, 2)
+    target!(g, 1, 1, 3)
+    target!(g, 1, 2, 2)
     target!(g, 3, 1, 4)
     target!(g, 4, 1, 5)
     target!(g, 5, 1, 3)
@@ -106,69 +117,6 @@ function _g_paths_009_small()
 end
 
 @testset verbose = true "Paths" begin
-
-    # =======================================================================
-    # Layer 1: binding-surface tests.
-    # These hit LibSemigroups.PathsCxx directly to confirm the C++ glue is
-    # wired up. They should pass immediately after the Task 1 commit, before
-    # any high-level Julia wrapper exists.
-    # =======================================================================
-
-    @testset "Paths bindings" begin
-        @test isdefined(LibSemigroups, :PathsCxx)
-        # Constructor takes a WordGraph. CxxWrap-allocated types don't expose
-        # constructors as `hasmethod`-discoverable on the type itself, so
-        # smoke-test by actually calling the constructor.
-        @test LibSemigroups.PathsCxx(WordGraph(3, 2)) isa LibSemigroups.PathsCxx
-
-        # Validation
-        @test hasmethod(LibSemigroups.throw_if_source_undefined,
-                        Tuple{LibSemigroups.PathsCxx})
-
-        # Range / iteration interface
-        @test hasmethod(LibSemigroups.get, Tuple{LibSemigroups.PathsCxx})
-        @test hasmethod(LibSemigroups.var"next!",
-                        Tuple{LibSemigroups.PathsCxx})
-        @test hasmethod(LibSemigroups.at_end, Tuple{LibSemigroups.PathsCxx})
-        @test hasmethod(LibSemigroups.count, Tuple{LibSemigroups.PathsCxx})
-
-        # Settings: getter / setter pairs
-        @test hasmethod(LibSemigroups.source, Tuple{LibSemigroups.PathsCxx})
-        @test hasmethod(LibSemigroups.var"source!",
-                        Tuple{LibSemigroups.PathsCxx,UInt32})
-        @test hasmethod(LibSemigroups.target, Tuple{LibSemigroups.PathsCxx})
-        @test hasmethod(LibSemigroups.var"target!",
-                        Tuple{LibSemigroups.PathsCxx,UInt32})
-        @test hasmethod(LibSemigroups.min, Tuple{LibSemigroups.PathsCxx})
-        @test hasmethod(LibSemigroups.var"min!",
-                        Tuple{LibSemigroups.PathsCxx,UInt})
-        @test hasmethod(LibSemigroups.max, Tuple{LibSemigroups.PathsCxx})
-        @test hasmethod(LibSemigroups.var"max!",
-                        Tuple{LibSemigroups.PathsCxx,UInt})
-        @test hasmethod(LibSemigroups.order, Tuple{LibSemigroups.PathsCxx})
-        @test hasmethod(LibSemigroups.var"order!",
-                        Tuple{LibSemigroups.PathsCxx,LibSemigroups.Order})
-
-        # Read-only queries
-        @test hasmethod(LibSemigroups.current_target,
-                        Tuple{LibSemigroups.PathsCxx})
-        @test hasmethod(LibSemigroups.word_graph,
-                        Tuple{LibSemigroups.PathsCxx})
-
-        # Free function
-        @test hasmethod(LibSemigroups.to_human_readable_repr,
-                        Tuple{LibSemigroups.PathsCxx})
-    end
-
-    # =======================================================================
-    # Layer 2: correctness tests ported from libsemigroups/tests/test-paths.cpp.
-    # These exercise the high-level Julia API (paths(g; ...), count(p),
-    # source!, etc.) which does NOT exist yet — these failures are the RED
-    # signal that drives Task 3.
-    #
-    # All letter values, source nodes, and target nodes are translated to
-    # 1-based; min / max (path lengths) are unchanged.
-    # =======================================================================
 
     @testset "Paths correctness" begin
 
@@ -220,19 +168,24 @@ end
             @test count(p) == 1
 
             # min=0, max=1 -> count == 3 (empty + two single letters)
-            min!(p, 0); max!(p, 1)
+            min!(p, 0)
+            max!(p, 1)
             @test count(p) == 3
 
-            min!(p, 0); max!(p, 2)
+            min!(p, 0)
+            max!(p, 2)
             @test count(p) == 6
 
-            min!(p, 0); max!(p, 3)
+            min!(p, 0)
+            max!(p, 3)
             @test count(p) == 8
 
-            min!(p, 0); max!(p, 4)
+            min!(p, 0)
+            max!(p, 4)
             @test count(p) == 9
 
-            min!(p, 0); max!(p, 10)
+            min!(p, 0)
+            max!(p, 10)
             @test count(p) == 9
         end
 
@@ -252,14 +205,15 @@ end
             @test count(p) == 7
 
             order!(p, ORDER_SHORTLEX)
-            source!(p, 1); min!(p, 0); max!(p, 2)
+            source!(p, 1)
+            min!(p, 0)
+            max!(p, 2)
             @test count(p) == 7
         end
 
         @testset "Paths 007 / #6 (POSITIVE_INFINITY round-trip)" begin
             g = _g_paths_007()
-            p = paths(g; source = 1, min = 0, max = 9,
-                      order = ORDER_SHORTLEX)
+            p = paths(g; source = 1, min = 0, max = 9, order = ORDER_SHORTLEX)
             @test count(p) == 75
 
             max!(p, POSITIVE_INFINITY)
@@ -279,8 +233,7 @@ end
 
             # Chain of 5: source==target=1 yields only the empty path.
             g = _chain(5)
-            p = paths(g; source = 1, target = 1, min = 0, max = 100,
-                      order = ORDER_LEX)
+            p = paths(g; source = 1, target = 1, min = 0, max = 100, order = ORDER_LEX)
             @test count(p) == 1
 
             min!(p, 4)
@@ -288,8 +241,7 @@ end
 
             # Cycle of 5: source==target, with various min/max bounds.
             g = _cycle(5)
-            p = paths(g; source = 1, target = 1, min = 0, max = 6,
-                      order = ORDER_LEX)
+            p = paths(g; source = 1, target = 1, min = 0, max = 6, order = ORDER_LEX)
             @test count(p) == 2
 
             max!(p, 100)
@@ -298,14 +250,11 @@ end
             min!(p, 4)
             @test count(p) == 20
 
-            min!(p, 0); max!(p, 2)
+            min!(p, 0)
+            max!(p, 2)
             @test count(p) == 1
         end
     end
-
-    # =======================================================================
-    # Layer 3: high-level Julia API integration tests.
-    # =======================================================================
 
     @testset "Paths Julia API" begin
 
@@ -318,8 +267,7 @@ end
 
         @testset "collect returns 1-based letter vectors" begin
             g = _g_paths_003()
-            p = paths(g; source = 1, target = 3, max = 5,
-                      order = ORDER_SHORTLEX)
+            p = paths(g; source = 1, target = 3, max = 5, order = ORDER_SHORTLEX)
             words = collect(p)
             @test words isa Vector{Vector{Int}}
             # Every letter must be 1-based.
@@ -352,6 +300,38 @@ end
             @test Base.max(p) === POSITIVE_INFINITY
         end
 
+        @testset "init! rebinds and resets" begin
+            g1 = _g_paths_003()
+            p = paths(g1; source = 1, min = 1, max = 4, order = ORDER_LEX)
+            @test count(p) > 0
+
+            # Rebind to a different graph; settings reset to defaults.
+            g2 = _cycle(5)
+            init!(p, g2)
+            @test source(p) === UNDEFINED
+            @test target(p) === UNDEFINED
+            @test Semigroups.min(p) == 0
+            @test Base.max(p) === POSITIVE_INFINITY
+            @test word_graph(p) === g2
+
+            # The new graph is now usable.
+            source!(p, 1)
+            max!(p, 4)
+            @test count(p) == 5
+
+            # Rebound graph survives GC after the original goes out of scope.
+            local p2
+            let
+                gtmp = WordGraph(4, 2)
+                target!(gtmp, 1, 1, 2)
+                p2 = Paths(WordGraph(2, 2))   # initial graph thrown away
+                init!(p2, gtmp)
+                # `gtmp` falls out of scope here.
+            end
+            GC.gc()
+            @test number_of_nodes(word_graph(p2)) == 4
+        end
+
         @testset "error paths" begin
             g = _g_paths_003()
             # Source undefined -> next! should throw.
@@ -364,12 +344,6 @@ end
             @test_throws InexactError source!(Paths(g), 0)
         end
     end
-
-    # =======================================================================
-    # GC stress test: confirms the wrapper struct's `g::WordGraph` field
-    # keeps the WordGraph alive after it leaves the surrounding scope.
-    # Without that pin, this case would crash.
-    # =======================================================================
 
     @testset "Paths GC pin" begin
         function make_paths()

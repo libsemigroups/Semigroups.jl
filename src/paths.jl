@@ -14,25 +14,19 @@ pointer to the `WordGraph`, so the Julia wrapper is responsible for keeping the
 graph alive for as long as the [`Paths`](@ref) exists.
 
 Index conventions (1-based at the boundary, 0-based in C++) and sentinel
-mapping ([`UNDEFINED`](@ref Semigroups.UNDEFINED) ↔ `typemax(UInt32)`,
-[`POSITIVE_INFINITY`](@ref Semigroups.POSITIVE_INFINITY) ↔ `typemax(UInt) - 1`)
+mapping ([`UNDEFINED`](@ref Semigroups.UNDEFINED) <-> `typemax(UInt32)`,
+[`POSITIVE_INFINITY`](@ref Semigroups.POSITIVE_INFINITY) <-> `typemax(UInt) - 1`)
 are handled by the private helpers at the top of this file.
 """
 
 # ============================================================================
-# Index / sentinel conversion (private, file-local)
-# ----------------------------------------------------------------------------
-# The C++ binding is pure pass-through: all conversion happens here, on the
-# Julia side. `_to_cpp` calls live OUTSIDE @wrap_libsemigroups_call so that a
-# native InexactError (from a zero or negative input being cast to UInt32 /
-# UInt) propagates as InexactError rather than being re-wrapped.
+# Index / sentinel conversion
 # ============================================================================
 
 # Nodes (uint32_t). UNDEFINED = typemax(UInt32).
 @inline _node_to_cpp(x::Integer) = UInt32(x - 1)
 @inline _node_to_cpp(::UndefinedType) = typemax(UInt32)
-@inline _node_from_cpp(x::Integer) =
-    x == typemax(UInt32) ? UNDEFINED : Int(x) + 1
+@inline _node_from_cpp(x::Integer) = x == typemax(UInt32) ? UNDEFINED : Int(x) + 1
 
 # Path lengths (size_t). POSITIVE_INFINITY = typemax(UInt) - 1.
 @inline _length_to_cpp(x::Integer) = UInt(x)
@@ -61,7 +55,8 @@ keeping the Julia wrapper alive is what keeps the underlying graph alive.
 Configure with [`source!`](@ref), [`target!`](@ref), [`min!`](@ref),
 [`max!`](@ref), [`order!`](@ref), then iterate with the standard Julia
 iteration protocol (`for w in p`, `collect(p)`) or via the manual interface
-([`Base.get`](@ref), [`next!`](@ref), [`at_end`](@ref), [`Base.count`](@ref)).
+([`Base.get`](@ref Base.get(::Paths)), [`next!`](@ref), [`at_end`](@ref),
+[`Base.count`](@ref Base.count(::Paths))).
 
 # Example
 ```jldoctest
@@ -102,6 +97,30 @@ and order [`ORDER_SHORTLEX`](@ref). At least the source must be set (via
 See also [`paths`](@ref).
 """
 Paths(g::WordGraph) = Paths(g, LibSemigroups.PathsCxx(g))
+
+"""
+    init!(p::Paths, g::WordGraph) -> Paths
+
+Reinitialize `p` to range over `g`, resetting all settings to their defaults.
+
+After this call, `p` is in the same state as a freshly constructed
+`Paths(g)`: source and target are [`UNDEFINED`](@ref Semigroups.UNDEFINED),
+minimum length `0`, maximum length [`POSITIVE_INFINITY`](@ref Semigroups.POSITIVE_INFINITY),
+and order [`ORDER_SHORTLEX`](@ref). The wrapper's GC pin is updated so the
+new word graph is kept alive.
+
+# Arguments
+- `g::WordGraph`: the new word graph.
+
+See also [`Paths`](@ref).
+"""
+function init!(p::Paths, g::WordGraph)
+    GC.@preserve p g begin
+        LibSemigroups.init!(p.cxx, g)
+    end
+    p.g = g
+    return p
+end
 
 # ============================================================================
 # Read-only getters
@@ -168,7 +187,8 @@ AbstractAlgebra.order(p::Paths) = LibSemigroups.order(p.cxx)
 """
     current_target(p::Paths) -> Union{Int, UndefinedType}
 
-Return the current target node of the path labelled by [`Base.get`](@ref).
+Return the current target node of the path labelled by
+[`Base.get`](@ref Base.get(::Paths)).
 
 If there is no such path (for example because [`source`](@ref) is undefined),
 returns [`UNDEFINED`](@ref Semigroups.UNDEFINED).
@@ -336,8 +356,8 @@ Throw if the source node of `p` has not been set.
 
 This function is the Julia mirror of libsemigroups'
 `Paths::throw_if_source_undefined()`. It is called automatically by
-[`Base.get`](@ref), [`next!`](@ref), [`at_end`](@ref), and
-[`Base.count`](@ref) since the underlying C++ implementation does *not*
+[`Base.get`](@ref Base.get(::Paths)), [`next!`](@ref), [`at_end`](@ref), and
+[`Base.count`](@ref Base.count(::Paths)) since the underlying C++ implementation does *not*
 internally guard those operations.
 
 # Throws
@@ -377,13 +397,15 @@ end
 """
     next!(p::Paths) -> Paths
 
-Advance `p` to the next path (if any).
+Advance `p` to the next path. If [`at_end`](@ref)`(p)` is `true`, this
+function does nothing, so repeated calls after the range is exhausted are
+safe.
 
 # Throws
 - `LibsemigroupsError`: if [`source`](@ref)`(p)` is
   [`UNDEFINED`](@ref Semigroups.UNDEFINED).
 
-See also [`Base.get`](@ref), [`at_end`](@ref).
+See also [`Base.get`](@ref Base.get(::Paths)), [`at_end`](@ref).
 """
 function next!(p::Paths)
     GC.@preserve p begin
@@ -418,7 +440,8 @@ end
 Return the number of paths in the range.
 
 If the range is infinite (cyclic graph with no upper bound on length), returns
-[`POSITIVE_INFINITY`](@ref Semigroups.POSITIVE_INFINITY).
+[`POSITIVE_INFINITY`](@ref Semigroups.POSITIVE_INFINITY). Always throws if
+`source(p) === UNDEFINED`; the source must be set before counting.
 
 # Throws
 - `LibsemigroupsError`: if [`source`](@ref)`(p)` is
@@ -502,12 +525,14 @@ julia> count(paths(g; source = 1, max = 5))
 3
 ```
 """
-function paths(g::WordGraph;
-               source = UNDEFINED,
-               target = UNDEFINED,
-               min::Integer = 0,
-               max = POSITIVE_INFINITY,
-               order::Order = ORDER_SHORTLEX)
+function paths(
+    g::WordGraph;
+    source = UNDEFINED,
+    target = UNDEFINED,
+    min::Integer = 0,
+    max = POSITIVE_INFINITY,
+    order::Order = ORDER_SHORTLEX,
+)
     p = Paths(g)
     if !(source isa UndefinedType)
         source!(p, source)
