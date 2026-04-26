@@ -3,53 +3,48 @@
 ## Requirements
 
 - Julia 1.9 or later
-- CMake 3.15 or later (for building C++ bindings)
-- A C++17 compatible compiler
 
-## Installing from Source
+## Installing `Semigroups.jl`
 
-Currently, Semigroups.jl must be installed from source:
+To install `Semigroups.jl` from GitHub:
 
 ```julia
 using Pkg
 Pkg.add(url="https://github.com/libsemigroups/Semigroups.jl")
 ```
 
-## Building the C++ Bindings
+The required C++ libraries are bundled via binary packages and will be
+downloaded automatically during installation.
 
-The package automatically builds the required C++ bindings during installation. If you need to rebuild manually:
-
-```julia
-using Pkg
-Pkg.build("Semigroups")
-```
-
-## Verifying Installation
+## Verifying the Installation
 
 ```julia
 using Semigroups
 
-# Test basic functionality
-t = Transf([2, 1])
-println(degree(t))  # Should print 2
+t = Transf([2, 3, 1])
+println(degree(t))  # 3
+println(t ^ 3)      # Transf([1, 2, 3])
 ```
 
 ## Troubleshooting
 
-### Library Loading Errors
-
-If you encounter errors loading the shared library, ensure:
-1. CMake is installed and available in your PATH
-2. You have a C++17 compatible compiler (GCC 7+, Clang 5+, or MSVC 2017+)
-3. The libsemigroups library is accessible
-
-### Build Failures
-
-For build issues, try:
+If you encounter problems loading the package, try rebuilding:
 
 ```julia
 using Pkg
 Pkg.build("Semigroups"; verbose=true)
 ```
 
-This will show detailed build output to help diagnose problems.
+## Building from Source
+
+To build from a local clone (for development):
+
+```julia
+using Pkg
+Pkg.develop(path="/path/to/Semigroups.jl")
+```
+
+This requires:
+
+- CMake 3.15 or later
+- A C++17 compatible compiler (GCC 7+, Clang 5+, or MSVC 2017+)
