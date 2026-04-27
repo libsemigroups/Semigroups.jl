@@ -26,6 +26,13 @@
 #include <libsemigroups/kambites-class.hpp>
 #include <libsemigroups/kambites-helpers.hpp>
 
+// Required for KambitesNormalFormRange::init to instantiate
+// libsemigroups::to<FroidurePin>(Kambites&); the template definition lives in
+// to-froidure-pin.tpp (transitively included by to-froidure-pin.hpp). Without
+// this, define_cong_common_normal_forms<Kambites<word_type>> compiles but
+// fails to link with an undefined `libsemigroups::to<FroidurePin, ...>` symbol.
+#include <libsemigroups/to-froidure-pin.hpp>
+
 #include "cong-common.hpp"
 
 #include <cstddef>
