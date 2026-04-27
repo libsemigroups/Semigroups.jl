@@ -29,3 +29,11 @@ Semigroups.tril_FALSE
 Semigroups.tril_unknown
 Semigroups.tril_to_bool
 ```
+
+## Congruence Kind
+
+```@docs
+Semigroups.congruence_kind
+Semigroups.onesided
+Semigroups.twosided
+```
