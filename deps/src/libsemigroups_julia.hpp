@@ -70,6 +70,7 @@ namespace libsemigroups_julia {
   void define_presentation_examples(jl::Module& mod);
   void define_knuth_bendix(jl::Module& mod);
   void define_todd_coxeter(jl::Module& mod);
+  void define_kambites(jl::Module& mod);
 
 }  // namespace libsemigroups_julia
 

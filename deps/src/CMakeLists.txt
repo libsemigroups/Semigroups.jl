@@ -60,6 +60,7 @@ add_library(libsemigroups_julia SHARED
     presentation-examples.cpp
     knuth-bendix.cpp
     todd-coxeter.cpp
+    kambites.cpp
 )
 
 # Include directories

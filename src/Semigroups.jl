@@ -83,6 +83,7 @@ include("presentation-examples.jl")
 include("cong-common.jl")
 include("knuth-bendix.jl")
 include("todd-coxeter.jl")
+include("kambites.jl")
 
 # High-level element types
 include("bmat8.jl")
@@ -374,6 +375,10 @@ export def_policy, def_policy!
 export standardize!, is_standardized, current_word_graph, word_graph
 export current_index_of, word_of, current_word_of
 export is_non_trivial, tc_redundant_rule
+
+# Kambites
+export Kambites
+export small_overlap_class, current_small_overlap_class, throw_if_not_C4
 
 # Transformation types and functions
 export Transf, PPerm, Perm
