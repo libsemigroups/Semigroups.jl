@@ -2,7 +2,7 @@
 
 This page documents the [`Kambites`](@ref Semigroups.Kambites) type,
 which implements Kambites's algorithm for the word problem in small
-overlap monoids — finitely presented monoids whose presentation
+overlap monoids -- finitely presented monoids whose presentation
 satisfies the small overlap condition `C(n)` for some `n >= 4`.
 
 `Kambites` is a subtype of
