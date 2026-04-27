@@ -26,11 +26,13 @@
 #include <libsemigroups/kambites-class.hpp>
 #include <libsemigroups/kambites-helpers.hpp>
 
-// Required for KambitesNormalFormRange::init to instantiate
-// libsemigroups::to<FroidurePin>(Kambites&); the template definition lives in
-// to-froidure-pin.tpp (transitively included by to-froidure-pin.hpp). Without
-// this, define_cong_common_normal_forms<Kambites<word_type>> compiles but
-// fails to link with an undefined `libsemigroups::to<FroidurePin, ...>` symbol.
+// Required for `congruence_common::normal_forms(Kambites&)` (used by the
+// `kambites_normal_forms_take` binding below). The returned
+// `KambitesNormalFormRange::init` calls `libsemigroups::to<FroidurePin>(k)`,
+// whose template definition lives in to-froidure-pin.tpp (transitively
+// included by to-froidure-pin.hpp). Without this header, the binding compiles
+// but fails to link with an undefined `libsemigroups::to<FroidurePin, ...>`
+// symbol.
 #include <libsemigroups/to-froidure-pin.hpp>
 
 #include "cong-common.hpp"

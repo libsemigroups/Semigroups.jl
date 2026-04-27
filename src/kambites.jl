@@ -239,7 +239,7 @@ Semigroups.small_overlap_class) for the rationale).
 """
 function current_small_overlap_class(k::Kambites)
     val = LibSemigroups.current_small_overlap_class(k)
-    return val == typemax(UInt) ? UNDEFINED : val
+    return val == convert(UInt, UNDEFINED) ? UNDEFINED : val
 end
 
 # ============================================================================
