@@ -356,7 +356,8 @@ export normal_forms, partition, non_trivial_classes
 
 # ToddCoxeter
 export ToddCoxeter
-export strategy_hlt, strategy_felsch, strategy_CR, strategy_R_over_C, strategy_Cr, strategy_Rc
+export strategy_hlt,
+    strategy_felsch, strategy_CR, strategy_R_over_C, strategy_Cr, strategy_Rc
 export lookahead_extent_full, lookahead_extent_partial
 export lookahead_style_hlt, lookahead_style_felsch
 export def_policy_no_stack_if_no_space, def_policy_purge_from_top, def_policy_purge_all

@@ -78,8 +78,7 @@ namespace libsemigroups_julia {
                 jlcxx::ArrayRef<size_t> v) -> bool {
                Word uw(u.begin(), u.end());
                Word vw(v.begin(), v.end());
-               return libsemigroups::congruence_common::contains(
-                   self, uw, vw);
+               return libsemigroups::congruence_common::contains(self, uw, vw);
              });
 
     // currently_contains (no enumeration, returns tril)
@@ -94,15 +93,13 @@ namespace libsemigroups_julia {
              });
 
     // add_generating_pair!
-    m.method("cong_common_add_generating_pair!",
-             [](Thing&                  self,
-                jlcxx::ArrayRef<size_t> u,
-                jlcxx::ArrayRef<size_t> v) {
-               Word uw(u.begin(), u.end());
-               Word vw(v.begin(), v.end());
-               libsemigroups::congruence_common::add_generating_pair(
-                   self, uw, vw);
-             });
+    m.method(
+        "cong_common_add_generating_pair!",
+        [](Thing& self, jlcxx::ArrayRef<size_t> u, jlcxx::ArrayRef<size_t> v) {
+          Word uw(u.begin(), u.end());
+          Word vw(v.begin(), v.end());
+          libsemigroups::congruence_common::add_generating_pair(self, uw, vw);
+        });
 
     m.method("cong_common_partition",
              [](Thing& self, jlcxx::ArrayRef<jl_value_t*> words)
@@ -125,16 +122,15 @@ namespace libsemigroups_julia {
 
     // normal_forms() returns an rx-style range; use
     // .at_end()/.get()/.next().
-    m.method(
-        "cong_common_normal_forms", [](Thing& self) -> std::vector<Word> {
-          std::vector<Word> result;
-          auto range = libsemigroups::congruence_common::normal_forms(self);
-          while (!range.at_end()) {
-            result.push_back(range.get());
-            range.next();
-          }
-          return result;
-        });
+    m.method("cong_common_normal_forms", [](Thing& self) -> std::vector<Word> {
+      std::vector<Word> result;
+      auto range = libsemigroups::congruence_common::normal_forms(self);
+      while (!range.at_end()) {
+        result.push_back(range.get());
+        range.next();
+      }
+      return result;
+    });
   }
 
   template <typename Thing>
@@ -143,9 +139,22 @@ namespace libsemigroups_julia {
 
     m.method("cong_common_non_trivial_classes",
              [](Thing& x, Thing& y) -> std::vector<std::vector<Word>> {
-               return libsemigroups::congruence_common::non_trivial_classes(
-                   x, y);
+               return libsemigroups::congruence_common::non_trivial_classes(x,
+                                                                            y);
              });
+  }
+
+  // Aggregator: register the full cong-common helper family for one
+  // concrete algorithm type. Each new algorithm binding (KnuthBendix,
+  // ToddCoxeter, Kambites, ...) calls this once at the end of its
+  // `define_<algorithm>(m)` function. The include-order requirement
+  // documented above still applies - the algorithm-specific helpers
+  // header must be included before this file in the calling TU.
+  template <typename Thing>
+  inline void define_cong_common_helpers(jl::Module& m) {
+    define_cong_common_word_helpers<Thing>(m);
+    define_cong_common_normal_forms<Thing>(m);
+    define_cong_common_non_trivial_classes<Thing>(m);
   }
 
 }  // namespace libsemigroups_julia

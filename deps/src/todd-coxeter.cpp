@@ -72,10 +72,6 @@ namespace libsemigroups_julia {
     using TCImpl           = libsemigroups::detail::ToddCoxeterImpl;
     using TC               = libsemigroups::ToddCoxeter<word_type>;
 
-    ////////////////////////////////////////////////////////////////////////
-    // Enums
-    ////////////////////////////////////////////////////////////////////////
-
     // strategy: TCImpl::options::strategy has 8 values; we only expose the
     // 6 that appear on the user-facing ToddCoxeter::options::strategy.
     m.add_bits<TCImpl::options::strategy>("strategy",
@@ -98,8 +94,7 @@ namespace libsemigroups_julia {
     // lookahead_style
     m.add_bits<TCImpl::options::lookahead_style>("lookahead_style",
                                                  jl::julia_type("CppEnum"));
-    m.set_const("lookahead_style_hlt",
-                TCImpl::options::lookahead_style::hlt);
+    m.set_const("lookahead_style_hlt", TCImpl::options::lookahead_style::hlt);
     m.set_const("lookahead_style_felsch",
                 TCImpl::options::lookahead_style::felsch);
 
@@ -110,12 +105,10 @@ namespace libsemigroups_julia {
                 TCImpl::options::def_policy::no_stack_if_no_space);
     m.set_const("def_policy_purge_from_top",
                 TCImpl::options::def_policy::purge_from_top);
-    m.set_const("def_policy_purge_all",
-                TCImpl::options::def_policy::purge_all);
+    m.set_const("def_policy_purge_all", TCImpl::options::def_policy::purge_all);
     m.set_const("def_policy_discard_all_if_no_space",
                 TCImpl::options::def_policy::discard_all_if_no_space);
-    m.set_const("def_policy_unlimited",
-                TCImpl::options::def_policy::unlimited);
+    m.set_const("def_policy_unlimited", TCImpl::options::def_policy::unlimited);
 
     // def_version (re-exported into TCImpl::options via a using-declaration
     // from FelschGraphSettings::options)
@@ -124,28 +117,19 @@ namespace libsemigroups_julia {
     m.set_const("def_version_one", TCImpl::options::def_version::one);
     m.set_const("def_version_two", TCImpl::options::def_version::two);
 
-    ////////////////////////////////////////////////////////////////////////
     // Type registration
-    ////////////////////////////////////////////////////////////////////////
-
     m.add_type<TCImpl>("ToddCoxeterImpl",
                        jlcxx::julia_base_type<CongruenceCommon>());
     auto type
         = m.add_type<TC>("ToddCoxeterWord", jlcxx::julia_base_type<TCImpl>());
 
-    ////////////////////////////////////////////////////////////////////////
     // Constructors
-    ////////////////////////////////////////////////////////////////////////
-
     type.constructor<congruence_kind, Presentation<word_type> const&>();
     type.constructor<congruence_kind, TC const&>();
     type.constructor<congruence_kind, WordGraph<uint32_t> const&>();
     type.constructor<TC const&>();  // copy ctor
 
-    ////////////////////////////////////////////////////////////////////////
     // init! overloads (mirror constructors)
-    ////////////////////////////////////////////////////////////////////////
-
     type.method("init!", [](TC& self) -> TC& { return self.init(); });
     type.method("init!",
                 [](TC&                            self,
@@ -157,23 +141,17 @@ namespace libsemigroups_julia {
                 [](TC& self, congruence_kind knd, TC const& other) -> TC& {
                   return self.init(knd, other);
                 });
-    type.method(
-        "init!",
-        [](TC& self, congruence_kind knd, WordGraph<uint32_t> const& wg)
-            -> TC& { return self.init(knd, wg); });
-
-    ////////////////////////////////////////////////////////////////////////
-    // Settings (getter / setter pairs with DISTINCT names)
-    ////////////////////////////////////////////////////////////////////////
+    type.method("init!",
+                [](TC& self, congruence_kind knd, WordGraph<uint32_t> const& wg)
+                    -> TC& { return self.init(knd, wg); });
 
     // strategy
     type.method("strategy", [](TC const& self) -> TCImpl::options::strategy {
       return self.strategy();
     });
-    type.method("set_strategy!",
-                [](TC& self, TCImpl::options::strategy val) {
-                  self.strategy(val);
-                });
+    type.method("set_strategy!", [](TC& self, TCImpl::options::strategy val) {
+      self.strategy(val);
+    });
 
     // lookahead_extent
     type.method("lookahead_extent",
@@ -232,10 +210,6 @@ namespace libsemigroups_julia {
                   self.def_policy(val);
                 });
 
-    ////////////////////////////////////////////////////////////////////////
-    // Standardize / word-graph access
-    ////////////////////////////////////////////////////////////////////////
-
     type.method("standardize!", [](TC& self, Order ord) -> bool {
       return self.standardize(ord);
     });
@@ -254,14 +228,9 @@ namespace libsemigroups_julia {
                 });
 
     // word_graph: triggers run; non-const this.
-    type.method("word_graph",
-                [](TC& self) -> WordGraph<uint32_t> const& {
-                  return self.word_graph();
-                });
-
-    ////////////////////////////////////////////////////////////////////////
-    // Word <-> class index
-    ////////////////////////////////////////////////////////////////////////
+    type.method("word_graph", [](TC& self) -> WordGraph<uint32_t> const& {
+      return self.word_graph();
+    });
 
     type.method("current_index_of",
                 [](TC const& self, jlcxx::ArrayRef<size_t> w) -> size_t {
@@ -269,17 +238,21 @@ namespace libsemigroups_julia {
                   return self.current_index_of(ww.begin(), ww.end());
                 });
 
-    type.method("index_of",
-                [](TC& self, jlcxx::ArrayRef<size_t> w) -> size_t {
-                  word_type ww(w.begin(), w.end());
-                  return self.index_of(ww.begin(), ww.end());
-                });
+    type.method("index_of", [](TC& self, jlcxx::ArrayRef<size_t> w) -> size_t {
+      word_type ww(w.begin(), w.end());
+      return self.index_of(ww.begin(), ww.end());
+    });
 
-    type.method("current_word_of",
-                [](TC const& self, size_t i) -> word_type {
-                  word_type out;
-                  self.current_word_of(std::back_inserter(out), i);
-                  return out;
+    type.method("current_word_of", [](TC const& self, size_t i) -> word_type {
+      word_type out;
+      self.current_word_of(std::back_inserter(out), i);
+      return out;
+    });
+
+    type.method("throw_if_letter_not_in_alphabet",
+                [](TC const& self, jlcxx::ArrayRef<size_t> w) {
+                  word_type ww(w.begin(), w.end());
+                  self.throw_if_letter_not_in_alphabet(ww.begin(), ww.end());
                 });
 
     type.method("word_of", [](TC& self, size_t i) -> word_type {
@@ -287,10 +260,6 @@ namespace libsemigroups_julia {
       self.word_of(std::back_inserter(out), i);
       return out;
     });
-
-    ////////////////////////////////////////////////////////////////////////
-    // Query methods
-    ////////////////////////////////////////////////////////////////////////
 
     type.method("number_of_classes",
                 [](TC& self) -> uint64_t { return self.number_of_classes(); });
@@ -313,26 +282,18 @@ namespace libsemigroups_julia {
       return self.presentation();
     });
 
-    ////////////////////////////////////////////////////////////////////////
-    // Display
-    ////////////////////////////////////////////////////////////////////////
-
     type.method("to_human_readable_repr", [](TC const& self) -> std::string {
       return libsemigroups::to_human_readable_repr(self);
     });
-
-    ////////////////////////////////////////////////////////////////////////
-    // Free functions (todd_coxeter:: namespace)
-    ////////////////////////////////////////////////////////////////////////
 
     // is_non_trivial - takes nanoseconds at the boundary, converts to
     // milliseconds (the helper takes std::chrono::milliseconds).
     m.method("tc_is_non_trivial",
              [](TC& self, size_t tries, int64_t try_for_ns, float threshold)
                  -> libsemigroups::tril {
-               auto try_for = std::chrono::duration_cast<
-                   std::chrono::milliseconds>(
-                   std::chrono::nanoseconds(try_for_ns));
+               auto try_for
+                   = std::chrono::duration_cast<std::chrono::milliseconds>(
+                       std::chrono::nanoseconds(try_for_ns));
                return libsemigroups::todd_coxeter::is_non_trivial(
                    self, tries, try_for, threshold);
              });
@@ -345,15 +306,8 @@ namespace libsemigroups_julia {
                    p, std::chrono::nanoseconds(ns));
                return static_cast<size_t>(std::distance(p.rules.cbegin(), it));
              });
-  }
 
-  void define_todd_coxeter_cong_common_helpers(jl::Module& m) {
-    using libsemigroups::word_type;
-    using TC = libsemigroups::ToddCoxeter<word_type>;
-
-    define_cong_common_word_helpers<TC>(m);
-    define_cong_common_normal_forms<TC>(m);
-    define_cong_common_non_trivial_classes<TC>(m);
+    define_cong_common_helpers<TC>(m);
   }
 
 }  // namespace libsemigroups_julia

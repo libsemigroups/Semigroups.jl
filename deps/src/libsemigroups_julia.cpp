@@ -55,8 +55,6 @@ namespace libsemigroups_julia {
     define_presentation_examples(mod);
     define_knuth_bendix(mod);
     define_todd_coxeter(mod);
-    define_knuth_bendix_cong_common_helpers(mod);
-    define_todd_coxeter_cong_common_helpers(mod);
   }
 
 }  // namespace libsemigroups_julia

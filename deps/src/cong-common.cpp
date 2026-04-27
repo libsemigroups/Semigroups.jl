@@ -18,15 +18,8 @@
 // CRITICAL: libsemigroups_julia.hpp MUST be included first (fmt consteval fix)
 #include "libsemigroups_julia.hpp"
 
-// libsemigroups headers that provide algorithm-specific overloads of
-// congruence_common helpers MUST be included BEFORE cong-common.hpp so the
-// template bodies in cong-common.hpp pick them up at instantiation.
 #include <libsemigroups/detail/cong-common-class.hpp>
-#include <libsemigroups/knuth-bendix-class.hpp>
-#include <libsemigroups/knuth-bendix-helpers.hpp>
 #include <libsemigroups/runner.hpp>
-
-#include "cong-common.hpp"
 
 #include <type_traits>
 
@@ -48,20 +41,12 @@ namespace libsemigroups_julia {
     using CongruenceCommon = libsemigroups::detail::CongruenceCommon;
 
     // No constructors: CongruenceCommon is a shared implementation base.
-    // Derived algorithms register their concrete methods on their own types.
+    // Derived algorithms register their concrete methods on their own types,
+    // and instantiate the cong-common helper templates from cong-common.hpp
+    // in their own translation units (see knuth-bendix.cpp,
+    // todd-coxeter.cpp, ...).
     m.add_type<CongruenceCommon>("CongruenceCommon",
                                  jlcxx::julia_base_type<Runner>());
-  }
-
-  void define_knuth_bendix_cong_common_helpers(jl::Module& m) {
-    using libsemigroups::word_type;
-    using KB = libsemigroups::KnuthBendix<word_type,
-                                          libsemigroups::detail::RewriteTrie,
-                                          libsemigroups::ShortLexCompare>;
-
-    define_cong_common_word_helpers<KB>(m);
-    define_cong_common_normal_forms<KB>(m);
-    define_cong_common_non_trivial_classes<KB>(m);
   }
 
 }  // namespace libsemigroups_julia

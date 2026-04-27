@@ -42,7 +42,8 @@ objects.
 
 - `LibsemigroupsError` if `p` is not valid (Presentation form).
 - `LibsemigroupsError` if `kind` and `tc.kind()` are incompatible
-  (ToddCoxeter form).
+  (ToddCoxeter form). Compatible pairs `(tc.kind(), kind)` are
+  `(onesided, onesided)`, `(twosided, onesided)`, and `(twosided, twosided)`.
 
 !!! warning "v1 limitation"
     v1 of Semigroups.jl binds `ToddCoxeter{word_type}` only. String-alphabet
@@ -55,33 +56,40 @@ const ToddCoxeter = LibSemigroups.ToddCoxeterWord
 """
     strategy_hlt
 
-Strategy enum value: HLT (Hazelgrove-Leech-Trotter) coset enumeration.
-See [`strategy!`](@ref Semigroups.strategy!).
+Strategy enum value: the HLT (Hazelgrove-Leech-Trotter) strategy. Analogous
+to the [ACE](https://staff.itee.uq.edu.au/havas/) R-style strategy. See
+[`strategy!`](@ref Semigroups.strategy!).
 """
 const strategy_hlt = LibSemigroups.strategy_hlt
 
 """
     strategy_felsch
 
-Strategy enum value: Felsch-style coset enumeration. Definitions are made
-greedily, applying the relations of the presentation immediately to identify
-classes. See [`strategy!`](@ref Semigroups.strategy!).
+Strategy enum value: the Felsch strategy. Analogous to the
+[ACE](https://staff.itee.uq.edu.au/havas/) C-style strategy. See
+[`strategy!`](@ref Semigroups.strategy!).
 """
 const strategy_felsch = LibSemigroups.strategy_felsch
 
 """
     strategy_CR
 
-Strategy enum value: alternating between HLT (Cosets) and Felsch (Relations).
-See Holt, Eick, O'Brien, *Handbook of Computational Group Theory*, §5.3.
-See [`strategy!`](@ref Semigroups.strategy!).
+Strategy enum value: mimics the [ACE](https://staff.itee.uq.edu.au/havas/) CR
+strategy. The Felsch strategy is run until at least `f_defs()` nodes are
+defined, then HLT is run until at least `hlt_defs()/N` nodes have been defined
+(where `N` is the sum of the lengths of the words in the presentation and
+generating pairs); these steps are repeated until enumeration terminates. See
+[`strategy!`](@ref Semigroups.strategy!).
 """
 const strategy_CR = LibSemigroups.strategy_CR
 
 """
     strategy_R_over_C
 
-Strategy enum value: HLT phase, followed by Felsch phase.
+Strategy enum value: mimics the [ACE](https://staff.itee.uq.edu.au/havas/) R/C
+strategy. HLT runs until the first lookahead is triggered (when the number of
+active nodes reaches `lookahead_next`); a full lookahead is then performed,
+after which the [`strategy_CR`](@ref Semigroups.strategy_CR) strategy is used.
 See [`strategy!`](@ref Semigroups.strategy!).
 """
 const strategy_R_over_C = LibSemigroups.strategy_R_over_C
@@ -89,16 +97,22 @@ const strategy_R_over_C = LibSemigroups.strategy_R_over_C
 """
     strategy_Cr
 
-Strategy enum value: short Felsch phase, followed by HLT, with one final
-Felsch sweep at the end. See [`strategy!`](@ref Semigroups.strategy!).
+Strategy enum value: mimics the [ACE](https://staff.itee.uq.edu.au/havas/) Cr
+strategy. Felsch runs until at least `f_defs()` new nodes have been defined,
+HLT runs until at least `hlt_defs()/N` further nodes have been defined (`N`
+as in [`strategy_CR`](@ref Semigroups.strategy_CR)), and finally Felsch runs
+to completion. See [`strategy!`](@ref Semigroups.strategy!).
 """
 const strategy_Cr = LibSemigroups.strategy_Cr
 
 """
     strategy_Rc
 
-Strategy enum value: short HLT phase, followed by Felsch, with one final
-HLT sweep at the end. See [`strategy!`](@ref Semigroups.strategy!).
+Strategy enum value: mimics the [ACE](https://staff.itee.uq.edu.au/havas/) Rc
+strategy. HLT runs until at least `hlt_defs()/N` new nodes have been defined
+(`N` as in [`strategy_CR`](@ref Semigroups.strategy_CR)), Felsch runs until
+at least `f_defs()` further nodes have been defined, and finally HLT runs to
+completion. See [`strategy!`](@ref Semigroups.strategy!).
 """
 const strategy_Rc = LibSemigroups.strategy_Rc
 
@@ -107,16 +121,20 @@ const strategy_Rc = LibSemigroups.strategy_Rc
 """
     lookahead_extent_full
 
-Lookahead-extent enum value: lookahead processes the full word graph.
-See [`lookahead_extent!`](@ref Semigroups.lookahead_extent!).
+Lookahead-extent enum value: perform a full lookahead from every node in the
+word graph. Full lookaheads are sometimes slower but may detect more
+coincidences than a partial lookahead. See
+[`lookahead_extent!`](@ref Semigroups.lookahead_extent!).
 """
 const lookahead_extent_full = LibSemigroups.lookahead_extent_full
 
 """
     lookahead_extent_partial
 
-Lookahead-extent enum value: lookahead processes only part of the word
-graph. See [`lookahead_extent!`](@ref Semigroups.lookahead_extent!).
+Lookahead-extent enum value: perform a partial lookahead starting from the
+current node in the word graph. Partial lookaheads are sometimes faster but
+may not detect as many coincidences as a full lookahead. See
+[`lookahead_extent!`](@ref Semigroups.lookahead_extent!).
 """
 const lookahead_extent_partial = LibSemigroups.lookahead_extent_partial
 
@@ -125,16 +143,19 @@ const lookahead_extent_partial = LibSemigroups.lookahead_extent_partial
 """
     lookahead_style_hlt
 
-Lookahead-style enum value: HLT-style lookahead.
-See [`lookahead_style!`](@ref Semigroups.lookahead_style!).
+Lookahead-style enum value: HLT-style lookahead - follow the paths labelled by
+every relation from every node in the range specified by the current
+[`lookahead_extent`](@ref Semigroups.lookahead_extent). See
+[`lookahead_style!`](@ref Semigroups.lookahead_style!).
 """
 const lookahead_style_hlt = LibSemigroups.lookahead_style_hlt
 
 """
     lookahead_style_felsch
 
-Lookahead-style enum value: Felsch-style lookahead.
-See [`lookahead_style!`](@ref Semigroups.lookahead_style!).
+Lookahead-style enum value: Felsch-style lookahead - every edge is considered
+in every path labelled by a relation in which it occurs. See
+[`lookahead_style!`](@ref Semigroups.lookahead_style!).
 """
 const lookahead_style_felsch = LibSemigroups.lookahead_style_felsch
 
@@ -143,42 +164,44 @@ const lookahead_style_felsch = LibSemigroups.lookahead_style_felsch
 """
     def_policy_no_stack_if_no_space
 
-Definition-policy enum value: do not stack a deduction if there is no space
-left. See [`def_policy!`](@ref Semigroups.def_policy!).
+Definition-policy enum value: when the definition stack reaches the limit
+`def_max`, newly generated definitions are dropped on the floor. See
+[`def_policy!`](@ref Semigroups.def_policy!).
 """
-const def_policy_no_stack_if_no_space =
-    LibSemigroups.def_policy_no_stack_if_no_space
+const def_policy_no_stack_if_no_space = LibSemigroups.def_policy_no_stack_if_no_space
 
 """
     def_policy_purge_from_top
 
-Definition-policy enum value: purge from the top of the deduction stack
-when full. See [`def_policy!`](@ref Semigroups.def_policy!).
+Definition-policy enum value: when the stack is full and a new definition is
+generated, definitions whose source node is dead are popped from the top of
+the stack. See [`def_policy!`](@ref Semigroups.def_policy!).
 """
 const def_policy_purge_from_top = LibSemigroups.def_policy_purge_from_top
 
 """
     def_policy_purge_all
 
-Definition-policy enum value: purge all deductions when the stack is full.
-See [`def_policy!`](@ref Semigroups.def_policy!).
+Definition-policy enum value: when the stack is full and a new definition is
+generated, all definitions with a dead source node are removed from the
+entire stack (not just the top). See [`def_policy!`](@ref Semigroups.def_policy!).
 """
 const def_policy_purge_all = LibSemigroups.def_policy_purge_all
 
 """
     def_policy_discard_all_if_no_space
 
-Definition-policy enum value: discard all deductions if there is no space
-left. See [`def_policy!`](@ref Semigroups.def_policy!).
+Definition-policy enum value: when the stack is full and a new definition is
+generated, the entire definition stack is discarded. See
+[`def_policy!`](@ref Semigroups.def_policy!).
 """
-const def_policy_discard_all_if_no_space =
-    LibSemigroups.def_policy_discard_all_if_no_space
+const def_policy_discard_all_if_no_space = LibSemigroups.def_policy_discard_all_if_no_space
 
 """
     def_policy_unlimited
 
-Definition-policy enum value: do not limit the number of stacked deductions.
-See [`def_policy!`](@ref Semigroups.def_policy!).
+Definition-policy enum value: place no limit on the number of stacked
+definitions. See [`def_policy!`](@ref Semigroups.def_policy!).
 """
 const def_policy_unlimited = LibSemigroups.def_policy_unlimited
 
@@ -187,16 +210,18 @@ const def_policy_unlimited = LibSemigroups.def_policy_unlimited
 """
     def_version_one
 
-Definition-version enum value: version 1 of the definition routine.
-See [`def_version!`](@ref Semigroups.def_version!).
+Definition-version enum value: the simpler version of definition processing.
+May follow the same dead-end path multiple times. See
+[`def_version!`](@ref Semigroups.def_version!).
 """
 const def_version_one = LibSemigroups.def_version_one
 
 """
     def_version_two
 
-Definition-version enum value: version 2 of the definition routine.
-See [`def_version!`](@ref Semigroups.def_version!).
+Definition-version enum value: the more complex version of definition
+processing. Attempts to avoid re-following a path once it has been found to
+lead nowhere. See [`def_version!`](@ref Semigroups.def_version!).
 """
 const def_version_two = LibSemigroups.def_version_two
 
@@ -209,8 +234,7 @@ const def_version_two = LibSemigroups.def_version_two
 # from `UInt(0 - 1)`) propagate as themselves rather than being re-wrapped.
 
 @inline _index_to_cpp(i::Integer) = UInt(i - 1)
-@inline _index_from_cpp(i::Integer) =
-    i == typemax(UInt) ? UNDEFINED : Int(i) + 1
+@inline _index_from_cpp(i::Integer) = i == typemax(UInt) ? UNDEFINED : Int(i) + 1
 
 # ============================================================================
 # Initialization
@@ -222,18 +246,18 @@ const def_version_two = LibSemigroups.def_version_two
     init!(tc::ToddCoxeter, kind::congruence_kind, other::ToddCoxeter) -> ToddCoxeter
     init!(tc::ToddCoxeter, kind::congruence_kind, wg::WordGraph) -> ToddCoxeter
 
-Re-initialize `tc`.
+Re-initialize `tc` so that it is in the state it would have been in
+immediately after the corresponding constructor.
 
 The one-argument form clears the underlying word graph, presentation,
-generating pairs, settings, and statistics from `tc`, putting it back into
-the same state as a newly default-constructed [`ToddCoxeter`](@ref
-Semigroups.ToddCoxeter).
+generating pairs, settings, and statistics, putting `tc` back into the same
+state as a newly default-constructed
+[`ToddCoxeter`](@ref Semigroups.ToddCoxeter).
 
-The three-argument forms reinitialize `tc` as if it had just been
-constructed from the corresponding arguments — `(kind, p)` for a
-[`Presentation`](@ref Semigroups.Presentation), `(kind, other)` for a
-quotient construction from another `ToddCoxeter`, or `(kind, wg)` for a
-construction from a [`WordGraph`](@ref Semigroups.WordGraph).
+The three-argument forms reinitialize `tc` from the corresponding arguments
+- `(kind, p)` for a [`Presentation`](@ref Semigroups.Presentation),
+`(kind, other)` for a quotient of another `ToddCoxeter`, or `(kind, wg)` for
+a [`WordGraph`](@ref Semigroups.WordGraph).
 
 Returns `tc` for chaining.
 
@@ -241,7 +265,8 @@ Returns `tc` for chaining.
 
 - `LibsemigroupsError` if `p` is not valid (Presentation form).
 - `LibsemigroupsError` if `kind` and `other.kind()` are incompatible
-  (ToddCoxeter form).
+  (ToddCoxeter form). The compatible pairs `(other.kind(), kind)` are
+  `(onesided, onesided)`, `(twosided, onesided)`, and `(twosided, twosided)`.
 """
 function init!(tc::ToddCoxeter)
     @wrap_libsemigroups_call LibSemigroups.init!(tc)
@@ -264,7 +289,7 @@ function init!(tc::ToddCoxeter, kind::congruence_kind, wg::WordGraph)
 end
 
 # ============================================================================
-# Settings — getter / setter pairs
+# Settings - getter / setter pairs
 # ============================================================================
 
 """
@@ -272,8 +297,8 @@ end
 
 Return the current coset enumeration strategy of `tc`.
 
-The returned value is one of [`strategy_hlt`](@ref Semigroups.strategy_hlt),
-[`strategy_felsch`](@ref Semigroups.strategy_felsch),
+The returned value is one of [`strategy_hlt`](@ref Semigroups.strategy_hlt)
+(the default), [`strategy_felsch`](@ref Semigroups.strategy_felsch),
 [`strategy_CR`](@ref Semigroups.strategy_CR),
 [`strategy_R_over_C`](@ref Semigroups.strategy_R_over_C),
 [`strategy_Cr`](@ref Semigroups.strategy_Cr), or
@@ -303,7 +328,8 @@ end
 """
     lookahead_extent(tc::ToddCoxeter)
 
-Return the current lookahead extent of `tc`.
+Return the current lookahead extent of `tc`. The default is
+[`lookahead_extent_partial`](@ref Semigroups.lookahead_extent_partial).
 
 The returned value is one of
 [`lookahead_extent_full`](@ref Semigroups.lookahead_extent_full) or
@@ -332,7 +358,8 @@ end
 """
     lookahead_style(tc::ToddCoxeter)
 
-Return the current lookahead style of `tc`.
+Return the current lookahead style of `tc`. The default is
+[`lookahead_style_hlt`](@ref Semigroups.lookahead_style_hlt).
 
 The returned value is one of
 [`lookahead_style_hlt`](@ref Semigroups.lookahead_style_hlt) or
@@ -361,8 +388,8 @@ end
 """
     save(tc::ToddCoxeter) -> Bool
 
-Return whether deductions made during HLT enumeration are processed in
-the same way as those made during Felsch enumeration.
+Return whether definitions are processed during HLT-style enumeration. The
+default is `false`.
 
 # See also
 
@@ -373,12 +400,12 @@ save(tc::ToddCoxeter) = LibSemigroups.save(tc)
 """
     save!(tc::ToddCoxeter, val::Bool) -> ToddCoxeter
 
-Set the value of the `save` setting on `tc`. Returns `tc` for chaining.
+Set whether definitions are processed during any HLT-style enumeration of
+`tc`. Returns `tc` for chaining. The default is `false`.
 
-If `val` is `true`, deductions made during HLT enumeration are processed
-in the same way as those made during Felsch enumeration. This typically
-slows down HLT enumeration but may reduce the size of the underlying word
-graph.
+If `val` is `true` and the HLT strategy is in use, definitions are processed
+during enumeration. This typically slows HLT down but can reduce the size of
+the underlying word graph.
 
 # See also
 
@@ -392,22 +419,23 @@ end
 """
     use_relations_in_extra(tc::ToddCoxeter) -> Bool
 
-Return whether the relations of the underlying presentation are used in
-the Felsch part of the algorithm when applied to the generating pairs.
+Return whether, when the Felsch strategy is in use over a finitely presented
+semigroup or monoid, the algorithm performs an HLT-style push of the defining
+relations at the identity. The default is `false`.
 
 # See also
 
 [`use_relations_in_extra!`](@ref Semigroups.use_relations_in_extra!)
 """
-use_relations_in_extra(tc::ToddCoxeter) =
-    LibSemigroups.use_relations_in_extra(tc)
+use_relations_in_extra(tc::ToddCoxeter) = LibSemigroups.use_relations_in_extra(tc)
 
 """
     use_relations_in_extra!(tc::ToddCoxeter, val::Bool) -> ToddCoxeter
 
-Set whether the relations of the underlying presentation are used in
-the Felsch part of the algorithm when applied to the generating pairs.
-Returns `tc` for chaining.
+Set whether, when the Felsch strategy is in use over a finitely presented
+semigroup or monoid, the algorithm should follow all paths from the identity
+labelled by the underlying relations. Returns `tc` for chaining. The default
+is `false`.
 
 # See also
 
@@ -419,26 +447,33 @@ function use_relations_in_extra!(tc::ToddCoxeter, val::Bool)
 end
 
 """
-    lower_bound(tc::ToddCoxeter) -> Int
+    lower_bound(tc::ToddCoxeter) -> Union{Int, UndefinedType}
 
 Return the current lower bound on the number of classes of the congruence
-represented by `tc`. A value of `0` means no bound has been set.
+represented by `tc`. The default is [`UNDEFINED`](@ref Semigroups.UNDEFINED)
+(no bound set); otherwise an `Int`.
 
 # See also
 
 [`lower_bound!`](@ref Semigroups.lower_bound!)
 """
-lower_bound(tc::ToddCoxeter) = Int(LibSemigroups.lower_bound(tc))
+function lower_bound(tc::ToddCoxeter)
+    val = LibSemigroups.lower_bound(tc)
+    return val == typemax(UInt) ? UNDEFINED : Int(val)
+end
 
 """
     lower_bound!(tc::ToddCoxeter, val::Integer) -> ToddCoxeter
+    lower_bound!(tc::ToddCoxeter, ::UndefinedType) -> ToddCoxeter
 
-Set a lower bound on the number of classes of the congruence represented
-by `tc` to `val`. Returns `tc` for chaining.
+Set a lower bound on the number of classes of the congruence represented by
+`tc`. Returns `tc` for chaining.
 
-If the number of currently active nodes during enumeration reaches `val`
-and the word graph is complete, the algorithm can stop early. A value of
-`0` indicates no lower bound.
+If the number of active nodes during enumeration reaches `val` and the word
+graph is complete, the algorithm may stop early. When the bound equals the
+number of classes, this can avoid following relation-labelled paths at many
+nodes once no further coincidences are possible. Pass
+[`UNDEFINED`](@ref Semigroups.UNDEFINED) to clear the bound (the default).
 
 # See also
 
@@ -449,10 +484,14 @@ function lower_bound!(tc::ToddCoxeter, val::Integer)
     return tc
 end
 
+lower_bound!(tc::ToddCoxeter, ::UndefinedType) =
+    (LibSemigroups.set_lower_bound!(tc, typemax(UInt)); tc)
+
 """
     def_version(tc::ToddCoxeter)
 
-Return the current definition-routine version of `tc`.
+Return the current definition-routine version of `tc`. The default is
+[`def_version_two`](@ref Semigroups.def_version_two).
 
 The returned value is one of
 [`def_version_one`](@ref Semigroups.def_version_one) or
@@ -482,7 +521,10 @@ end
 """
     def_policy(tc::ToddCoxeter)
 
-Return the current definition-stack policy of `tc`.
+Return the current definition-stack policy of `tc`. The default is
+[`def_policy_no_stack_if_no_space`](@ref Semigroups.def_policy_no_stack_if_no_space).
+Together with `def_max` (currently not bound) the policy controls what
+happens when the stack of pending definitions becomes full.
 
 The returned value is one of
 [`def_policy_no_stack_if_no_space`](@ref Semigroups.def_policy_no_stack_if_no_space),
@@ -519,17 +561,17 @@ end
 """
     standardize!(tc::ToddCoxeter, ord::Order) -> Bool
 
-Standardize the underlying word graph of `tc` according to the order
-`ord`.
+Standardize the [`current_word_graph`](@ref Semigroups.current_word_graph) of
+`tc` with respect to the order `ord`. This function does **not** trigger any
+enumeration.
 
-Standardization renumbers the nodes of the word graph so that the words
-labelling its nodes appear in the order specified by `ord`. Returns
-`true` if the underlying word graph was modified, `false` otherwise.
+Returns `true` if the word graph was modified - equivalently, if it was not
+already standardized with respect to `ord` - and `false` otherwise.
 
 # Arguments
 
 - `tc::ToddCoxeter`: the `ToddCoxeter` instance to standardize.
-- `ord::Order`: the order to standardize by — typically
+- `ord::Order`: the order to standardize by - typically
   [`ORDER_SHORTLEX`](@ref Semigroups.ORDER_SHORTLEX) or
   [`ORDER_LEX`](@ref Semigroups.ORDER_LEX).
 
@@ -545,11 +587,19 @@ end
     is_standardized(tc::ToddCoxeter) -> Bool
     is_standardized(tc::ToddCoxeter, ord::Order) -> Bool
 
-Return whether the underlying word graph of `tc` is standardized.
+Return whether the [`current_word_graph`](@ref Semigroups.current_word_graph)
+of `tc` is standardized.
 
-The one-argument form returns `true` if the word graph has been
-standardized according to *some* order. The two-argument form returns
-`true` only if it has been standardized according to `ord`.
+The one-argument form returns `true` if the word graph has been standardized
+with respect to any [`Order`](@ref Semigroups.Order) other than
+[`ORDER_NONE`](@ref Semigroups.ORDER_NONE). The two-argument form returns
+`true` only if it has been standardized with respect to `ord`.
+
+!!! warning "Deprecated upstream"
+    The corresponding libsemigroups members are marked deprecated; they
+    suggest using `current_word_graph(tc).is_standardized(...)` directly. The
+    Julia binding still exposes both forms so existing code continues to
+    compile, but new code should prefer the word-graph form.
 
 # See also
 
@@ -557,33 +607,44 @@ standardized according to *some* order. The two-argument form returns
 """
 is_standardized(tc::ToddCoxeter) = LibSemigroups.is_standardized(tc)
 
-is_standardized(tc::ToddCoxeter, ord::Order) =
-    LibSemigroups.is_standardized(tc, ord)
+is_standardized(tc::ToddCoxeter, ord::Order) = LibSemigroups.is_standardized(tc, ord)
 
 """
     current_word_graph(tc::ToddCoxeter) -> WordGraph
 
-Return the current state of the underlying word graph of `tc`, without
-triggering a run.
+Return the underlying word graph of `tc` in its current state, without
+triggering an enumeration.
 
-If `tc` has not been run, the returned word graph reflects whatever
-incomplete state has been built so far.
+The returned graph may be in a complicated state: nothing is guaranteed about
+the labels of active nodes (they may be any non-negative integers in any
+order), about whether the active node count matches the total node count,
+about completeness, or about compatibility with the relations of
+[`presentation`](@ref Semigroups.presentation) or with
+[`generating_pairs`](@ref Semigroups.generating_pairs). Use
+[`standardize!`](@ref Semigroups.standardize!) (or `shrink_to_fit`, not yet
+bound) to put it into a more reasonable state.
 
 # See also
 
 [`word_graph`](@ref Semigroups.word_graph)
 """
-@cxxdereference current_word_graph(tc::ToddCoxeter) =
-    LibSemigroups.current_word_graph(tc)
+@cxxdereference current_word_graph(tc::ToddCoxeter) = LibSemigroups.current_word_graph(tc)
 
 """
     word_graph(tc::ToddCoxeter) -> WordGraph
 
-Return the underlying word graph of `tc`, after running the algorithm to
-completion and standardizing.
+Return the underlying word graph of `tc` after triggering a full
+enumeration. The returned graph is short-lex standardized: its active nodes
+are exactly `0, ..., n-1` where `n` is
+[`number_of_classes`](@ref Semigroups.number_of_classes) (or `n+1` when the
+underlying [`presentation`](@ref Semigroups.presentation) does not contain
+the empty word). It will usually be complete and compatible with the
+relations of `presentation` and with `generating_pairs`, though some
+combinations of settings (e.g. an aggressive
+[`lower_bound!`](@ref Semigroups.lower_bound!)) can break this.
 
-This function triggers a full enumeration of `tc`, which may never
-terminate.
+!!! warning
+    This function may never terminate if the congruence is undecidable.
 
 # See also
 
@@ -598,10 +659,14 @@ terminate.
 """
     index_of(tc::ToddCoxeter, w::AbstractVector{<:Integer}) -> Int
 
-Return the 1-based index of the congruence class containing `w`.
+Return the 1-based index of the congruence class containing `w`, triggering
+a full enumeration of `tc`.
 
-This function triggers a full enumeration of `tc`, which may never
-terminate.
+If [`current_word_graph`](@ref Semigroups.current_word_graph) is not already
+standardized, the algorithm first standardizes it with respect to short-lex
+order; otherwise the existing standardization is preserved. Because
+enumeration completes, the result is never
+[`UNDEFINED`](@ref Semigroups.UNDEFINED).
 
 # Arguments
 
@@ -613,6 +678,9 @@ terminate.
 
 - `LibsemigroupsError` if any letter in `w` is not in the alphabet of the
   underlying presentation.
+
+!!! warning
+    This function may never terminate if the congruence is undecidable.
 
 # See also
 
@@ -632,7 +700,10 @@ Return the 1-based index of the congruence class containing `w` if it is
 already known, without triggering a run.
 
 If the class of `w` is not currently known, returns
-[`UNDEFINED`](@ref Semigroups.UNDEFINED).
+[`UNDEFINED`](@ref Semigroups.UNDEFINED). Test for that case with
+`result === UNDEFINED` (or [`is_undefined`](@ref Semigroups.is_undefined));
+`result == typemax(UInt)` will always be `false` because `UNDEFINED` is
+its own singleton type.
 
 # Arguments
 
@@ -689,7 +760,13 @@ end
     current_word_of(tc::ToddCoxeter, i::Integer) -> Vector{Int}
 
 Return a representative word for the `i`-th congruence class of `tc`
-(1-based), without triggering a run.
+(1-based), without triggering an enumeration.
+
+If [`current_word_graph`](@ref Semigroups.current_word_graph) is not already
+standardized, this function standardizes it with respect to short-lex order
+as a side effect. The returned word is obtained by walking the
+current-spanning-tree path from the node corresponding to class `i` back to
+the root.
 
 # Arguments
 
@@ -712,6 +789,28 @@ function current_word_of(tc::ToddCoxeter, i::Integer)
     return _word_from_cpp(out)
 end
 
+"""
+    throw_if_letter_not_in_alphabet(tc::ToddCoxeter, w::AbstractVector{<:Integer})
+
+Check that every letter in `w` belongs to the alphabet of the underlying
+presentation of `tc`.
+
+# Arguments
+
+- `tc::ToddCoxeter`: the `ToddCoxeter` instance.
+- `w::AbstractVector{<:Integer}`: a 1-based `Vector{Int}` of letter indices.
+
+# Throws
+
+- `LibsemigroupsError` if any letter in `w` is not in the alphabet of the
+  underlying presentation.
+"""
+function throw_if_letter_not_in_alphabet(tc::ToddCoxeter, w::AbstractVector{<:Integer})
+    cpp_w = _word_to_cpp(w)
+    @wrap_libsemigroups_call LibSemigroups.throw_if_letter_not_in_alphabet(tc, cpp_w)
+    return nothing
+end
+
 # ============================================================================
 # Query methods
 # ============================================================================
@@ -725,6 +824,12 @@ needed.
 Returns [`POSITIVE_INFINITY`](@ref Semigroups.POSITIVE_INFINITY) if the
 congruence has infinitely many classes.
 
+The return type is `UInt64` (rather than `Int`, which is the project
+convention elsewhere) because `POSITIVE_INFINITY` is encoded as
+`typemax(UInt64)` on the wire and would not round-trip through `Int`.
+Use [`is_positive_infinity`](@ref Semigroups.is_positive_infinity) to
+detect the infinite case.
+
 !!! warning
     This function may not terminate if the congruence has infinitely many
     classes and the algorithm cannot detect this.
@@ -734,9 +839,10 @@ number_of_classes(tc::ToddCoxeter) = LibSemigroups.number_of_classes(tc)
 """
     kind(tc::ToddCoxeter) -> congruence_kind
 
-Return the kind of the congruence represented by `tc` — either
-[`twosided`](@ref Semigroups.twosided) or
-[`onesided`](@ref Semigroups.onesided).
+Return the kind (1- or 2-sided) of the congruence represented by `tc`.
+The result is either [`twosided`](@ref Semigroups.twosided) or
+[`onesided`](@ref Semigroups.onesided); see
+[`congruence_kind`](@ref Semigroups.congruence_kind).
 """
 kind(tc::ToddCoxeter) = LibSemigroups.kind(tc)
 
@@ -754,11 +860,13 @@ number_of_generating_pairs(tc::ToddCoxeter) =
 """
     generating_pairs(tc::ToddCoxeter) -> Vector{Tuple{Vector{Int}, Vector{Int}}}
 
-Return the generating pairs of `tc` as 1-based word pairs.
+Return the generating pairs of `tc` as a vector of 1-based word pairs.
 
-These are the pairs added via [`add_generating_pair!`](@ref
-Semigroups.add_generating_pair!). Words are returned as 1-based
-`Vector{Int}` letter indices.
+These are the pairs added via
+[`add_generating_pair!`](@ref Semigroups.add_generating_pair!). Words are
+returned as 1-based `Vector{Int}` letter indices. The length of the returned
+vector equals
+[`number_of_generating_pairs`](@ref Semigroups.number_of_generating_pairs).
 """
 function generating_pairs(tc::ToddCoxeter)
     flat = LibSemigroups.generating_pairs(tc)
@@ -772,7 +880,12 @@ end
 """
     presentation(tc::ToddCoxeter) -> Presentation
 
-Return a copy of the presentation used by `tc`.
+Return a copy of the presentation used to construct `tc`.
+
+If `tc` was constructed or initialised from a
+[`WordGraph`](@ref Semigroups.WordGraph) rather than a
+[`Presentation`](@ref Semigroups.Presentation), the returned presentation is
+empty.
 """
 presentation(tc::ToddCoxeter) = LibSemigroups.presentation(tc)
 
@@ -804,8 +917,7 @@ Create an independent copy of `tc`.
 """
 Base.copy(tc::ToddCoxeter) = LibSemigroups.ToddCoxeterWord(tc)
 
-Base.deepcopy_internal(tc::ToddCoxeter, ::IdDict) =
-    LibSemigroups.ToddCoxeterWord(tc)
+Base.deepcopy_internal(tc::ToddCoxeter, ::IdDict) = LibSemigroups.ToddCoxeterWord(tc)
 
 # ============================================================================
 # Free functions (todd_coxeter:: namespace)
@@ -815,7 +927,7 @@ Base.deepcopy_internal(tc::ToddCoxeter, ::IdDict) =
     is_non_trivial(tc::ToddCoxeter;
                    tries::Integer = 10,
                    try_for::TimePeriod = Dates.Millisecond(100),
-                   threshold::Real = 0.99) -> [`tril`](@ref Semigroups.tril)
+                   threshold::Real = 0.99) -> tril
 
 Heuristically check whether the congruence represented by `tc` is
 non-trivial.
@@ -850,13 +962,13 @@ function is_non_trivial(
     try_for::TimePeriod = Dates.Millisecond(100),
     threshold::Real = 0.99,
 )
-    ns = convert(Nanosecond, try_for)
-    return @wrap_libsemigroups_call LibSemigroups.tc_is_non_trivial(
-        tc,
-        UInt(tries),
-        Int64(Dates.value(ns)),
-        Float32(threshold),
-    )
+    # Coerce all arguments outside `@wrap_libsemigroups_call` so a Julia-side
+    # InexactError (e.g. negative `tries`) propagates as itself instead of
+    # being re-wrapped as `LibsemigroupsError` by the macro's broad catch.
+    ut = UInt(tries)
+    ns = Int64(Dates.value(convert(Nanosecond, try_for)))
+    th = Float32(threshold)
+    return @wrap_libsemigroups_call LibSemigroups.tc_is_non_trivial(tc, ut, ns, th)
 end
 
 """
@@ -884,15 +996,13 @@ if no redundant rule is identified within the timeout.
 
 # See also
 
-[`redundant_rule`](@ref Semigroups.redundant_rule) — the analogous
+[`redundant_rule`](@ref Semigroups.redundant_rule) - the analogous
 Knuth-Bendix-based helper.
 """
 function tc_redundant_rule(p::Presentation, timeout::TimePeriod)
-    ns = convert(Nanosecond, timeout)
-    idx = @wrap_libsemigroups_call LibSemigroups.tc_redundant_rule(
-        p,
-        Int64(Dates.value(ns)),
-    )
+    # See note on is_non_trivial: keep coercions out of the macro arglist.
+    ns = Int64(Dates.value(convert(Nanosecond, timeout)))
+    idx = @wrap_libsemigroups_call LibSemigroups.tc_redundant_rule(p, ns)
     n_flat = 2 * number_of_rules(p)
     if idx >= n_flat
         return nothing
