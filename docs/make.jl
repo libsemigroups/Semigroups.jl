@@ -78,6 +78,10 @@ makedocs(;
                 "The KnuthBendix type" => "main-algorithms/knuth-bendix/knuth-bendix.md",
                 "Helper functions" => "main-algorithms/knuth-bendix/helpers.md",
             ],
+            "Kambites" => [
+                "Overview" => "main-algorithms/kambites/index.md",
+                "The Kambites type" => "main-algorithms/kambites/kambites.md",
+            ],
         ],
     ],
     warnonly = [:missing_docs, :linkcheck, :cross_references],
