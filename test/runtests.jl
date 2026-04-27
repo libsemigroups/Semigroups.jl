@@ -27,4 +27,5 @@ using Semigroups
     include("test_knuth_bendix_1.jl")
     include("test_knuth_bendix_6.jl")
     include("test_todd_coxeter.jl")
+    include("test_kambites.jl")
 end
