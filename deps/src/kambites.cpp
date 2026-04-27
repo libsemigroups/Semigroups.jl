@@ -19,6 +19,8 @@
 // CRITICAL: libsemigroups_julia.hpp MUST be included first (fmt consteval fix)
 #include "libsemigroups_julia.hpp"
 
+#include <libsemigroups/exception.hpp>
+
 // kambites-class.hpp and kambites-helpers.hpp MUST come BEFORE cong-common.hpp
 // so the template bodies in cong-common.hpp see Kambites-specific overloads of
 // congruence_common helpers. ADL resolves these at template-instantiation time;
@@ -65,12 +67,12 @@ namespace libsemigroups_julia {
     using K                = libsemigroups::Kambites<word_type>;
 
     // Type registration
-    auto type
-        = m.add_type<K>("KambitesWord", jlcxx::julia_base_type<CongruenceCommon>());
+    auto type = m.add_type<K>("KambitesWord",
+                              jlcxx::julia_base_type<CongruenceCommon>());
 
     // Constructors. Direct registration (no defensive lambda); CxxWrap
     // converts C++ exceptions through the std::function path for direct
-    // constructor bindings (Phase 3a/3b precedent).
+    // constructor bindings.
     type.constructor<>();
     type.constructor<congruence_kind, Presentation<word_type> const&>();
     type.constructor<K const&>();  // copy ctor
@@ -112,22 +114,23 @@ namespace libsemigroups_julia {
     // small_overlap_class() overloads differ only on receiver const-ness, which
     // CxxWrap cannot dispatch. Split into two distinctly-named Julia methods.
     //
-    // small_overlap_class — mutable variant (calls run, returns the class).
+    // small_overlap_class -- mutable variant (calls run, returns the class).
     type.method("small_overlap_class",
                 [](K& self) -> size_t { return self.small_overlap_class(); });
 
-    // current_small_overlap_class — const variant (returns UNDEFINED if
+    // current_small_overlap_class -- const variant (returns UNDEFINED if
     // unknown). Receiver-by-const-ref selects the const overload.
     type.method("current_small_overlap_class", [](K const& self) -> size_t {
       return self.small_overlap_class();
     });
 
-    // throw_if_not_C4 — bind only the mutable overload
-    // (kambites-class.hpp:801). The const variant (kambites-class.hpp:813) is
-    // deferred per the design spec.
+    // throw_if_not_C4 -- bind only the mutable overload, const deferred
     type.method("throw_if_not_C4", [](K& self) { self.throw_if_not_C4(); });
 
-    // throw_if_letter_not_in_alphabet — accept ArrayRef<size_t>, build a
+    // TODO: ukkonen() is intentionally NOT bound: its return type is the
+    // Ukkonen suffix-tree class, which is currently not bound
+
+    // throw_if_letter_not_in_alphabet -- accept ArrayRef<size_t>, build a
     // word_type inside the lambda (mirrors todd-coxeter.cpp:256-260).
     type.method("throw_if_letter_not_in_alphabet",
                 [](K const& self, jlcxx::ArrayRef<size_t> w) {
@@ -140,20 +143,25 @@ namespace libsemigroups_julia {
       return libsemigroups::to_human_readable_repr(self);
     });
 
-    // Cong-common helper subset. Do NOT call define_cong_common_helpers (the
-    // aggregator) — kambites-helpers.hpp:128-133 documents that
-    // non_trivial_classes(Kambites, Kambites) is intentionally undefined
-    // upstream because both Kambites instances always represent infinite-class
-    // congruences, so the construction does not generalize. ADL would silently
-    // bind the generic congruence_common::non_trivial_classes here, producing
-    // nonsense at runtime. The Julia wrapper provides a throwing override.
-    //
-    // We also do NOT call define_cong_common_normal_forms<K>(m) — the eager
-    // template at cong-common.hpp:125-133 drains the entire range, which
-    // hangs forever on Kambites's infinite KambitesNormalFormRange. The
-    // Kambites-specific bounded binding `kambites_normal_forms_take` below
-    // materializes only the first `n` normal forms.
+    // Cong common helper subset - DO NOT call aggregator
     define_cong_common_word_helpers<K>(m);
+
+    // Defense: register a throwing `cong_common_normal_forms` for
+    // Kambites so the abstract-supertype dispatch path in
+    // `src/cong-common.jl::normal_forms(::CongruenceCommon)` raises a clear
+    // LibsemigroupsError if it is ever reached on a Kambites value (rather
+    // than CxxWrap's opaque method-not-found error). The user-facing
+    // `normal_forms(::Kambites)` override in `src/kambites.jl` already
+    // throws ArgumentError for direct calls; this guards the indirect path.
+    m.method("cong_common_normal_forms", [](K&) -> std::vector<word_type> {
+      throw libsemigroups::LibsemigroupsException(
+          __FILE__,
+          __LINE__,
+          __func__,
+          "Kambites has infinitely many normal forms; use "
+          "kambites_normal_forms_take (or normal_forms(k, n) on "
+          "the Julia side) to materialize a finite prefix.");
+    });
 
     // Bounded normal_forms binding (Kambites-specific). Mirrors the cong-common
     // normal_forms template but caps iteration at n elements so callers can
@@ -162,7 +170,8 @@ namespace libsemigroups_julia {
              [](K& self, size_t n) -> std::vector<word_type> {
                std::vector<word_type> result;
                result.reserve(n);
-               auto range = libsemigroups::congruence_common::normal_forms(self);
+               auto range
+                   = libsemigroups::congruence_common::normal_forms(self);
                for (size_t i = 0; i < n && !range.at_end(); ++i) {
                  result.push_back(range.get());
                  range.next();

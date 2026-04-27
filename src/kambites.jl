@@ -13,10 +13,19 @@ kambites.jl - Kambites wrapper (Layer 2 + 3)
 """
     Kambites
 
-Type implementing Kambites's algorithm for computing the word problem in
-small overlap monoids — finitely presented monoids whose presentation
+Type implementing small overlap class, equality, and normal forms for
+small overlap monoids -- finitely presented monoids whose presentation
 satisfies the small overlap condition `C(n)` for `n >= 4` (Kambites,
 2009).
+
+A [`Kambites`](@ref Semigroups.Kambites) instance represents a
+congruence on the free monoid or semigroup containing the rules of the
+[`Presentation`](@ref Semigroups.Presentation) used to construct the
+instance, together with the
+[`generating_pairs`](@ref Semigroups.generating_pairs) added via
+[`add_generating_pair!`](@ref Semigroups.add_generating_pair!). As such,
+generating pairs and presentation rules are interchangeable in the
+context of `Kambites` objects.
 
 A `Kambites` object is constructed from a
 [`congruence_kind`](@ref Semigroups.congruence_kind) (which must be
@@ -51,8 +60,7 @@ helpers ([`reduce`](@ref Semigroups.reduce),
   infinite. Use the bounded form `normal_forms(k, n)` to materialize
   the first `n` normal forms.
 - The `ukkonen()` accessor (and the `Ukkonen` type) is deferred to a
-  later release; see the v1 design spec
-  (`docs/superpowers/specs/2026-04-19-semigroups-jl-v1-design.md`).
+  later release
 
 # Constructors
 
@@ -67,8 +75,7 @@ helpers ([`reduce`](@ref Semigroups.reduce),
 
 !!! warning "v1 limitation"
     v1 of Semigroups.jl binds `Kambites{word_type}` only. String-alphabet
-    presentations are deferred to v1.1. See the v1 design spec at
-    `docs/superpowers/specs/2026-04-19-semigroups-jl-v1-design.md`.
+    presentations are deferred to later versions.
 """
 const Kambites = LibSemigroups.KambitesWord
 
@@ -79,8 +86,15 @@ const Kambites = LibSemigroups.KambitesWord
 """
     Kambites(kind::congruence_kind, p::Presentation) -> Kambites
 
-Construct a [`Kambites`](@ref Semigroups.Kambites) from a congruence kind
-and a presentation.
+Construct a [`Kambites`](@ref Semigroups.Kambites) instance representing
+a congruence of kind `kind` over the semigroup or monoid defined by the
+presentation `p`.
+
+`Kambites` instances can only be used to compute two-sided congruences,
+so `kind` must always be [`twosided`](@ref Semigroups.twosided). The
+parameter is included for uniformity of interface with
+[`KnuthBendix`](@ref Semigroups.KnuthBendix), `ToddCoxeter`, and
+`Congruence`.
 
 This Julia wrapper builds a default `Kambites` and then calls
 [`init!`](@ref Semigroups.init!) so that exceptions raised by
@@ -90,6 +104,8 @@ CxxWrap-bound constructor would surface them as `Base.ErrorException`).
 
 # Throws
 
+- [`LibsemigroupsError`](@ref Semigroups.LibsemigroupsError) if `p` is
+  not valid.
 - [`LibsemigroupsError`](@ref Semigroups.LibsemigroupsError) if `kind`
   is not [`twosided`](@ref Semigroups.twosided).
 """
@@ -106,18 +122,26 @@ end
 Re-initialize `k` so that it is in the state it would have been in
 immediately after the corresponding constructor.
 
-The one-argument form clears the underlying state, putting `k` back
-into the same state as a newly default-constructed
-[`Kambites`](@ref Semigroups.Kambites).
+The one-argument form puts `k` back into the same state as a newly
+default-constructed [`Kambites`](@ref Semigroups.Kambites).
 
-The three-argument form reinitializes `k` from `(kind, p)`.
+The three-argument form puts `k` back into the state it would have been
+in if it had just been newly constructed from `kind` and `p`.
+`Kambites` instances can only be used to compute two-sided congruences,
+so `kind` must always be [`twosided`](@ref Semigroups.twosided); the
+parameter is included for uniformity of interface with
+[`KnuthBendix`](@ref Semigroups.KnuthBendix), `ToddCoxeter`, and
+`Congruence`.
 
 Returns `k` for chaining.
 
 # Throws
 
+- [`LibsemigroupsError`](@ref Semigroups.LibsemigroupsError) if `p` is
+  not valid (three-argument form only).
 - [`LibsemigroupsError`](@ref Semigroups.LibsemigroupsError) if `kind`
-  is not [`twosided`](@ref Semigroups.twosided).
+  is not [`twosided`](@ref Semigroups.twosided) (three-argument form
+  only).
 """
 function init!(k::Kambites)
     @wrap_libsemigroups_call LibSemigroups.init!(k)
@@ -137,7 +161,12 @@ end
     presentation(k::Kambites) -> Presentation
 
 Return a copy of the [`Presentation`](@ref Semigroups.Presentation) used
-to construct `k`.
+to construct or initialize `k` (if any).
+
+If `k` was constructed or initialized using a presentation, that
+presentation is returned. The Julia binding returns by value (an
+independent copy) rather than by reference; mutating the returned
+object does not affect `k`.
 """
 presentation(k::Kambites) = LibSemigroups.presentation(k)
 
@@ -164,34 +193,45 @@ end
 """
     kind(k::Kambites) -> congruence_kind
 
-Return the kind of congruence represented by `k`. Always
-[`twosided`](@ref Semigroups.twosided) for [`Kambites`](@ref
-Semigroups.Kambites).
+Return the kind of congruence (one- or two-sided) represented by `k`;
+see [`congruence_kind`](@ref Semigroups.congruence_kind) for details.
+For [`Kambites`](@ref Semigroups.Kambites) this is always
+[`twosided`](@ref Semigroups.twosided), since the constructor enforces
+that constraint.
+
+Complexity: constant.
 """
 kind(k::Kambites) = LibSemigroups.kind(k)
 
 """
     number_of_generating_pairs(k::Kambites) -> Int
 
-Return the number of generating pairs added to `k`. Equals the length of
-[`generating_pairs`](@ref Semigroups.generating_pairs)`(k)`.
+Return the number of generating pairs added to `k`. Equals the length
+of [`generating_pairs`](@ref Semigroups.generating_pairs)`(k)`.
+
+Complexity: constant.
 """
 number_of_generating_pairs(k::Kambites) = Int(LibSemigroups.number_of_generating_pairs(k))
 
 """
     number_of_classes(k::Kambites) -> UInt64
 
-Return the number of congruence classes of `k`. Returns
-[`POSITIVE_INFINITY`](@ref Semigroups.POSITIVE_INFINITY) when
-[`small_overlap_class`](@ref Semigroups.small_overlap_class) is at least
-4. Use [`is_positive_infinity`](@ref Semigroups.is_positive_infinity) (or
+Compute the number of congruence classes of `k`.
+
+`Kambites` instances can only compute the number of classes when
+[`small_overlap_class`](@ref Semigroups.small_overlap_class) is at
+least 4, and in that case the number is always
+[`POSITIVE_INFINITY`](@ref Semigroups.POSITIVE_INFINITY); otherwise an
+exception is thrown. Use
+[`is_positive_infinity`](@ref Semigroups.is_positive_infinity) (or
 direct comparison `result == POSITIVE_INFINITY`) to detect the infinite
 case.
 
 # Throws
 
-- [`LibsemigroupsError`](@ref Semigroups.LibsemigroupsError) if
-  `small_overlap_class(k) < 4`.
+- [`LibsemigroupsError`](@ref Semigroups.LibsemigroupsError) if it is
+  not possible to compute the number of classes because the small
+  overlap class is too small (`small_overlap_class(k) < 4`).
 """
 number_of_classes(k::Kambites) = @wrap_libsemigroups_call LibSemigroups.number_of_classes(k)
 
@@ -202,20 +242,39 @@ number_of_classes(k::Kambites) = @wrap_libsemigroups_call LibSemigroups.number_o
 """
     small_overlap_class(k::Kambites) -> UInt64
 
-Return the small overlap class of the [`Presentation`](@ref
+Get the small overlap class of the [`Presentation`](@ref
 Semigroups.Presentation) underlying `k`.
 
-This is the greatest positive integer `n` such that the presentation
-satisfies the condition `C(n)`, or
+If ``S`` is a finitely presented semigroup with generating set ``A``,
+then a word ``w`` over ``A`` is a *piece* if ``w`` occurs as a factor
+in at least two of the relations defining ``S``, or if it occurs as a
+factor of one relation in two different positions (possibly
+overlapping). A finitely presented semigroup ``S`` satisfies the
+condition ``C(n)`` for a positive integer ``n`` if the minimum number
+of pieces in any factorisation of a word occurring as the left or
+right hand side of a relation is at least ``n``.
+
+This function returns the greatest positive integer `n` such that the
+finitely presented semigroup represented by `k` satisfies the
+condition ``C(n)``, or
 [`POSITIVE_INFINITY`](@ref Semigroups.POSITIVE_INFINITY) if no word
-occurring in a relation can be written as a product of pieces.
+occurring in a relation can be written as a product of pieces. It may
+trigger computation.
 
 The return type is `UInt64` (rather than `Int`) because
 [`POSITIVE_INFINITY`](@ref Semigroups.POSITIVE_INFINITY) is encoded as
 `typemax(UInt64) - 1` on the wire and would not round-trip through
 `Int`. Use [`is_positive_infinity`](@ref Semigroups.is_positive_infinity)
 (or direct comparison `result == POSITIVE_INFINITY`) to detect the
-infinite case. This function may trigger computation.
+infinite case.
+
+Complexity: ``O(m^3)``, where ``m`` is the sum of the lengths of the
+words occurring in the relations of the semigroup.
+
+!!! warning
+    [`Semigroups.contains`](@ref Semigroups.contains) and
+    [`Semigroups.reduce`](@ref Semigroups.reduce) only work if the
+    return value of this function is at least 4.
 
 # See also
 
@@ -226,12 +285,16 @@ small_overlap_class(k::Kambites) = LibSemigroups.small_overlap_class(k)
 """
     current_small_overlap_class(k::Kambites) -> Union{UInt64, UndefinedType}
 
-Return the small overlap class of `k` if it is currently known, or
-[`UNDEFINED`](@ref Semigroups.UNDEFINED) otherwise.
+Get the current value of the small overlap class of `k`, if known.
 
-This function does not trigger any computation. The known value is
-returned as `UInt64` (see [`small_overlap_class`](@ref
-Semigroups.small_overlap_class) for the rationale).
+Returns the small overlap class if it has already been computed, or
+[`UNDEFINED`](@ref Semigroups.UNDEFINED) otherwise. This function does
+not trigger any computation. The known value is returned as `UInt64`
+(see [`small_overlap_class`](@ref Semigroups.small_overlap_class) for
+the rationale).
+
+See [`small_overlap_class`](@ref Semigroups.small_overlap_class) for
+more details on what the small overlap class is.
 
 # See also
 
@@ -249,9 +312,18 @@ end
 """
     throw_if_letter_not_in_alphabet(k::Kambites, w::AbstractVector{<:Integer})
 
-Check that every letter in `w` belongs to the alphabet of the underlying
-[`Presentation`](@ref Semigroups.Presentation) of `k`. Letters in `w`
-are 1-based indices.
+Throw if any letter in `w` is out of bounds.
+
+This function throws a
+[`LibsemigroupsError`](@ref Semigroups.LibsemigroupsError) if any
+letter of `w` is out of bounds -- i.e. does not belong to the alphabet
+of the [`Presentation`](@ref Semigroups.Presentation) used to
+construct `k`. Letters in `w` are 1-based indices.
+
+# Arguments
+
+- `k::Kambites`: the [`Kambites`](@ref Semigroups.Kambites) instance.
+- `w::AbstractVector{<:Integer}`: the word to check.
 
 # Throws
 
@@ -267,9 +339,11 @@ end
 """
     throw_if_not_C4(k::Kambites)
 
-Throw a [`LibsemigroupsError`](@ref Semigroups.LibsemigroupsError) unless
-the [`small_overlap_class`](@ref Semigroups.small_overlap_class) of `k`
-is at least 4.
+Throw if the [`small_overlap_class`](@ref Semigroups.small_overlap_class)
+of `k` is not at least 4.
+
+This function throws an exception if the small overlap class of `k` is
+not at least 4 (and computes it if necessary).
 
 # Throws
 
@@ -288,7 +362,8 @@ end
 """
     Base.show(io::IO, k::Kambites)
 
-Print a human-readable representation of `k`.
+Print a human-readable representation of `k`. Delegates to
+libsemigroups' `to_human_readable_repr`.
 """
 function Base.show(io::IO, k::Kambites)
     print(io, LibSemigroups.to_human_readable_repr(k))
@@ -319,12 +394,14 @@ instances always represent infinite-class congruences, so the
 construction does not generalize.
 """
 function non_trivial_classes(::Kambites, ::Kambites)
-    throw(ArgumentError(
-        "non_trivial_classes(::Kambites, ::Kambites) is intentionally not " *
-        "supported: both Kambites instances always represent infinite-class " *
-        "congruences, so the construction does not generalize " *
-        "(see kambites-helpers.hpp:128-133).",
-    ))
+    throw(
+        ArgumentError(
+            "non_trivial_classes(::Kambites, ::Kambites) is intentionally not " *
+            "supported: both Kambites instances always represent infinite-class " *
+            "congruences, so the construction does not generalize " *
+            "(see kambites-helpers.hpp:128-133).",
+        ),
+    )
 end
 
 # ============================================================================
@@ -334,10 +411,13 @@ end
 """
     normal_forms(k::Kambites, n::Integer) -> Vector{Vector{Int}}
 
-Return the first `n` normal forms of `k`, as 1-based `Vector{Int}` words.
+Return the first `n` short-lex normal forms of the classes of the
+congruence represented by `k`, as 1-based `Vector{Int}` words.
 
-The set of normal forms is infinite for any `C(>=4)` presentation, so
-the caller must specify the bound `n`.
+The underlying range of normal forms is always infinite (one per
+congruence class, and a `C(>=4)` presentation has infinitely many
+classes), so the caller must specify the bound `n`. The bounded form
+materializes only the first `n` words and is safe to call.
 
 # Throws
 
@@ -360,8 +440,10 @@ is infinite, so the no-argument form is unsafe; use the bounded form
 instead.
 """
 function normal_forms(k::Kambites)
-    throw(ArgumentError(
-        "Kambites has infinitely many normal forms; use normal_forms(k, n) " *
-        "to take the first n.",
-    ))
+    throw(
+        ArgumentError(
+            "Kambites has infinitely many normal forms; use normal_forms(k, n) " *
+            "to take the first n.",
+        ),
+    )
 end
