@@ -59,6 +59,7 @@ add_library(libsemigroups_julia SHARED
     presentation.cpp
     presentation-examples.cpp
     knuth-bendix.cpp
+    todd-coxeter.cpp
 )
 
 # Include directories
@@ -84,6 +85,10 @@ target_link_libraries(libsemigroups_julia
 target_compile_options(libsemigroups_julia PRIVATE
     "-I${LIBSEMIGROUPS_INCLUDEDIR}"
     -fno-char8_t  # Work around C++20 char8_t issues with fmt in libsemigroups
+    # Silence noisy upstream warnings from libsemigroups iterator templates
+    # under C++20's reversed-operator rules. The semantics are unambiguous;
+    # only Clang/AppleClang emit this warning.
+    $<$<CXX_COMPILER_ID:Clang,AppleClang>:-Wno-ambiguous-reversed-operator>
 )
 
 # Set RPATH to find libsemigroups at runtime

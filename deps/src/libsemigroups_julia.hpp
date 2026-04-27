@@ -22,7 +22,7 @@
 #ifndef LIBSEMIGROUPS_JULIA_HPP_
 #define LIBSEMIGROUPS_JULIA_HPP_
 
-// JlCxx headers FIRST — these pull in standard library headers (<string>,
+// JlCxx headers FIRST - these pull in standard library headers (<string>,
 // <memory>, etc.) that on libstdc++ use __cpp_lib_is_constant_evaluated to
 // decide constexpr-ness. They must be included while the macro is intact.
 #include "jlcxx/jlcxx.hpp"
@@ -69,7 +69,7 @@ namespace libsemigroups_julia {
   void define_presentation(jl::Module& mod);
   void define_presentation_examples(jl::Module& mod);
   void define_knuth_bendix(jl::Module& mod);
-  void define_knuth_bendix_cong_common_helpers(jl::Module& mod);
+  void define_todd_coxeter(jl::Module& mod);
 
 }  // namespace libsemigroups_julia
 

@@ -19,10 +19,15 @@
 // CRITICAL: libsemigroups_julia.hpp MUST be included first (fmt consteval fix)
 #include "libsemigroups_julia.hpp"
 
+// knuth-bendix-helpers.hpp MUST come BEFORE cong-common.hpp so the template
+// bodies in cong-common.hpp see KB-specific overloads of congruence_common
+// helpers (e.g., non_trivial_classes(KB&, KB&)) at instantiation time.
 #include <libsemigroups/knuth-bendix-class.hpp>
 #include <libsemigroups/knuth-bendix-helpers.hpp>
 #include <libsemigroups/presentation.hpp>
 #include <libsemigroups/word-graph.hpp>
+
+#include "cong-common.hpp"
 
 #include <chrono>
 #include <cstddef>
@@ -256,6 +261,8 @@ namespace libsemigroups_julia {
                    p, std::chrono::nanoseconds(ns));
                return static_cast<size_t>(std::distance(p.rules.cbegin(), it));
              });
+
+    define_cong_common_helpers<KB>(m);
   }
 
 }  // namespace libsemigroups_julia
