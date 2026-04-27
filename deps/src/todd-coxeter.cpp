@@ -214,11 +214,15 @@ namespace libsemigroups_julia {
       return self.standardize(ord);
     });
 
-    type.method("is_standardized",
-                [](TC const& self) -> bool { return self.is_standardized(); });
+    // is_standardized: route through current_word_graph(). The wrappers
+    // self.is_standardized(...) on TC/TCImpl are [[deprecated]] in
+    // libsemigroups, with this exact replacement recommended.
+    type.method("is_standardized", [](TC const& self) -> bool {
+      return self.current_word_graph().is_standardized();
+    });
 
     type.method("is_standardized", [](TC const& self, Order ord) -> bool {
-      return self.is_standardized(ord);
+      return self.current_word_graph().is_standardized(ord);
     });
 
     // current_word_graph: large stable data, return by const reference.
