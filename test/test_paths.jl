@@ -356,4 +356,33 @@ end
         GC.gc()
         @test number_of_nodes(word_graph(p)) == 5
     end
+
+    @testset "paths over word_graph(tc)" begin
+        # Regression test: `current_word_graph(tc)` / `word_graph(tc)` return
+        # `CxxWrap.CxxBaseRef{WordGraph}`, not an owned `WordGraph`. The
+        # `paths` factory and `Paths` constructor must accept the borrowed
+        # reference without throwing `MethodError`.
+        p = Presentation()
+        set_alphabet!(p, 2)
+        add_rule_no_checks!(p, [1, 1, 1], [1])
+        add_rule_no_checks!(p, [1], [2, 2])
+        tc = ToddCoxeter(twosided, p)
+        run!(tc)
+
+        wg = word_graph(tc)
+        # word_graph / current_word_graph hand back either the owned graph
+        # or a CxxBaseRef — either is acceptable, as long as `paths` accepts it.
+        @test wg isa Semigroups.CxxWrap.CxxBaseRef{WordGraph} || wg isa WordGraph
+
+        # Composition: paths(::CxxBaseRef{WordGraph}; ...) must not MethodError.
+        pths = paths(wg; source = 1)
+        @test pths isa Paths
+        @test count(pths) >= 0
+
+        # Same for current_word_graph and the bare `Paths(...)` ctor.
+        cwg = current_word_graph(tc)
+        pths2 = paths(cwg; source = 1)
+        @test pths2 isa Paths
+        @test Paths(cwg) isa Paths
+    end
 end

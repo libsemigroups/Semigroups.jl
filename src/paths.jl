@@ -58,6 +58,18 @@ iteration protocol (`for w in p`, `collect(p)`) or via the manual interface
 ([`Base.get`](@ref Base.get(::Paths)), [`next!`](@ref), [`at_end`](@ref),
 [`Base.count`](@ref Base.count(::Paths))).
 
+!!! warning "Lifetime when constructed from a borrowed reference"
+    A `Paths` may also be constructed from a `WordGraph` reference borrowed
+    from another object - for example, the result of
+    [`current_word_graph`](@ref Semigroups.current_word_graph) or
+    [`word_graph`](@ref Semigroups.word_graph) on a
+    [`ToddCoxeter`](@ref) instance, both of which return a
+    `CxxWrap.CxxBaseRef{WordGraph}` viewing memory owned by the source
+    object. In that case the `Paths` wrapper does **not** pin the underlying
+    owner; the borrowed reference does not extend its lifetime. The caller
+    must keep the source object (e.g. the `ToddCoxeter`) alive for as long
+    as the `Paths` is in use.
+
 # Example
 ```jldoctest
 julia> using Semigroups
@@ -77,7 +89,7 @@ julia> collect(p)
 ```
 """
 mutable struct Paths
-    g::WordGraph
+    g::Union{WordGraph,CxxWrap.CxxBaseRef{WordGraph}}
     cxx::LibSemigroups.PathsCxx
 end
 
@@ -96,7 +108,12 @@ and order [`ORDER_SHORTLEX`](@ref). At least the source must be set (via
 
 See also [`paths`](@ref).
 """
+# Accept either an owned `WordGraph` or a borrowed `CxxBaseRef{WordGraph}`
+# (e.g. from `current_word_graph(tc)` / `word_graph(tc)`). The field stores
+# whichever was passed; CxxWrap handles refs natively at the C++ boundary.
+# See the lifetime warning in the docstring above for borrowed-ref caveats.
 Paths(g::WordGraph) = Paths(g, LibSemigroups.PathsCxx(g))
+Paths(g::CxxWrap.CxxBaseRef{WordGraph}) = Paths(g, LibSemigroups.PathsCxx(g))
 
 """
     init!(p::Paths, g::WordGraph) -> Paths
@@ -115,6 +132,14 @@ new word graph is kept alive.
 See also [`Paths`](@ref).
 """
 function init!(p::Paths, g::WordGraph)
+    GC.@preserve p g begin
+        LibSemigroups.init!(p.cxx, g)
+    end
+    p.g = g
+    return p
+end
+
+function init!(p::Paths, g::CxxWrap.CxxBaseRef{WordGraph})
     GC.@preserve p g begin
         LibSemigroups.init!(p.cxx, g)
     end
@@ -524,9 +549,19 @@ julia> target!(g, 1, 1, 2); target!(g, 2, 1, 3);
 julia> count(paths(g; source = 1, max = 5))
 3
 ```
+
+!!! warning "Lifetime when `g` is a borrowed reference"
+    `g` may also be a `CxxWrap.CxxBaseRef{WordGraph}` borrowed from another
+    object - for example, the result of
+    [`current_word_graph`](@ref Semigroups.current_word_graph) or
+    [`word_graph`](@ref Semigroups.word_graph) on a
+    [`ToddCoxeter`](@ref) instance. In that case the returned `Paths` does
+    **not** pin the source object; the caller must keep that owner (e.g.
+    the `ToddCoxeter`) alive for as long as the `Paths` is in use. See the
+    note on [`Paths`](@ref).
 """
 function paths(
-    g::WordGraph;
+    g::Union{WordGraph,CxxWrap.CxxBaseRef{WordGraph}};
     source = UNDEFINED,
     target = UNDEFINED,
     min::Integer = 0,
