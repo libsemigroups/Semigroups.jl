@@ -279,19 +279,28 @@ end
 
 @testset "Kambites - normal_forms finite-prefix iteration" begin
     # The set of normal forms is infinite for any C(>=4) presentation, so
-    # the integration test only takes a finite prefix.
-    #
-    # NOTE (RED phase, blocks Task 4): the shared
-    # `normal_forms(::CongruenceCommon)` in `src/cong-common.jl`
-    # materializes the underlying rx-range eagerly (via the C++ helper at
-    # `deps/src/cong-common.hpp:125-133`), which would hang forever on an
-    # infinite Kambites congruence. Task 4 must therefore introduce a
-    # Kambites-specific lazy `normal_forms` wrapper (or otherwise expose
-    # the underlying range so `Iterators.take` can short-circuit). The
-    # assertions below are gated behind `@test_skip` for now so the suite
-    # does not hang during the RED → GREEN transition; flip to live
-    # `@test`s once Task 4 lands the lazy wrapper.
-    @test_skip false  # placeholder: flip to actual lazy-iteration assertions in Task 4
+    # callers must specify a bound. Task 4 added the Kambites-specific
+    # `normal_forms(k, n)` binding (a lazy take from the underlying rx
+    # range) and made the no-arg `normal_forms(k)` form throw
+    # `ArgumentError` so the inherited eager
+    # `normal_forms(::CongruenceCommon)` cannot accidentally hang.
+    p = Presentation()
+    set_alphabet!(p, 7)
+    add_rule_no_checks!(
+        p,
+        _test_kambites_cword(0, 1, 2, 3),
+        _test_kambites_cword(0, 0, 0, 4, 0, 0),
+    )
+    add_rule_no_checks!(p, _test_kambites_cword(4, 5), _test_kambites_cword(3, 6))
+
+    k = Kambites(twosided, p)
+
+    nfs = normal_forms(k, 20)
+    @test length(nfs) == 20
+    @test all(w -> w isa Vector{Int}, nfs)
+
+    # The no-arg form must throw, not hang on the infinite range.
+    @test_throws ArgumentError normal_forms(k)
 end
 
 @testset "Kambites - copy round-trip" begin

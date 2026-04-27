@@ -145,8 +145,28 @@ namespace libsemigroups_julia {
     // congruences, so the construction does not generalize. ADL would silently
     // bind the generic congruence_common::non_trivial_classes here, producing
     // nonsense at runtime. The Julia wrapper provides a throwing override.
+    //
+    // We also do NOT call define_cong_common_normal_forms<K>(m) — the eager
+    // template at cong-common.hpp:125-133 drains the entire range, which
+    // hangs forever on Kambites's infinite KambitesNormalFormRange. The
+    // Kambites-specific bounded binding `kambites_normal_forms_take` below
+    // materializes only the first `n` normal forms.
     define_cong_common_word_helpers<K>(m);
-    define_cong_common_normal_forms<K>(m);
+
+    // Bounded normal_forms binding (Kambites-specific). Mirrors the cong-common
+    // normal_forms template but caps iteration at n elements so callers can
+    // safely take a finite prefix of the infinite normal-form range.
+    m.method("kambites_normal_forms_take",
+             [](K& self, size_t n) -> std::vector<word_type> {
+               std::vector<word_type> result;
+               result.reserve(n);
+               auto range = libsemigroups::congruence_common::normal_forms(self);
+               for (size_t i = 0; i < n && !range.at_end(); ++i) {
+                 result.push_back(range.get());
+                 range.next();
+               }
+               return result;
+             });
   }
 
 }  // namespace libsemigroups_julia
