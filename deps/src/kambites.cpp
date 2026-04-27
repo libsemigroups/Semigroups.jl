@@ -25,7 +25,6 @@
 // see the include-order requirement documented at cong-common.hpp:27-38.
 #include <libsemigroups/kambites-class.hpp>
 #include <libsemigroups/kambites-helpers.hpp>
-#include <libsemigroups/presentation.hpp>
 
 #include "cong-common.hpp"
 
@@ -96,10 +95,7 @@ namespace libsemigroups_julia {
       return self.number_of_generating_pairs();
     });
 
-    // success / number_of_classes
-    type.method("success",
-                [](K const& self) -> bool { return self.success(); });
-
+    // number_of_classes
     type.method("number_of_classes",
                 [](K& self) -> uint64_t { return self.number_of_classes(); });
 
@@ -131,7 +127,7 @@ namespace libsemigroups_julia {
                 });
 
     // Display
-    m.method("to_human_readable_repr", [](K const& self) -> std::string {
+    type.method("to_human_readable_repr", [](K const& self) -> std::string {
       return libsemigroups::to_human_readable_repr(self);
     });
 
