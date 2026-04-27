@@ -108,11 +108,12 @@ and order [`ORDER_SHORTLEX`](@ref). At least the source must be set (via
 
 See also [`paths`](@ref).
 """
-# Accept either an owned `WordGraph` or a borrowed `CxxBaseRef{WordGraph}`
-# (e.g. from `current_word_graph(tc)` / `word_graph(tc)`). The field stores
-# whichever was passed; CxxWrap handles refs natively at the C++ boundary.
-# See the lifetime warning in the docstring above for borrowed-ref caveats.
 Paths(g::WordGraph) = Paths(g, LibSemigroups.PathsCxx(g))
+
+# Accept a borrowed `CxxBaseRef{WordGraph}` (e.g. from `current_word_graph(tc)`
+# / `word_graph(tc)`). The field stores the ref; CxxWrap handles it natively at
+# the C++ boundary. See the lifetime warning on `Paths` for borrowed-ref
+# caveats.
 Paths(g::CxxWrap.CxxBaseRef{WordGraph}) = Paths(g, LibSemigroups.PathsCxx(g))
 
 """
@@ -561,7 +562,28 @@ julia> count(paths(g; source = 1, max = 5))
     note on [`Paths`](@ref).
 """
 function paths(
-    g::Union{WordGraph,CxxWrap.CxxBaseRef{WordGraph}};
+    g::WordGraph;
+    source = UNDEFINED,
+    target = UNDEFINED,
+    min::Integer = 0,
+    max = POSITIVE_INFINITY,
+    order::Order = ORDER_SHORTLEX,
+)
+    p = Paths(g)
+    if !(source isa UndefinedType)
+        source!(p, source)
+    end
+    target!(p, target)
+    min!(p, min)
+    max!(p, max)
+    order!(p, order)
+    return p
+end
+
+# Borrowed-ref overload (e.g. from `current_word_graph(tc)` / `word_graph(tc)`).
+# Behavior is identical to the `WordGraph` form; documentation lives there.
+function paths(
+    g::CxxWrap.CxxBaseRef{WordGraph};
     source = UNDEFINED,
     target = UNDEFINED,
     min::Integer = 0,
