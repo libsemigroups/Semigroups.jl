@@ -56,6 +56,8 @@ namespace libsemigroups_julia {
     define_knuth_bendix(mod);
     define_todd_coxeter(mod);
     define_kambites(mod);
+    define_congruence(mod);
+    define_to_cong(mod);
   }
 
 }  // namespace libsemigroups_julia

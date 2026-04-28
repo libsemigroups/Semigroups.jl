@@ -71,6 +71,8 @@ namespace libsemigroups_julia {
   void define_knuth_bendix(jl::Module& mod);
   void define_todd_coxeter(jl::Module& mod);
   void define_kambites(jl::Module& mod);
+  void define_congruence(jl::Module& mod);
+  void define_to_cong(jl::Module& mod);
 
 }  // namespace libsemigroups_julia
 
