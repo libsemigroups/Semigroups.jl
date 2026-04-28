@@ -1,6 +1,6 @@
 name = "Semigroups"
 uuid = "f8a5e1c0-7b2d-4a3e-9c6f-1d2e3f4a5b6c"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["James Swent"]
 
 [deps]
@@ -17,7 +17,7 @@ AbstractAlgebra = "0.43, 0.48"
 CxxWrap = "0.17"
 libsemigroups_jll = "=3.5.5"
 julia = "1.9"
-libsemigroups_julia_jll = "0.0.1"
+libsemigroups_julia_jll = "0.1.1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
