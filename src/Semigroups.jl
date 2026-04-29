@@ -84,6 +84,7 @@ include("cong-common.jl")
 include("knuth-bendix.jl")
 include("todd-coxeter.jl")
 include("kambites.jl")
+include("congruence.jl")
 
 # High-level element types
 include("bmat8.jl")
@@ -91,6 +92,10 @@ include("transf.jl")
 
 # Algorithm types (must come after element types)
 include("froidure-pin.jl")
+
+# `to(::Type{T}, ...)` conversions; depends on Congruence + FroidurePinBase
+# + WordGraph, so include after all of those.
+include("to.jl")
 
 function _version_string(v::Union{Nothing,VersionNumber})
     return isnothing(v) ? "unknown" : string(v)
@@ -380,6 +385,13 @@ export is_non_trivial, tc_redundant_rule
 export Kambites
 export small_overlap_class, current_small_overlap_class, throw_if_not_C4
 
+# Congruence
+export Congruence
+export is_obviously_infinite, has, number_of_runners
+
+# `to(::Type{T}, ...)` conversions
+export to
+
 # Transformation types and functions
 export Transf, PPerm, Perm
 export degree, rank, image, domain, inverse
@@ -387,7 +399,7 @@ export increase_degree_by!, swap!
 export left_one, right_one
 
 # FroidurePin
-export FroidurePin, current_size, number_of_generators, enumerate!
+export FroidurePin, FroidurePinBase, current_size, number_of_generators, enumerate!
 export generator, sorted_at
 export sorted_position, to_sorted_position
 export closure!, copy_closure, copy_add_generators, reserve!
