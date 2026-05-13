@@ -68,8 +68,7 @@ function package_is_from_registry()
     return pkginfo !== nothing && pkginfo.is_tracking_registry
 end
 
-function use_jll_library(src_hash::AbstractString; force_local_build::Bool = false)
-    force_local_build && return false
+function use_jll_library(src_hash::AbstractString)
     return src_hash in jll_tree_hashes() || package_is_from_registry()
 end
 
@@ -122,9 +121,9 @@ function build_library(src_hash::AbstractString = source_tree_hash())
 end
 
 # Locate the library, building if necessary
-function locate_library(; force_local_build::Bool = false)
+function locate_library()
     src_hash = source_tree_hash()
-    if use_jll_library(src_hash; force_local_build)
+    if use_jll_library(src_hash)
         path = libsemigroups_julia_jll.libsemigroups_julia
         @debug "Using libsemigroups_julia from JLL" path
         return path
