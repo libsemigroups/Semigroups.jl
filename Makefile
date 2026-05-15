@@ -29,7 +29,7 @@ docs-serve:
 	$(JULIA) --project=docs -e 'using LiveServer; servedocs(; include_dirs = ["src"])'
 
 build:
-	$(JULIA) --project=. -e 'using Pkg; Pkg.build("Semigroups")'
+	$(JULIA) --project=. -e 'using Semigroups'
 
 clean:
 	rm -rf docs/build
