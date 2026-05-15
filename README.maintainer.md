@@ -43,6 +43,7 @@ Suppose just the C++ wrappers need to be updated, without any changes to the
 
 5. Release a new `Semigroups.jl`. This is done by pinging JuliaRegistrator in
    the comments of a commit.
+    > See an example of the release comment [here](https://github.com/libsemigroups/Semigroups.jl/commit/eb34e11c46a737eedf1bf58bc3f7dbe07ac6338f#commitcomment-185167266)
 
 After the new version of `Semigroups.jl` is picked up by the registry, it may
 be used in further downstream packages.
@@ -61,6 +62,7 @@ build scripts because `libsemigroups_julia_jll` will need to point to the new
    builds on all targets.
 
 2. Wait for the Yggdrasil merge, and wait for the registry.
+    > _Note:_ steps 1 and 2 should be handled automatically by the [libsemigroups-yggdrasil-pr](https://github.com/libsemigroups-yggdrasil-pr/) bot
 
 3. Update the `libsemigroups_julia` build scripts with a new version and
    `libsemigroups_jll` dependency.
