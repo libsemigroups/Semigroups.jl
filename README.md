@@ -79,7 +79,8 @@ To install `Semigroups.jl` from GitHub:
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/libsemigroups/Semigroups.jl")
+Pkg.add("Semigroups")
+using Semigroups
 ```
 
 For more detailed installation instructions, including prerequisites and
@@ -108,11 +109,11 @@ We would like to thank the authors and contributors of these projects!
 
 A Makefile is provided for common development tasks:
 
-| Command | Description |
-|---------|-------------|
-| `make test` | Run the test suite |
-| `make docs` | Build documentation |
+| Command           | Description                  |
+| ----------------- | ---------------------------- |
+| `make test`       | Run the test suite           |
+| `make docs`       | Build documentation          |
 | `make docs-serve` | Build and serve docs locally |
-| `make build` | Build C++ bindings |
-| `make clean` | Clean build artifacts |
-| `make format` | Format Julia and C++ code |
+| `make build`      | Build C++ bindings           |
+| `make clean`      | Clean build artifacts        |
+| `make format`     | Format Julia and C++ code    |
