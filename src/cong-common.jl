@@ -22,6 +22,31 @@ algorithm.
 """
 const CongruenceCommon = LibSemigroups.CongruenceCommon
 
+const Congruence = LibSemigroups.CongruenceWord
+
+"""
+  number_of_classes(cong::CongruenceCommon) -> UInt64
+
+Return the number of classes of `cong`, triggering a full enumeration if
+needed.
+"""
+number_of_classes(cong::CongruenceCommon) =
+    @wrap_libsemigroups_call LibSemigroups.number_of_classes(cong)
+
+"""
+  presentation(cong::CongruenceCommon) -> Presentation
+
+Return the presentation associated with `cong`.
+"""
+presentation(cong::CongruenceCommon) = LibSemigroups.presentation(cong)
+
+"""
+  kind(cong::CongruenceCommon) -> congruence_kind
+
+Return whether `cong` is a one-sided or two-sided congruence.
+"""
+kind(cong::CongruenceCommon) = LibSemigroups.kind(cong)
+
 _words_to_cpp(words::AbstractVector{<:AbstractVector{<:Integer}}) =
     Any[_word_to_cpp(word) for word in words]
 

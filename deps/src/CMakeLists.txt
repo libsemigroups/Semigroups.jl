@@ -63,6 +63,10 @@ add_library(libsemigroups_julia SHARED
     kambites.cpp
     congruence.cpp
     to-cong.cpp
+    to-todd-coxeter.cpp
+    to-knuth-bendix.cpp
+    to-froidure-pin.cpp
+    to-presentation.cpp
 )
 
 # Include directories

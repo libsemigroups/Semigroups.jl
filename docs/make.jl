@@ -31,8 +31,7 @@ makedocs(;
         "Package Info" => [
             "Installation" => "package-info/installation.md",
             "Authors" => "package-info/authors.md",
-            #= "Bibliography" => "package-info/bibliography.md", =#
-            "Exceptions" => "package-info/exceptions.md",
+            #= "Bibliography" => "package-info/bibliography.md", =# "Exceptions" => "package-info/exceptions.md",
         ],
         "Data Structures" => [
             "Constants" => "data-structures/constants/index.md",

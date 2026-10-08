@@ -87,6 +87,12 @@ include("transf.jl")
 
 # Algorithm types (must come after element types)
 include("froidure-pin.jl")
+include("to-cong.jl")
+include("to-todd-coxeter.jl")
+include("to-presentation.jl")
+include("to-knuth-bendix.jl")
+include("to-froidure-pin.jl")
+include("to-inverse-presentation.jl")
 
 function _version_string(v::Union{Nothing,VersionNumber})
     return isnothing(v) ? "unknown" : string(v)
@@ -260,7 +266,7 @@ end
 export enable_debug, is_debug, LibsemigroupsError, ReportGuard
 export UNDEFINED, POSITIVE_INFINITY, NEGATIVE_INFINITY, LIMIT_MAX
 export Runner, RunnerState
-export CongruenceCommon
+export CongruenceCommon, Congruence
 export STATE_NEVER_RUN, STATE_RUNNING_TO_FINISH, STATE_RUNNING_FOR
 export STATE_RUNNING_UNTIL, STATE_TIMED_OUT, STATE_STOPPED_BY_PREDICATE
 export STATE_NOT_RUNNING, STATE_DEAD
