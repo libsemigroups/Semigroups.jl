@@ -87,12 +87,7 @@ include("transf.jl")
 
 # Algorithm types (must come after element types)
 include("froidure-pin.jl")
-include("to-cong.jl")
-include("to-todd-coxeter.jl")
-include("to-presentation.jl")
-include("to-knuth-bendix.jl")
-include("to-froidure-pin.jl")
-include("to-inverse-presentation.jl")
+include("to.jl")
 
 function _version_string(v::Union{Nothing,VersionNumber})
     return isnothing(v) ? "unknown" : string(v)
