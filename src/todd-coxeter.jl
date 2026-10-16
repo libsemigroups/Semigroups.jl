@@ -51,6 +51,9 @@ objects.
 """
 const ToddCoxeter = LibSemigroups.ToddCoxeterWord
 
+ToddCoxeter(kind::congruence_kind, p::Presentation) =
+    LibSemigroups.ToddCoxeterWord(kind, _cxx_word(p))
+
 # --- strategy ---------------------------------------------------------------
 
 """
@@ -273,10 +276,12 @@ function init!(tc::ToddCoxeter)
     return tc
 end
 
+
 function init!(tc::ToddCoxeter, kind::congruence_kind, p::Presentation)
-    @wrap_libsemigroups_call LibSemigroups.init!(tc, kind, p)
+    @wrap_libsemigroups_call LibSemigroups.init!(tc, kind, _cxx_word(p))
     return tc
 end
+
 
 function init!(tc::ToddCoxeter, kind::congruence_kind, other::ToddCoxeter)
     @wrap_libsemigroups_call LibSemigroups.init!(tc, kind, other)
@@ -887,7 +892,7 @@ If `tc` was constructed or initialised from a
 [`Presentation`](@ref Semigroups.Presentation), the returned presentation is
 empty.
 """
-presentation(tc::ToddCoxeter) = LibSemigroups.presentation(tc)
+presentation(tc::ToddCoxeter) = _wrap_presentation(LibSemigroups.presentation(tc))
 
 # ============================================================================
 # Base.* overloads
@@ -1002,7 +1007,7 @@ Knuth-Bendix-based helper.
 function tc_redundant_rule(p::Presentation, timeout::TimePeriod)
     # See note on is_non_trivial: keep coercions out of the macro arglist.
     ns = Int64(Dates.value(convert(Nanosecond, timeout)))
-    idx = @wrap_libsemigroups_call LibSemigroups.tc_redundant_rule(p, ns)
+    idx = @wrap_libsemigroups_call LibSemigroups.tc_redundant_rule(_cxx_word(p), ns)
     n_flat = 2 * number_of_rules(p)
     if idx >= n_flat
         return nothing

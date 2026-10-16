@@ -24,6 +24,15 @@ const CongruenceCommon = LibSemigroups.CongruenceCommon
 
 const Congruence = LibSemigroups.CongruenceWord
 
+# The C++ binding takes the congruence kind as an Integer and a raw
+# `PresentationWord`; adapt the public Julia types to that.
+function Congruence(kind::congruence_kind, p::Presentation)
+    return @wrap_libsemigroups_call LibSemigroups.CongruenceWord(
+        _kind_to_cpp(kind),
+        _cxx_word(p),
+    )
+end
+
 """
   number_of_classes(cong::CongruenceCommon) -> UInt64
 
@@ -38,7 +47,7 @@ number_of_classes(cong::CongruenceCommon) =
 
 Return the presentation associated with `cong`.
 """
-presentation(cong::CongruenceCommon) = LibSemigroups.presentation(cong)
+presentation(cong::CongruenceCommon) = _wrap_presentation(LibSemigroups.presentation(cong))
 
 """
   kind(cong::CongruenceCommon) -> congruence_kind

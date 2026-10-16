@@ -75,6 +75,17 @@ number_of_classes(kb)                   # POSITIVE_INFINITY
 """
 const KnuthBendix = LibSemigroups.KnuthBendixRewriteTrie
 
+# The C++ binding takes the congruence kind as an Integer and a raw
+# `PresentationWord`; adapt the public Julia types to that.
+_kind_to_cpp(kind) = Int(kind)
+
+function KnuthBendix(kind::congruence_kind, p::Presentation)
+    return @wrap_libsemigroups_call LibSemigroups.KnuthBendixRewriteTrie(
+        _kind_to_cpp(kind),
+        _cxx_word(p),
+    )
+end
+
 """
     overlap_ABC
 
@@ -141,8 +152,8 @@ function init!(kb::KnuthBendix)
     return kb
 end
 
-function init!(kb::KnuthBendix, kind::congruence_kind, p::Presentation)
-    @wrap_libsemigroups_call LibSemigroups.init!(kb, kind, p)
+function init!(kb::KnuthBendix, kind::congruence_kind, p::Presentation{Vector{Int}})
+    @wrap_libsemigroups_call LibSemigroups.init!(kb, _kind_to_cpp(kind), p.cxx_obj)
     return kb
 end
 
@@ -499,7 +510,7 @@ Return a copy of the presentation used by `kb`.
     required by the algorithm. This extra letter also appears in the output of
     [`active_rules`](@ref Semigroups.active_rules).
 """
-presentation(kb::KnuthBendix) = LibSemigroups.presentation(kb)
+presentation(kb::KnuthBendix) = _wrap_presentation(LibSemigroups.presentation(kb))
 
 # ============================================================================
 # Rules access
@@ -657,8 +668,10 @@ no redundant rule is identified within the timeout.
 """
 function redundant_rule(p::Presentation, timeout::TimePeriod)
     ns = convert(Nanosecond, timeout)
-    idx =
-        @wrap_libsemigroups_call LibSemigroups.kb_redundant_rule(p, Int64(Dates.value(ns)))
+    idx = @wrap_libsemigroups_call LibSemigroups.kb_redundant_rule(
+        _cxx_word(p),
+        Int64(Dates.value(ns)),
+    )
     n_flat = 2 * number_of_rules(p)
     # If idx == n_flat, no redundant rule was found
     if idx >= n_flat

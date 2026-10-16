@@ -149,7 +149,7 @@ function init!(k::Kambites)
 end
 
 function init!(k::Kambites, kind::congruence_kind, p::Presentation)
-    @wrap_libsemigroups_call LibSemigroups.init!(k, kind, p)
+    @wrap_libsemigroups_call LibSemigroups.init!(k, kind, _cxx_word(p))
     return k
 end
 
@@ -168,7 +168,7 @@ presentation is returned. The Julia binding returns by value (an
 independent copy) rather than by reference; mutating the returned
 object does not affect `k`.
 """
-presentation(k::Kambites) = LibSemigroups.presentation(k)
+presentation(k::Kambites) = _wrap_presentation(LibSemigroups.presentation(k))
 
 """
     generating_pairs(k::Kambites) -> Vector{Tuple{Vector{Int}, Vector{Int}}}

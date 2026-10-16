@@ -7,6 +7,24 @@ using Semigroups
         @test hasmethod(Presentation, Tuple{})
     end
 
+    @testset "parametric types and string support" begin
+        # Default constructor resolves to Vector{Int}
+        p_default = Presentation()
+        @test p_default isa Presentation{Vector{Int}}
+
+        p_vec = Presentation([([1, 2], [2, 1])])
+
+        p_str = Presentation([("a", "b")])
+        # String constructor inference
+        p_str_inferred = Presentation(["a", "b"])
+        @test p_str_inferred isa Presentation{String}
+
+        if isdefined(Semigroups, :_cxx_word)
+            @test_throws ArgumentError Semigroups._cxx_word(p_str)
+            @test Semigroups._cxx_word(p_default) === p_default.cxx_obj
+        end
+    end
+
     @testset "constructors + init! + deepcopy + alphabet getter" begin
         p = Presentation()
         @test p isa Presentation
@@ -22,6 +40,51 @@ using Semigroups
         @test r !== p                           # distinct wrapper
     end
 
+@testset "Alphabet Invariants & Custom Alphabets" begin
+    p_char = Presentation(['a', 'b', 'c'])
+    @test p_char isa Presentation{String}
+    @test alphabet(p_char) == "abc"
+    @test letter(p_char, 1) == 'a'
+    @test index_of(p_char, 'b') == 2
+    @test in_alphabet(p_char, 'c')
+    @test !in_alphabet(p_char, 'z')
+
+    p_dup = Presentation()
+    @test_throws LibsemigroupsError set_alphabet!(p_dup, [1, 1, 2])
+end
+    @testset "Rule Searching and Index Invariants" begin
+        p = Presentation()
+        set_alphabet!(p, [1, 2])
+        add_rule!(p, [1, 2], [2, 1])
+
+        # Verified present rule
+        @test is_rule(p, [1, 2], [2, 1])
+        @test index_rule(p, [1, 2], [2, 1]) == 1
+
+        # Verified absent rule returns UNDEFINED sentinel
+        @test !is_rule(p, [1], [2])
+        @test index_rule(p, [1], [2]) == Semigroups.UNDEFINED
+        @test !contains_rule(p, [1], [2])
+    end
+
+@testset "Rule Validation Guards" begin
+    p = Presentation()
+    set_alphabet!(p, [1, 2])
+
+    @test_throws LibsemigroupsError throw_if_letter_not_in_alphabet(p, 3)
+
+    add_rule_no_checks!(p, [1, 3], [2])
+    @test_throws LibsemigroupsError throw_if_bad_rules(p)
+    @test_throws LibsemigroupsError throw_if_bad_alphabet_or_rules(p)
+end
+
+@testset "Algorithm Type Guard Constraints" begin
+    p_str = Presentation{String}()
+    set_alphabet!(p_str, "ab")
+
+    # Assert type guard raises ArgumentError explaining type incompatibility
+    @test_throws ArgumentError Semigroups._cxx_word(p_str)
+end
     @testset "alphabet setters" begin
         p = Presentation()
         set_alphabet!(p, 3)
@@ -247,7 +310,7 @@ using Semigroups
         set_alphabet!(p, [1, 2])
         ip = InversePresentation(p)
         @test ip isa InversePresentation
-        @test ip isa Presentation                   # CxxWrap inheritance chain
+        @test ip isa Semigroups.LibSemigroups.PresentationWord   # CxxWrap inheritance chain
         @test alphabet(ip) == [1, 2]
 
         # Copy ctor
@@ -475,7 +538,7 @@ using Semigroups
         @test rules(p) == [([1, 1], [1]), ([2, 2], [2])]
 
         # Binding-surface: rules_vector is a callable C++ method on Presentation.
-        flat = Semigroups.LibSemigroups.rules_vector(p)
+        flat = Semigroups.LibSemigroups.rules_vector(p.cxx_obj)
         @test length(flat) == 2 * number_of_rules(p)
     end
 
@@ -519,10 +582,10 @@ using Semigroups
     @testset "binding surface" begin
         LS = Semigroups.LibSemigroups
         # Scalar / reference signatures - hasmethod with concrete types works.
-        @test hasmethod(LS.first_unused_letter, Tuple{Presentation})
-        @test hasmethod(LS.longest_rule_index, Tuple{Presentation})
-        @test hasmethod(LS.shortest_rule_index, Tuple{Presentation})
-        @test hasmethod(LS.rules_vector, Tuple{Presentation})
+        @test hasmethod(LS.first_unused_letter, Tuple{LS.PresentationWord})
+        @test hasmethod(LS.longest_rule_index, Tuple{LS.PresentationWord})
+        @test hasmethod(LS.shortest_rule_index, Tuple{LS.PresentationWord})
+        @test hasmethod(LS.rules_vector, Tuple{LS.PresentationWord})
 
         # Vector-input methods: CxxWrap's ArrayRef<size_t> maps to a concrete
         # Julia method signature that is tricky to spell as a `Tuple{...}`, so
