@@ -73,6 +73,10 @@ makedocs(;
                 "The FroidurePin type" => "main-algorithms/froidure-pin/froidure-pin.md",
                 "Helper functions" => "main-algorithms/froidure-pin/helpers.md",
             ],
+            "Konieczny" => [
+                "Overview" => "main-algorithms/konieczny/index.md",
+                "The Konieczny type" => "main-algorithms/konieczny/konieczny.md",
+            ],
             "Knuth-Bendix" => [
                 "Overview" => "main-algorithms/knuth-bendix/index.md",
                 "The KnuthBendix type" => "main-algorithms/knuth-bendix/knuth-bendix.md",

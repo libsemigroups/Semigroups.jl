@@ -51,6 +51,7 @@ namespace libsemigroups_julia {
     define_paths(mod);
     define_froidure_pin_base(mod);
     define_froidure_pin(mod);
+    define_konieczny(mod);
     define_presentation(mod);
     define_presentation_examples(mod);
     define_knuth_bendix(mod);

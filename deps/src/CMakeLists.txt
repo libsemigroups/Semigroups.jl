@@ -49,6 +49,7 @@ add_library(libsemigroups_julia SHARED
     constants.cpp
     froidure-pin-base.cpp
     froidure-pin.cpp
+    konieczny.cpp
     order.cpp
     report.cpp
     runner.cpp

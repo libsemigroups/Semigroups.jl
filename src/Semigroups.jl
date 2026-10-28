@@ -87,6 +87,7 @@ include("transf.jl")
 
 # Algorithm types (must come after element types)
 include("froidure-pin.jl")
+include("konieczny.jl")
 
 function _version_string(v::Union{Nothing,VersionNumber})
     return isnothing(v) ? "unknown" : string(v)
@@ -400,6 +401,21 @@ export minimal_factorisation, current_minimal_factorisation, factorisation
 export right_cayley_graph, current_right_cayley_graph
 export left_cayley_graph, current_left_cayley_graph
 export to_element, equal_to
+
+# Konieczny
+export Konieczny, KoniecznyDClass
+export number_of_D_classes, current_number_of_D_classes
+export number_of_regular_D_classes, current_number_of_regular_D_classes
+export number_of_L_classes, current_number_of_L_classes
+export number_of_regular_L_classes, current_number_of_regular_L_classes
+export number_of_R_classes, current_number_of_R_classes
+export number_of_regular_R_classes, current_number_of_regular_R_classes
+export number_of_H_classes, current_number_of_H_classes
+export current_number_of_idempotents
+export number_of_regular_elements, current_number_of_regular_elements
+export is_regular_element
+export D_class_of_element, D_class, regular_D_class, D_classes, regular_D_classes
+export rep, size_H_class, is_regular_D_class
 
 # BMat8
 export BMat8, to_int, swap!, degree, random, row_space_basis
