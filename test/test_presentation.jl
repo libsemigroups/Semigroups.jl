@@ -25,6 +25,98 @@ using Semigroups
         end
     end
 
+    @testset "string presentation: rules and alphabet" begin
+        p = Presentation{String}()
+        set_alphabet!(p, "abc")
+        @test alphabet(p) == "abc"
+        @test letter(p, 1) == 'a'
+        @test letter(p, 2) == 'b'
+        @test letter(p, 3) == 'c'
+        @test index_of(p, 'b') == 2
+        @test in_alphabet(p, 'c')
+        @test !in_alphabet(p, 'z')
+
+        add_rule_no_checks!(p, "aaa", "a")
+        @test rules(p) == [("aaa", "a")]
+        @test number_of_rules(p) == 1
+        @test rule_lhs(p, 1) == "aaa"
+        @test rule_rhs(p, 1) == "a"
+        @test is_rule(p, "aaa", "a")
+        @test contains_rule(p, "aaa", "a")
+        @test index_rule(p, "aaa", "a") == 1
+
+        @test_throws Semigroups.LibsemigroupsError set_alphabet!(p, "aa")
+        @test_throws Semigroups.LibsemigroupsError add_rule!(p, "abz", "a")
+        @test_throws Semigroups.LibsemigroupsError add_rule!(p, "", "a")
+    end
+
+    @testset "string presentation: alphabet from rules and constructors" begin
+        p = Presentation{String}()
+        set_alphabet!(p, 4)
+        @test alphabet(p) == "abcd"
+        add_rule_no_checks!(p, "abca", "aa")
+        add_rule_no_checks!(p, "eb", "af")
+        add_rule_no_checks!(p, "eb", "abbbbbb")
+        alphabet_from_rules!(p)
+        @test alphabet(p) == "abcef"
+        @test index_of(p, 'a') == 1
+        @test index_of(p, 'b') == 2
+        @test index_of(p, 'c') == 3
+        @test index_of(p, 'e') == 4
+        @test index_of(p, 'f') == 5
+
+        add_rule_no_checks!(p, "e", "")
+        alphabet_from_rules!(p)
+        @test contains_empty_word(p)
+
+        q = Presentation([("ab", "ba")])
+        @test q isa Presentation{String}
+        @test alphabet(q) == "ab"
+        @test deepcopy(q) == q
+    end
+
+    @testset "string presentation: identity and zero rules" begin
+        p = Presentation{String}()
+        add_rule_no_checks!(p, "abcb", "aa")
+        @test_throws Semigroups.LibsemigroupsError add_identity_rules!(p, 'a')
+        alphabet_from_rules!(p)
+        add_identity_rules!(p, 'a')
+        @test rules(p) == [
+            ("abcb", "aa"),
+            ("aa", "a"),
+            ("ba", "b"),
+            ("ab", "b"),
+            ("ca", "c"),
+            ("ac", "c"),
+        ]
+
+        q = Presentation{String}()
+        add_rule_no_checks!(q, "abcb", "aa")
+        @test_throws Semigroups.LibsemigroupsError add_zero_rules!(q, '0')
+        set_alphabet!(q, "abc0")
+        add_zero_rules!(q, '0')
+        @test number_of_rules(q) == 8
+        @test rule_lhs(q, 2) == "a0"
+        @test rule_rhs(q, 2) == "0"
+        @test rule_lhs(q, 8) == "00"
+        @test rule_rhs(q, 8) == "0"
+    end
+
+    @testset "string presentation: word transformations" begin
+        p = Presentation{String}()
+        set_alphabet!(p, "ab")
+        add_rule!(p, "aaa", "a")
+        replace_subword!(p, "aa", "b")
+        @test rules(p) == [("ba", "a")]
+
+        q = Presentation{String}()
+        set_alphabet!(q, "ab")
+        add_rule!(q, "aa", "aa")
+        add_rule!(q, "ab", "aa")
+        replace_word!(q, "aa", "b")
+        @test rules(q) == [("b", "b"), ("ab", "b")]
+    end
+
     @testset "constructors + init! + deepcopy + alphabet getter" begin
         p = Presentation()
         @test p isa Presentation
