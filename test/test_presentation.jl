@@ -117,6 +117,73 @@ using Semigroups
         @test rules(q) == [("b", "b"), ("ab", "b")]
     end
 
+    @testset "string presentation: complete API sweep" begin
+        p = Presentation{String}()
+        set_alphabet!(p, "ac")
+        @test add_generator!(p) == 'b'
+        add_generator!(p, 'd')
+        @test remove_generator!(p, 'd') === p
+        @test first_unused_letter(p) == 'd'
+
+        add_rule_no_checks!(p, "cc", "c")
+        add_rule_no_checks!(p, "cc", "c")
+        add_rule_no_checks!(p, "a", "a")
+        @test length_of(p) == 8
+        @test longest_rule_length(p) == 3
+        @test shortest_rule_length(p) == 2
+        @test longest_rule_index(p) == 1
+        @test shortest_rule_index(p) == 3
+        @test !are_rules_sorted(p)
+        @test !is_normalized(p)
+        remove_duplicate_rules!(p)
+        remove_trivial_rules!(p)
+        @test rules(p) == [("c", "cc")]
+        @test sort_each_rule!(p) isa Bool
+        sort_rules!(p)
+        normalize_alphabet!(p)
+        change_alphabet!(p, "cba")
+        reverse!(p)
+        reverse!(p)
+        @test throw_if_alphabet_has_duplicates(p) === nothing
+        @test throw_if_letter_not_in_alphabet(p, 'b') === nothing
+        @test throw_if_bad_rules(p) === nothing
+        @test throw_if_bad_alphabet_or_rules(p) === nothing
+        @test throw_if_odd_number_of_rules(p) === nothing
+
+        q = Presentation{String}()
+        set_alphabet!(q, "ba")
+        add_rule!(q, "bb", "b")
+        @test add_rules!(p, q) === p
+        @test number_of_rules(p) == 2
+        clear_rules!(p)
+        @test isempty(rules(p))
+
+        r = Presentation{String}()
+        set_alphabet!(r, "ab")
+        set_contains_empty_word!(r, true)
+        @test add_inverse_rules!(r, "ba") === r
+        @test add_inverse_rules!(r, "ab", 'a') === r
+        @test_throws Semigroups.LibsemigroupsError throw_if_bad_inverses(r, "aa")
+
+        s = Presentation{String}()
+        set_alphabet!(s, "ab")
+        add_rule!(s, "abab", "a")
+        @test replace_word_with_new_generator!(s, "ab") == 'c'
+        @test first_unused_letter(s) == 'd'
+        @test to_gap_string(s, "S") isa String
+        @test isempty(Presentation{String}())
+        @test hash(s) isa UInt
+        @test s == deepcopy(s)
+
+        v = Presentation{String}()
+        set_alphabet!(v, "ab")
+        add_rule!(v, ["a", "b"], ["b"])
+        add_rule!(v, ['a', 'b'], ['a'])
+        @test rules(v) == [("ab", "b"), ("ab", "a")]
+        init!(v)
+        @test isempty(v)
+    end
+
     @testset "constructors + init! + deepcopy + alphabet getter" begin
         p = Presentation()
         @test p isa Presentation
