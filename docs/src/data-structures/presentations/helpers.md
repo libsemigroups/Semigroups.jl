@@ -93,7 +93,7 @@ mutators add or remove rules.
 | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
 | [`add_identity_rules!`](@ref Semigroups.add_identity_rules!(::Presentation, ::Integer))                | Add ``e \cdot a = a \cdot e = a`` for every letter ``a``.               |
 | [`add_zero_rules!`](@ref Semigroups.add_zero_rules!(::Presentation, ::Integer))                        | Add ``z \cdot a = a \cdot z = z`` for every letter ``a``.               |
-| [`add_rules!`](@ref Semigroups.add_rules!(::Presentation, ::Presentation))                             | Copy every rule of `q` into `p`.                                         |
+| [`add_rules!`](@ref Semigroups.add_rules!)                                                               | Copy every rule of `q` into `p`.                                         |
 | [`add_inverse_rules!`](@ref Semigroups.add_inverse_rules!(::Presentation, ::AbstractVector{<:Integer})) | Add rules ``a_i \cdot b_i = e`` for a matching list of inverses.        |
 | [`replace_subword!`](@ref Semigroups.replace_subword!(::Presentation, ::AbstractVector{<:Integer}, ::AbstractVector{<:Integer})) | Replace every non-overlapping occurrence of a subword. |
 | [`replace_word!`](@ref Semigroups.replace_word!(::Presentation, ::AbstractVector{<:Integer}, ::AbstractVector{<:Integer}))       | Replace a word wherever it appears as a full side of a rule. |
@@ -111,7 +111,7 @@ Semigroups.sort_rules!(::Presentation)
 Semigroups.sort_each_rule!(::Presentation)
 Semigroups.add_identity_rules!(::Presentation, ::Integer)
 Semigroups.add_zero_rules!(::Presentation, ::Integer)
-Semigroups.add_rules!(::Presentation, ::Presentation)
+Semigroups.add_rules!
 Semigroups.add_inverse_rules!(::Presentation, ::AbstractVector{<:Integer})
 Semigroups.replace_subword!(::Presentation, ::AbstractVector{<:Integer}, ::AbstractVector{<:Integer})
 Semigroups.replace_word!(::Presentation, ::AbstractVector{<:Integer}, ::AbstractVector{<:Integer})

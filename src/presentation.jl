@@ -502,6 +502,11 @@ function change_alphabet!(p::Presentation{W}, new_alphabet) where {W}
     return p
 end
 
+"""
+    Base.reverse!(p::Presentation{W}) where {W}
+
+Reverse every word on both sides of every rule in `p` in place.
+"""
 Base.reverse!(p::Presentation{W}) where {W} = (LibSemigroups.reverse_rules!(p.cxx_obj); p)
 
 """
@@ -703,8 +708,18 @@ end
 Base.:(==)(a::Presentation{W}, b::Presentation{W}) where {W} =
     LibSemigroups.is_equal(a.cxx_obj, b.cxx_obj)
 
+"""
+    Base.isempty(p::Presentation{W}) where {W}
+
+Return `true` if `p` has no alphabet and no rules.
+"""
 Base.isempty(p::Presentation{W}) where {W} = isempty(alphabet(p)) && number_of_rules(p) == 0
 
+"""
+    Base.hash(p::Presentation{W}, h::UInt) where {W}
+
+Compute a hash from the alphabet, rules, and empty-word setting of `p`.
+"""
 function Base.hash(p::Presentation{W}, h::UInt) where {W}
     return hash(
         (
