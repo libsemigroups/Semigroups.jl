@@ -65,20 +65,42 @@ Map a high-level Julia word type to its CxxWrap Presentation constructor type.
 _cxx_presentation_type(::Type{Vector{Int}}) = PresentationWord
 _cxx_presentation_type(::Type{String}) = PresentationString
 
+const _PRESENTATION_STRING_MAX_CODEPOINT = UInt32(0x7f)
+const _PRESENTATION_STRING_GENERATED_MAX =
+    _PRESENTATION_STRING_MAX_CODEPOINT - UInt32('a') + UInt32(1)
+
+function _presentation_ascii_char(x::Char)
+    UInt32(x) <= _PRESENTATION_STRING_MAX_CODEPOINT ||
+        throw(ArgumentError("Presentation{String} supports ASCII characters only"))
+    return x
+end
+
+function _presentation_ascii_string(w::AbstractString)
+    all(codeunit <= _PRESENTATION_STRING_MAX_CODEPOINT for codeunit in codeunits(w)) ||
+        throw(ArgumentError("Presentation{String} supports ASCII characters only"))
+    return String(w)
+end
+
 _presentation_word_to_cpp(::Type{Vector{Int}}, w::AbstractVector{<:Integer}) =
     _word_to_cpp(w)
-_presentation_word_to_cpp(::Type{String}, w::AbstractString) = String(w)
-_presentation_word_to_cpp(::Type{String}, w::AbstractVector{<:AbstractString}) = join(w)
-_presentation_word_to_cpp(::Type{String}, w::AbstractVector{Char}) = String(w)
+_presentation_word_to_cpp(::Type{String}, w::AbstractString) = _presentation_ascii_string(w)
+_presentation_word_to_cpp(::Type{String}, w::AbstractVector{<:AbstractString}) =
+    _presentation_ascii_string(join(w))
+_presentation_word_to_cpp(::Type{String}, w::AbstractVector{Char}) =
+    _presentation_ascii_string(String(w))
 
 _presentation_word_from_cpp(::Type{Vector{Int}}, w) = _word_from_cpp(w)
-_presentation_word_from_cpp(::Type{String}, w) = String(w)
+_presentation_word_from_cpp(::Type{String}, w) = _presentation_ascii_string(String(w))
 
 _presentation_letter_to_cpp(::Type{Vector{Int}}, x::Integer) = _letter_to_cpp(x)
-# In src/presentation.jl:
-_presentation_letter_to_cpp(::Type{String}, x::Char) = UInt(x)
+_presentation_letter_to_cpp(::Type{String}, x::Char) = UInt(_presentation_ascii_char(x))
 _presentation_letter_from_cpp(::Type{Vector{Int}}, x) = _letter_from_cpp(x)
-_presentation_letter_from_cpp(::Type{String}, x) = Char(x)
+function _presentation_letter_from_cpp(::Type{String}, x)
+    value = Int(x)
+    0 <= value <= _PRESENTATION_STRING_MAX_CODEPOINT ||
+        throw(ArgumentError("Presentation{String} supports ASCII characters only"))
+    return Char(value)
+end
 
 # ============================================================================
 # Wrap / unwrap helpers
@@ -121,6 +143,8 @@ function Presentation(p::Presentation{W}) where {W}
     T = _cxx_presentation_type(W)
     return Presentation{W}(@wrap_libsemigroups_call T(p.cxx_obj))
 end
+
+Base.copy(p::Presentation{W}) where {W} = Presentation(p)
 
 """
     Presentation(rules::AbstractVector{<:Union{Tuple{W,W}, Pair{W,W}}}) where {W<:Union{Vector{Int}, String}}
@@ -173,9 +197,9 @@ into the state it would be in if it was newly constructed.
 init!(p::Presentation{W}) where {W} = (LibSemigroups.init!(p.cxx_obj); p)
 
 """
-    alphabet(p::Presentation{W}) -> Vector{Int}
+    alphabet(p::Presentation{W}) -> W
 
-Return the alphabet of `p`.
+Return the alphabet of `p` as a `Vector{Int}` or `String`, according to `W`.
 
 # Complexity
 Constant.
@@ -192,6 +216,14 @@ Set the alphabet of `p` by size.
 """
 function set_alphabet!(p::Presentation{W}, n::Integer) where {W}
     m = UInt(n)
+    if W === String && m > UInt(_PRESENTATION_STRING_GENERATED_MAX)
+        throw(
+            ArgumentError(
+                "Presentation{String} supports at most $(_PRESENTATION_STRING_GENERATED_MAX) " *
+                "generated ASCII letters",
+            ),
+        )
+    end
     @wrap_libsemigroups_call LibSemigroups.set_alphabet_size!(p.cxx_obj, m)
     return p
 end
@@ -216,9 +248,10 @@ alphabet_from_rules!(p::Presentation{W}) where {W} =
     (LibSemigroups.alphabet_from_rules!(p.cxx_obj); p)
 
 """
-    letter(p::Presentation{W}, i::Integer)
+    letter(p::Presentation{W}, i::Integer) -> Union{Int, Char}
 
-Return a letter in the alphabet of `p` by index.
+Return a letter in the alphabet of `p` by index. The result is an `Int` for
+`Presentation{Vector{Int}}` and a `Char` for `Presentation{String}`.
 """
 function letter(p::Presentation{W}, i::Integer) where {W}
     idx = UInt(i - 1)
@@ -231,7 +264,8 @@ end
 """
     index_of(p::Presentation{W}, x) -> Int
 
-Return the 1-based index of a letter in the alphabet of `p`.
+Return the 1-based index of a letter in the alphabet of `p`. Pass an `Integer`
+for `Presentation{Vector{Int}}` or a `Char` for `Presentation{String}`.
 """
 function index_of(p::Presentation{W}, x) where {W}
     y = _presentation_letter_to_cpp(W, x)
@@ -241,7 +275,8 @@ end
 """
     in_alphabet(p::Presentation{W}, x) -> Bool
 
-Check if a letter belongs to the alphabet of `p`.
+Check if a letter belongs to the alphabet of `p`; `x` is an `Integer` or `Char`
+according to `W`.
 """
 in_alphabet(p::Presentation{W}, x) where {W} =
     LibSemigroups.in_alphabet(p.cxx_obj, _presentation_letter_to_cpp(W, x))
@@ -263,12 +298,14 @@ set_contains_empty_word!(p::Presentation{W}, val::Bool) where {W} =
     (LibSemigroups.set_contains_empty_word!(p.cxx_obj, val); p)
 
 """
-    add_generator!(p::Presentation{W})
+    add_generator!(p::Presentation{W}) -> Union{Int, Char}
     add_generator!(p::Presentation{W}, x) -> Presentation
 
-Add a generator to `p`.
+Add a generator to `p`. The no-argument form returns the new letter as an
+`Int` or `Char` according to `W`.
 """
 function add_generator!(p::Presentation{W}) where {W}
+    W === String && first_unused_letter(p)
     x = @wrap_libsemigroups_call LibSemigroups.add_generator_no_arg!(p.cxx_obj)
     return _presentation_letter_from_cpp(W, x)
 end
@@ -291,9 +328,10 @@ function remove_generator!(p::Presentation{W}, x) where {W}
 end
 
 """
-    add_rule!(p::Presentation{W}, lhs, rhs) -> Presentation
+    add_rule!(p::Presentation{W}, lhs::W, rhs::W) -> Presentation
 
-Add the rule `lhs = rhs` to `p`, after validation checks.
+Add the rule `lhs = rhs` to `p`, after validation checks. Words use the
+representation selected by `W`.
 """
 function add_rule!(p::Presentation{W}, lhs, rhs) where {W}
     l = _presentation_word_to_cpp(W, lhs)
@@ -303,9 +341,10 @@ function add_rule!(p::Presentation{W}, lhs, rhs) where {W}
 end
 
 """
-    add_rule_no_checks!(p::Presentation{W}, lhs, rhs) -> Presentation
+    add_rule_no_checks!(p::Presentation{W}, lhs::W, rhs::W) -> Presentation
 
-Add the rule `lhs = rhs` to `p` without checking the arguments.
+Add the rule `lhs = rhs` to `p` without checking the arguments. Words use the
+representation selected by `W`.
 """
 function add_rule_no_checks!(p::Presentation{W}, lhs, rhs) where {W}
     l = _presentation_word_to_cpp(W, lhs)
@@ -323,9 +362,10 @@ number_of_rules(p::Presentation{W}) where {W} =
     Int(LibSemigroups.number_of_rules(p.cxx_obj))
 
 """
-    rule_lhs(p::Presentation{W}, i::Integer)
+    rule_lhs(p::Presentation{W}, i::Integer) -> W
 
-Return the left-hand side of the `i`-th rule of `p` (1-based rule index).
+Return the left-hand side of the `i`-th rule of `p` (1-based rule index), using
+the word representation selected by `W`.
 """
 function rule_lhs(p::Presentation{W}, i::Integer) where {W}
     idx = UInt(i - 1)
@@ -336,9 +376,10 @@ function rule_lhs(p::Presentation{W}, i::Integer) where {W}
 end
 
 """
-    rule_rhs(p::Presentation{W}, i::Integer)
+    rule_rhs(p::Presentation{W}, i::Integer) -> W
 
-Return the right-hand side of the `i`-th rule of `p` (1-based rule index).
+Return the right-hand side of the `i`-th rule of `p` (1-based rule index),
+using the word representation selected by `W`.
 """
 function rule_rhs(p::Presentation{W}, i::Integer) where {W}
     idx = UInt(i - 1)
@@ -351,14 +392,15 @@ end
 """
     rule(p::Presentation{W}, i::Integer)
 
-Return the `i`-th rule of `p` as a `(lhs, rhs)` tuple (1-based rule index).
+Return the `i`-th rule of `p` as a `(lhs, rhs)` tuple of `W` words (1-based
+rule index).
 """
 rule(p::Presentation{W}, i::Integer) where {W} = (rule_lhs(p, i), rule_rhs(p, i))
 
 """
     rules(p::Presentation{W})
 
-Return all rules of `p` as a vector of `(lhs, rhs)` tuples.
+Return all rules of `p` as a vector of `(lhs, rhs)` tuples of `W` words.
 """
 function rules(p::Presentation{W}) where {W}
     flat = LibSemigroups.rules_vector(p.cxx_obj)
@@ -793,6 +835,9 @@ throw_if_bad_alphabet_rules_or_inverses(ip::InversePresentation) = (
 
 Base.:(==)(a::InversePresentation, b::InversePresentation) =
     LibSemigroups.is_equal_inv(a, b)
+
+Base.hash(ip::InversePresentation, h::UInt) =
+    hash((_presentation_view(ip), inverses(ip)), h)
 
 function Base.show(io::IO, ip::InversePresentation)
     print(io, LibSemigroups.to_human_readable_repr(ip))

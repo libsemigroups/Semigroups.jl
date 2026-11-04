@@ -83,7 +83,7 @@ mutators add or remove rules.
 | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
 | [`normalize_alphabet!`](@ref Semigroups.normalize_alphabet!(::Presentation))                           | Rewrite `p` so the alphabet is `[1, ..., n]`.                             |
 | [`change_alphabet!`](@ref Semigroups.change_alphabet!(::Presentation, ::AbstractVector{<:Integer}))    | Rewrite under `old[i] -> new[i]`.                                        |
-| [`Base.reverse!`](@ref Base.reverse!(::Presentation))                                                  | Reverse each rule word in place (extends `Base.reverse!`; not exported). |
+| [`Base.reverse!`](@ref Base.reverse!)                                                                  | Reverse each rule word in place (extends `Base.reverse!`; not exported). |
 | [`sort_rules!`](@ref Semigroups.sort_rules!(::Presentation))                                           | Sort the rule list.                                                      |
 | [`sort_each_rule!`](@ref Semigroups.sort_each_rule!(::Presentation))                                   | Order each rule so that `lhs >= rhs`.                                    |
 
@@ -93,7 +93,7 @@ mutators add or remove rules.
 | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
 | [`add_identity_rules!`](@ref Semigroups.add_identity_rules!(::Presentation, ::Integer))                | Add ``e \cdot a = a \cdot e = a`` for every letter ``a``.               |
 | [`add_zero_rules!`](@ref Semigroups.add_zero_rules!(::Presentation, ::Integer))                        | Add ``z \cdot a = a \cdot z = z`` for every letter ``a``.               |
-| [`add_rules!`](@ref Semigroups.add_rules!)                                                               | Copy every rule of `q` into `p`.                                         |
+| [`add_rules!`](@ref Semigroups.add_rules!)                                                               | Copy rules from `q` into `p`; both use the same `W`.                      |
 | [`add_inverse_rules!`](@ref Semigroups.add_inverse_rules!(::Presentation, ::AbstractVector{<:Integer})) | Add rules ``a_i \cdot b_i = e`` for a matching list of inverses.        |
 | [`replace_subword!`](@ref Semigroups.replace_subword!(::Presentation, ::AbstractVector{<:Integer}, ::AbstractVector{<:Integer})) | Replace every non-overlapping occurrence of a subword. |
 | [`replace_word!`](@ref Semigroups.replace_word!(::Presentation, ::AbstractVector{<:Integer}, ::AbstractVector{<:Integer}))       | Replace a word wherever it appears as a full side of a rule. |
@@ -106,7 +106,7 @@ mutators add or remove rules.
 ```@docs
 Semigroups.normalize_alphabet!(::Presentation)
 Semigroups.change_alphabet!(::Presentation, ::AbstractVector{<:Integer})
-Base.reverse!(::Presentation)
+Base.reverse!
 Semigroups.sort_rules!(::Presentation)
 Semigroups.sort_each_rule!(::Presentation)
 Semigroups.add_identity_rules!(::Presentation, ::Integer)

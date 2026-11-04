@@ -1,12 +1,16 @@
 # The Presentation type
 
 This page documents the type [`Presentation`](@ref Semigroups.Presentation),
-a finite semigroup or monoid presentation over `word_type` (Julia:
-`Vector{Int}` with 1-based letter indices).
+a finite semigroup or monoid presentation over `Presentation{W}`, where `W`
+is either `Vector{Int}` or `String`.
 
-!!! warning "v1 limitation"
-    Semigroups.jl v1 binds `Presentation<word_type>` only. Alphabets and
-    rules use `Vector{Int}` with 1-based letter indices.
+`Presentation{String}` uses the byte-oriented native `std::string` API and
+therefore accepts ASCII characters only. Its generated alphabet-by-size form
+is limited to 31 letters because libsemigroups starts that alphabet at `'a'`.
+
+Algorithms such as Knuth-Bendix and Todd-Coxeter currently accept only
+`Presentation{Vector{Int}}`; `Presentation{String}` is supported for the
+presentation data structure and its helpers.
 
 ```@docs
 Semigroups.Presentation
@@ -17,13 +21,13 @@ Semigroups.Presentation
 | Function                                                                                                                               | Description                               |
 | -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | [`init!`](@ref Semigroups.init!(::Presentation))                                                                                       | Reset a presentation to the empty state.  |
-| [`alphabet`](@ref Semigroups.alphabet(::Presentation))                                                                                 | Return the alphabet as a `Vector{Int}`.   |
+| [`alphabet`](@ref Semigroups.alphabet(::Presentation))                                                                                 | Return the alphabet as `W`.              |
 | [`set_alphabet!`](@ref Semigroups.set_alphabet!(::Presentation, ::Integer))                                                            | Set the alphabet to `[1, ..., n]`.          |
-| [`set_alphabet!`](@ref Semigroups.set_alphabet!(::Presentation, ::AbstractVector{<:Integer}))                                          | Set the alphabet to the given vector.     |
+| [`set_alphabet!`](@ref Semigroups.set_alphabet!(::Presentation, ::AbstractVector{<:Integer}))                                          | Set the alphabet to the given `W` value.  |
 | [`alphabet_from_rules!`](@ref Semigroups.alphabet_from_rules!(::Presentation))                                                         | Infer the alphabet from the rules.        |
-| [`letter`](@ref Semigroups.letter(::Presentation, ::Integer))                                                                          | Return the `i`-th letter of the alphabet. |
-| [`index_of`](@ref Semigroups.index_of(::Presentation, ::Integer))                                                                      | Return the 1-based index of a letter.     |
-| [`in_alphabet`](@ref Semigroups.in_alphabet(::Presentation, ::Integer))                                                                | Test membership in the alphabet.          |
+| [`letter`](@ref Semigroups.letter(::Presentation, ::Integer))                                                                          | Return the `i`-th alphabet letter.        |
+| [`index_of`](@ref Semigroups.index_of(::Presentation, ::Integer))                                                                      | Return the 1-based letter index.         |
+| [`in_alphabet`](@ref Semigroups.in_alphabet(::Presentation, ::Integer))                                                                | Test alphabet membership.                |
 | [`contains_empty_word`](@ref Semigroups.contains_empty_word(::Presentation))                                                           | Query whether the empty word is allowed.  |
 | [`set_contains_empty_word!`](@ref Semigroups.set_contains_empty_word!(::Presentation, ::Bool))                                         | Set whether the empty word is allowed.    |
 | [`add_generator!`](@ref Semigroups.add_generator!(::Presentation))                                                                     | Append a generator (no-arg or by letter). |
@@ -69,6 +73,6 @@ value-semantics predicates from `Base`, making it usable as a dictionary
 key and interoperable with generic Julia code.
 
 ```@docs
-Base.isempty(::Presentation)
-Base.hash(::Presentation, ::UInt)
+Base.isempty
+Base.hash
 ```
