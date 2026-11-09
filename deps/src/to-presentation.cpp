@@ -52,6 +52,20 @@ namespace libsemigroups_julia {
                return libsemigroups::to<
                    libsemigroups::Presentation<libsemigroups::word_type>>(k);
              });
+    m.method(
+        "to_presentation_string", [](libsemigroups::Kambites<std::string>& k) {
+          return libsemigroups::to<libsemigroups::Presentation<std::string>>(k);
+        });
+    m.method("to_presentation_word",
+             [](libsemigroups::Kambites<std::string>& k) {
+               return libsemigroups::to<
+                   libsemigroups::Presentation<libsemigroups::word_type>>(k);
+             });
+    m.method(
+        "to_presentation_string",
+        [](libsemigroups::Kambites<libsemigroups::word_type>& k) {
+          return libsemigroups::to<libsemigroups::Presentation<std::string>>(k);
+        });
     m.method("to_presentation_word",
              [](libsemigroups::ToddCoxeter<libsemigroups::word_type>& tc) {
                return libsemigroups::to<

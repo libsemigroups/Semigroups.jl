@@ -108,16 +108,27 @@ to(::Type{Presentation}, c::Congruence) =
     _wrap_presentation(LibSemigroups.to_presentation_word(c))
 
 """
-    to(::Type{Presentation}, k::Kambites) -> Presentation
+    to(::Type{Presentation}, k::Kambites{W}) -> Presentation{W}
+    to(::Type{Presentation{V}}, k::Kambites) -> Presentation{V}
 
 Julia implementation of libsemigroups' `to<Presentation>(k)` conversion.
 Return a presentation equivalent to the presentation used to construct or
 initialise `k`.
 
+With an unparameterised `Presentation` target, the returned presentation has
+the same word type `W` as `k`. With an explicit target `Presentation{V}`
+(`V` is `Vector{Int}` or `String`), the presentation is converted to that
+word type.
+
 This conversion does not enumerate `k`.
 """
-to(::Type{Presentation}, k::Kambites) =
-    _wrap_presentation(LibSemigroups.to_presentation_word(k))
+to(::Type{Presentation}, k::Kambites{W}) where {W} = to(Presentation{W}, k)
+
+to(::Type{Presentation{Vector{Int}}}, k::Kambites) =
+    _wrap_presentation(LibSemigroups.to_presentation_word(k.cxx_obj))
+
+to(::Type{Presentation{String}}, k::Kambites) =
+    _wrap_presentation(LibSemigroups.to_presentation_string(k.cxx_obj))
 
 """
     to(::Type{Presentation}, tc::ToddCoxeter) -> Presentation
