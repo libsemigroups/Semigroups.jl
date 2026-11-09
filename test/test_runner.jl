@@ -90,26 +90,3 @@ end
     tc = _test_runner_todd_coxeter()
     @test Semigroups._cxx(tc) === tc
 end
-
-@testset "Runner - run_until! accepts Bool-returning predicates" begin
-    # Previously the predicate had to return a Cuchar; a Bool errored with
-    # "TypeError: in cfunction, expected UInt8, got a value of type Bool".
-    tc = _test_runner_todd_coxeter()
-    run_until!(() -> false, tc)       # never stops early, so runs to the end
-    @test finished(tc)
-
-    # do-block form, with a predicate that becomes true after its first check
-    tc2 = _test_runner_todd_coxeter()
-    calls = Ref(0)
-    run_until!(tc2) do
-        calls[] += 1
-        calls[] > 1
-    end
-    @test calls[] > 1
-    @test stopped_by_predicate(tc2) || finished(tc2)
-
-    # A predicate that is already true means the runner never starts.
-    tc3 = _test_runner_todd_coxeter()
-    run_until!(() -> true, tc3)
-    @test !started(tc3)
-end

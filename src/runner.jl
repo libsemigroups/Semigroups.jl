@@ -106,10 +106,7 @@ function run_for!(r::Runner, t::TimePeriod)
 end
 
 function run_until!(f::Function, r::Runner)
-    # The C++ side expects a `Cuchar`-returning callback; convert so that
-    # ordinary `Bool`-returning predicates work.
-    g = () -> Cuchar(f())
-    sf = @safe_cfunction($g, Cuchar, ())
+    sf = @safe_cfunction($f, Cuchar, ())
     GC.@preserve sf LibSemigroups.run_until!(_cxx(r), sf)
 end
 
