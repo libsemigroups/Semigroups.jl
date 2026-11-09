@@ -79,8 +79,27 @@ _cong_word_to_cpp(::Type{W}, w) where {W} = throw(
 )
 _cong_word_to_cpp(cong::CongruenceCommon, w) = _cong_word_to_cpp(_cong_word_type(cong), w)
 
+# A collection of words is passed to C++ as a `std::vector<Word>`, built here
+# as a CxxWrap `StdVector`. (`word_type` is `std::vector<size_t>`, matching
+# the `Vector{UInt}` produced by `_word_to_cpp`.)
 _cong_words_to_cpp(cong::CongruenceCommon, words) =
-    Any[_cong_word_to_cpp(cong, w) for w in words]
+    _cong_words_to_cpp(_cong_word_type(cong), words)
+
+function _cong_words_to_cpp(::Type{Vector{Int}}, words)
+    return CxxWrap.StdLib.StdVector(
+        CxxWrap.StdLib.StdVector{UInt}[
+            CxxWrap.StdLib.StdVector{UInt}(_cong_word_to_cpp(Vector{Int}, w)) for w in words
+        ],
+    )
+end
+
+function _cong_words_to_cpp(::Type{String}, words)
+    return CxxWrap.StdLib.StdVector(
+        CxxWrap.StdLib.StdString[
+            CxxWrap.StdLib.StdString(_cong_word_to_cpp(String, w)) for w in words
+        ],
+    )
+end
 
 _cong_word_from_cpp(cong::CongruenceCommon, w) =
     _presentation_word_from_cpp(_cong_word_type(cong), w)
