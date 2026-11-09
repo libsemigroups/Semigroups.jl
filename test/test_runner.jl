@@ -71,3 +71,36 @@ end
     @test hasmethod(report_why_we_stopped, Tuple{Runner})
     @test hasmethod(string_why_we_stopped, Tuple{Runner})
 end
+
+# ============================================================================
+# Behaviour of the generic Runner methods
+# ============================================================================
+
+# Finite monoid: a^2 = a, b^2 = b, ab = ba.
+function _test_runner_todd_coxeter()
+    p = Presentation()
+    set_alphabet!(p, 2)
+    add_rule!(p, [1, 1], [1])
+    add_rule!(p, [2, 2], [2])
+    add_rule!(p, [1, 2], [2, 1])
+    return ToddCoxeter(twosided, p)
+end
+
+@testset "Runner - _cxx is the identity for CxxWrap-bound runners" begin
+    tc = _test_runner_todd_coxeter()
+    @test Semigroups._cxx(tc) === tc
+end
+
+@testset "Runner - run_until! accepts Bool-returning predicates" begin
+    # Previously the predicate had to return a Cuchar; a Bool errored with
+    # "TypeError: in cfunction, expected UInt8, got a value of type Bool".
+    tc = _test_runner_todd_coxeter()
+    run_until!(() -> false, tc)       # never stops early, so runs to the end
+    @test finished(tc)
+
+    tc2 = _test_runner_todd_coxeter()
+    run_until!(tc2) do                # do-block form
+        true
+    end
+    @test finished(tc2) || stopped_by_predicate(tc2)
+end

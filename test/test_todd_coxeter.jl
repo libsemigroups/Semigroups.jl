@@ -394,3 +394,29 @@ end
 # ============================================================================
 # TODO - port full test-todd-coxeter.cpp test cases
 # ============================================================================
+
+# ============================================================================
+# Generic CongruenceCommon helpers: word types
+# ============================================================================
+
+@testset "ToddCoxeter - word type of the generic congruence helpers" begin
+    # Finite monoid: a^2 = a, b^2 = b, ab = ba.
+    p = Presentation()
+    set_alphabet!(p, 2)
+    add_rule!(p, [1, 1], [1])
+    add_rule!(p, [2, 2], [2])
+    add_rule!(p, [1, 2], [2, 1])
+    tc = ToddCoxeter(twosided, p)
+
+    # ToddCoxeter is bound over word_type, so its words are Vector{Int}.
+    @test Semigroups._cong_word_type(tc) === Vector{Int}
+
+    # String words are rejected with a clear ArgumentError (not a
+    # MethodError or LibsemigroupsError).
+    @test_throws ArgumentError Semigroups.contains(tc, "ab", "ba")
+    @test_throws ArgumentError currently_contains(tc, "ab", "ba")
+    @test_throws ArgumentError Semigroups.reduce(tc, "ab")
+    @test_throws ArgumentError reduce_no_run(tc, "ab")
+    @test_throws ArgumentError add_generating_pair!(tc, "a", "b")
+    @test_throws ArgumentError partition(tc, ["a", "b"])
+end

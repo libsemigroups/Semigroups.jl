@@ -8,8 +8,11 @@ function names work uniformly across [`KnuthBendix`](@ref
 Semigroups.KnuthBendix) (and, in later phases, `ToddCoxeter`,
 `Kambites`, and `Congruence`).
 
-Words are accepted and returned as 1-based `Vector{Int}` letter indices
-throughout.
+Words are accepted and returned in the word type of the congruence, as
+in libsemigroups, where every helper takes and returns
+`Thing::native_word_type`. For most congruences this is 1-based
+`Vector{Int}` letter indices; congruences over `String` words take and
+return ASCII `String`s. Passing a word of the wrong type throws an `ArgumentError`.
 
 !!! warning "v1 limitation"
     [`KnuthBendix`](@ref Semigroups.KnuthBendix) is the only concrete

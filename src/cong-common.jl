@@ -40,29 +40,64 @@ Return the number of classes of `cong`, triggering a full enumeration if
 needed.
 """
 number_of_classes(cong::CongruenceCommon) =
-    @wrap_libsemigroups_call LibSemigroups.number_of_classes(cong)
+    @wrap_libsemigroups_call LibSemigroups.number_of_classes(_cxx(cong))
 
 """
   presentation(cong::CongruenceCommon) -> Presentation
 
 Return the presentation associated with `cong`.
 """
-presentation(cong::CongruenceCommon) = _wrap_presentation(LibSemigroups.presentation(cong))
+presentation(cong::CongruenceCommon) =
+    _wrap_presentation(LibSemigroups.presentation(_cxx(cong)))
 
 """
   kind(cong::CongruenceCommon) -> congruence_kind
 
 Return whether `cong` is a one-sided or two-sided congruence.
 """
-kind(cong::CongruenceCommon) = LibSemigroups.kind(cong)
+kind(cong::CongruenceCommon) = LibSemigroups.kind(_cxx(cong))
 
-_words_to_cpp(words::AbstractVector{<:AbstractVector{<:Integer}}) =
-    Any[_word_to_cpp(word) for word in words]
+# ============================================================================
+# Word-type plumbing
+#
+# Mirrors libsemigroups, where every congruence_common helper takes and
+# returns `Thing::native_word_type`. `_cong_word_type(cong)` is the Julia
+# word type (`Vector{Int}` or `String`) of `cong`. The CxxWrap-bound
+# algorithms (`KnuthBendix`, `ToddCoxeter`, `Congruence`) are currently only
+# bound over `word_type`, so the default is `Vector{Int}`; parametric
+# wrappers such as `Kambites{W}` override it.
+# ============================================================================
+
+_cong_word_type(::CongruenceCommon) = Vector{Int}
+
+_cong_word_to_cpp(::Type{Vector{Int}}, w::AbstractVector{<:Integer}) = _word_to_cpp(w)
+_cong_word_to_cpp(::Type{String}, w::AbstractString) = _presentation_ascii_string(w)
+_cong_word_to_cpp(::Type{W}, w) where {W} = throw(
+    ArgumentError("expected a word of type $W for this congruence, got a $(typeof(w))"),
+)
+_cong_word_to_cpp(cong::CongruenceCommon, w) = _cong_word_to_cpp(_cong_word_type(cong), w)
+
+_cong_words_to_cpp(cong::CongruenceCommon, words) =
+    Any[_cong_word_to_cpp(cong, w) for w in words]
+
+_cong_word_from_cpp(cong::CongruenceCommon, w) =
+    _presentation_word_from_cpp(_cong_word_type(cong), w)
+
+_cong_classes_from_cpp(cong::CongruenceCommon, classes) =
+    [[_cong_word_from_cpp(cong, w) for w in cls] for cls in classes]
+
+const _CONG_WORDS_NOTE = """
+Words are 1-based `Vector{Int}` letter indices, or ASCII `String`s for
+congruences over `String` words; the word type must match that of
+`cong`."""
 
 """
     add_generating_pair!(cong::CongruenceCommon, u::AbstractVector{<:Integer}, v::AbstractVector{<:Integer}) -> CongruenceCommon
+    add_generating_pair!(cong::CongruenceCommon, u::AbstractString, v::AbstractString) -> CongruenceCommon
 
 Add a generating pair `(u, v)` to `cong`.
+
+$(_CONG_WORDS_NOTE)
 
 # Arguments
 
@@ -84,10 +119,17 @@ function add_generating_pair!(
     u::AbstractVector{<:Integer},
     v::AbstractVector{<:Integer},
 )
-    cpp_u = _word_to_cpp(u)
-    cpp_v = _word_to_cpp(v)
+    return _cong_add_generating_pair!(cong, u, v)
+end
+
+add_generating_pair!(cong::CongruenceCommon, u::AbstractString, v::AbstractString) =
+    _cong_add_generating_pair!(cong, u, v)
+
+function _cong_add_generating_pair!(cong::CongruenceCommon, u, v)
+    cpp_u = _cong_word_to_cpp(cong, u)
+    cpp_v = _cong_word_to_cpp(cong, v)
     @wrap_libsemigroups_call LibSemigroups.cong_common_add_generating_pair!(
-        cong,
+        _cxx(cong),
         cpp_u,
         cpp_v,
     )
@@ -96,6 +138,7 @@ end
 
 """
     currently_contains(cong::CongruenceCommon, u::AbstractVector{<:Integer}, v::AbstractVector{<:Integer}) -> tril
+    currently_contains(cong::CongruenceCommon, u::AbstractString, v::AbstractString) -> tril
 
 Check whether the words `u` and `v` are already known to be equivalent
 under `cong`, without triggering a run.
@@ -103,6 +146,8 @@ under `cong`, without triggering a run.
 This function performs no enumeration of `cong`, so it is possible for
 `u` and `v` to be equivalent in the congruence but for that not yet to
 be known.
+
+$(_CONG_WORDS_NOTE)
 
 # Arguments
 
@@ -134,10 +179,17 @@ function currently_contains(
     u::AbstractVector{<:Integer},
     v::AbstractVector{<:Integer},
 )
-    cpp_u = _word_to_cpp(u)
-    cpp_v = _word_to_cpp(v)
+    return _cong_currently_contains(cong, u, v)
+end
+
+currently_contains(cong::CongruenceCommon, u::AbstractString, v::AbstractString) =
+    _cong_currently_contains(cong, u, v)
+
+function _cong_currently_contains(cong::CongruenceCommon, u, v)
+    cpp_u = _cong_word_to_cpp(cong, u)
+    cpp_v = _cong_word_to_cpp(cong, v)
     return @wrap_libsemigroups_call LibSemigroups.cong_common_currently_contains(
-        cong,
+        _cxx(cong),
         cpp_u,
         cpp_v,
     )
@@ -145,11 +197,14 @@ end
 
 """
     contains(cong::CongruenceCommon, u::AbstractVector{<:Integer}, v::AbstractVector{<:Integer}) -> Bool
+    contains(cong::CongruenceCommon, u::AbstractString, v::AbstractString) -> Bool
 
 Check whether the words `u` and `v` are equivalent under `cong`.
 
 This function triggers a full enumeration of `cong`, which may never
 terminate.
+
+$(_CONG_WORDS_NOTE)
 
 # Arguments
 
@@ -181,13 +236,25 @@ function contains(
     u::AbstractVector{<:Integer},
     v::AbstractVector{<:Integer},
 )
-    cpp_u = _word_to_cpp(u)
-    cpp_v = _word_to_cpp(v)
-    return @wrap_libsemigroups_call LibSemigroups.cong_common_contains(cong, cpp_u, cpp_v)
+    return _cong_contains(cong, u, v)
+end
+
+contains(cong::CongruenceCommon, u::AbstractString, v::AbstractString) =
+    _cong_contains(cong, u, v)
+
+function _cong_contains(cong::CongruenceCommon, u, v)
+    cpp_u = _cong_word_to_cpp(cong, u)
+    cpp_v = _cong_word_to_cpp(cong, v)
+    return @wrap_libsemigroups_call LibSemigroups.cong_common_contains(
+        _cxx(cong),
+        cpp_u,
+        cpp_v,
+    )
 end
 
 """
     reduce_no_run(cong::CongruenceCommon, w::AbstractVector{<:Integer}) -> Vector{Int}
+    reduce_no_run(cong::CongruenceCommon, w::AbstractString) -> String
 
 Reduce the word `w` using the current state of `cong`, without
 triggering an enumeration.
@@ -196,6 +263,8 @@ The output word is equivalent to `w` in the congruence represented by
 `cong`. If `cong` is [`finished`](@ref Semigroups.finished), the output
 is a normal form for `w`. Otherwise, equivalent input words may produce
 different output words.
+
+$(_CONG_WORDS_NOTE)
 
 # Arguments
 
@@ -217,19 +286,28 @@ current rules of `cong`.
 
 [`reduce`](@ref Semigroups.reduce(::CongruenceCommon, ::AbstractVector{<:Integer}))
 """
-function reduce_no_run(cong::CongruenceCommon, w::AbstractVector{<:Integer})
-    cpp_w = _word_to_cpp(w)
-    result = @wrap_libsemigroups_call LibSemigroups.cong_common_reduce_no_run(cong, cpp_w)
-    return _word_from_cpp(result)
+reduce_no_run(cong::CongruenceCommon, w::AbstractVector{<:Integer}) =
+    _cong_reduce_no_run(cong, w)
+
+reduce_no_run(cong::CongruenceCommon, w::AbstractString) = _cong_reduce_no_run(cong, w)
+
+function _cong_reduce_no_run(cong::CongruenceCommon, w)
+    cpp_w = _cong_word_to_cpp(cong, w)
+    result =
+        @wrap_libsemigroups_call LibSemigroups.cong_common_reduce_no_run(_cxx(cong), cpp_w)
+    return _cong_word_from_cpp(cong, result)
 end
 
 """
     reduce(cong::CongruenceCommon, w::AbstractVector{<:Integer}) -> Vector{Int}
+    reduce(cong::CongruenceCommon, w::AbstractString) -> String
 
 Reduce the word `w` to a normal form under `cong`.
 
 This function triggers a full enumeration of `cong`. The output word is
 a normal form for `w` in the congruence.
+
+$(_CONG_WORDS_NOTE)
 
 # Arguments
 
@@ -259,10 +337,14 @@ A 1-based `Vector{Int}` representing a normal form of `w` in `cong`.
 
 [`reduce_no_run`](@ref Semigroups.reduce_no_run(::CongruenceCommon, ::AbstractVector{<:Integer}))
 """
-function reduce(cong::CongruenceCommon, w::AbstractVector{<:Integer})
-    cpp_w = _word_to_cpp(w)
-    result = @wrap_libsemigroups_call LibSemigroups.cong_common_reduce(cong, cpp_w)
-    return _word_from_cpp(result)
+reduce(cong::CongruenceCommon, w::AbstractVector{<:Integer}) = _cong_reduce(cong, w)
+
+reduce(cong::CongruenceCommon, w::AbstractString) = _cong_reduce(cong, w)
+
+function _cong_reduce(cong::CongruenceCommon, w)
+    cpp_w = _cong_word_to_cpp(cong, w)
+    result = @wrap_libsemigroups_call LibSemigroups.cong_common_reduce(_cxx(cong), cpp_w)
+    return _cong_word_from_cpp(cong, result)
 end
 
 """
@@ -289,18 +371,21 @@ A `Vector` of 1-based `Vector{Int}` words, one per congruence class.
 [`non_trivial_classes`](@ref Semigroups.non_trivial_classes(::CongruenceCommon, ::CongruenceCommon))
 """
 function normal_forms(cong::CongruenceCommon)
-    nf = @wrap_libsemigroups_call LibSemigroups.cong_common_normal_forms(cong)
-    return [_word_from_cpp(w) for w in nf]
+    nf = @wrap_libsemigroups_call LibSemigroups.cong_common_normal_forms(_cxx(cong))
+    return [_cong_word_from_cpp(cong, w) for w in nf]
 end
 
 """
     partition(cong::CongruenceCommon, words::AbstractVector{<:AbstractVector{<:Integer}}) -> Vector{Vector{Vector{Int}}}
+    partition(cong::CongruenceCommon, words::AbstractVector{<:AbstractString}) -> Vector{Vector{String}}
 
 Partition `words` into congruence classes induced by `cong`.
 
 Each returned class is a list of the input words that belong to the
 same congruence class. This function triggers a full enumeration of
 `cong`.
+
+$(_CONG_WORDS_NOTE)
 
 # Arguments
 
@@ -327,11 +412,19 @@ function partition(
     cong::CongruenceCommon,
     words::AbstractVector{<:AbstractVector{<:Integer}},
 )
-    classes = @wrap_libsemigroups_call LibSemigroups.cong_common_partition(
-        cong,
-        _words_to_cpp(words),
-    )
-    return [[_word_from_cpp(word) for word in cls] for cls in classes]
+    return _cong_partition(cong, words)
+end
+
+partition(cong::CongruenceCommon, words::AbstractVector{<:AbstractString}) =
+    _cong_partition(cong, words)
+
+function _cong_partition(cong::CongruenceCommon, words)
+    # Convert outside @wrap_libsemigroups_call so that word-type/ASCII
+    # errors surface as ArgumentError rather than LibsemigroupsError.
+    cpp_words = _cong_words_to_cpp(cong, words)
+    classes =
+        @wrap_libsemigroups_call LibSemigroups.cong_common_partition(_cxx(cong), cpp_words)
+    return _cong_classes_from_cpp(cong, classes)
 end
 
 """
@@ -380,7 +473,9 @@ A `Vector` of non-trivial classes; each class is a `Vector` of 1-based
 [`normal_forms`](@ref Semigroups.normal_forms(::CongruenceCommon))
 """
 function non_trivial_classes(cong1::CongruenceCommon, cong2::CongruenceCommon)
-    classes =
-        @wrap_libsemigroups_call LibSemigroups.cong_common_non_trivial_classes(cong1, cong2)
-    return [[_word_from_cpp(w) for w in cls] for cls in classes]
+    classes = @wrap_libsemigroups_call LibSemigroups.cong_common_non_trivial_classes(
+        _cxx(cong1),
+        _cxx(cong2),
+    )
+    return _cong_classes_from_cpp(cong1, classes)
 end

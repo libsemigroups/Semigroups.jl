@@ -48,58 +48,86 @@
 #include <jlcxx/array.hpp>
 
 #include <cstddef>
+#include <string>
 #include <vector>
 
 namespace libsemigroups_julia {
 
+  // JuliaWord<Word> describes how a word arrives from Julia for a congruence
+  // whose `native_word_type` is `Word`, and how to convert it:
+  //
+  //   * `arg_type`        - the CxxWrap argument type of a single word;
+  //   * `to_cpp(w)`       - convert an `arg_type` to `Word`;
+  //   * `from_jl_value(v)` - convert one element of a Julia `Vector{Any}` of
+  //                          words (used by `partition`) to `Word`.
+  //
+  // word_type words arrive as 0-based `Vector{UInt}` (see `_word_to_cpp`);
+  // std::string words arrive as Julia `String`s (ASCII-checked on the Julia
+  // side).
+  template <typename Word>
+  struct JuliaWord;
+
+  template <>
+  struct JuliaWord<libsemigroups::word_type> {
+    using arg_type = jlcxx::ArrayRef<size_t>;
+
+    static libsemigroups::word_type to_cpp(arg_type w) {
+      return libsemigroups::word_type(w.begin(), w.end());
+    }
+
+    static libsemigroups::word_type from_jl_value(jl_value_t* v) {
+      return to_cpp(jlcxx::ArrayRef<size_t>(reinterpret_cast<jl_array_t*>(v)));
+    }
+  };
+
+  template <>
+  struct JuliaWord<std::string> {
+    using arg_type = std::string const&;
+
+    static std::string const& to_cpp(arg_type w) {
+      return w;
+    }
+
+    static std::string from_jl_value(jl_value_t* v) {
+      return std::string(jl_string_data(v), jl_string_len(v));
+    }
+  };
+
   template <typename Thing>
   inline void define_cong_common_word_helpers(jl::Module& m) {
     using Word = typename Thing::native_word_type;
+    using JW   = JuliaWord<Word>;
+    using Arg  = typename JW::arg_type;
 
     // reduce (triggers full enumeration)
-    m.method("cong_common_reduce",
-             [](Thing& self, jlcxx::ArrayRef<size_t> w) -> Word {
-               Word input(w.begin(), w.end());
-               return libsemigroups::congruence_common::reduce(self, input);
-             });
+    m.method("cong_common_reduce", [](Thing& self, Arg w) -> Word {
+      return libsemigroups::congruence_common::reduce(self, JW::to_cpp(w));
+    });
 
     // reduce_no_run (no enumeration)
-    m.method("cong_common_reduce_no_run",
-             [](Thing const& self, jlcxx::ArrayRef<size_t> w) -> Word {
-               Word input(w.begin(), w.end());
-               return libsemigroups::congruence_common::reduce_no_run(self,
-                                                                      input);
-             });
+    m.method("cong_common_reduce_no_run", [](Thing const& self, Arg w) -> Word {
+      return libsemigroups::congruence_common::reduce_no_run(self,
+                                                             JW::to_cpp(w));
+    });
 
     // contains (triggers full enumeration)
-    m.method("cong_common_contains",
-             [](Thing&                  self,
-                jlcxx::ArrayRef<size_t> u,
-                jlcxx::ArrayRef<size_t> v) -> bool {
-               Word uw(u.begin(), u.end());
-               Word vw(v.begin(), v.end());
-               return libsemigroups::congruence_common::contains(self, uw, vw);
-             });
+    m.method("cong_common_contains", [](Thing& self, Arg u, Arg v) -> bool {
+      return libsemigroups::congruence_common::contains(
+          self, JW::to_cpp(u), JW::to_cpp(v));
+    });
 
     // currently_contains (no enumeration, returns tril)
     m.method("cong_common_currently_contains",
-             [](Thing const&            self,
-                jlcxx::ArrayRef<size_t> u,
-                jlcxx::ArrayRef<size_t> v) -> libsemigroups::tril {
-               Word uw(u.begin(), u.end());
-               Word vw(v.begin(), v.end());
+             [](Thing const& self, Arg u, Arg v) -> libsemigroups::tril {
                return libsemigroups::congruence_common::currently_contains(
-                   self, uw, vw);
+                   self, JW::to_cpp(u), JW::to_cpp(v));
              });
 
     // add_generating_pair!
-    m.method(
-        "cong_common_add_generating_pair!",
-        [](Thing& self, jlcxx::ArrayRef<size_t> u, jlcxx::ArrayRef<size_t> v) {
-          Word uw(u.begin(), u.end());
-          Word vw(v.begin(), v.end());
-          libsemigroups::congruence_common::add_generating_pair(self, uw, vw);
-        });
+    m.method("cong_common_add_generating_pair!", [](Thing& self, Arg u, Arg v) {
+      libsemigroups::congruence_common::add_generating_pair(
+          self, JW::to_cpp(u), JW::to_cpp(v));
+    });
 
     m.method("cong_common_partition",
              [](Thing& self, jlcxx::ArrayRef<jl_value_t*> words)
@@ -107,9 +135,7 @@ namespace libsemigroups_julia {
                std::vector<Word> input;
                input.reserve(words.size());
                for (jl_value_t* word_value : words) {
-                 auto word = jlcxx::ArrayRef<size_t>(
-                     reinterpret_cast<jl_array_t*>(word_value));
-                 input.emplace_back(word.begin(), word.end());
+                 input.push_back(JW::from_jl_value(word_value));
                }
                return libsemigroups::congruence_common::partition(
                    self, input.begin(), input.end());
