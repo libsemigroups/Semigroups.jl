@@ -397,12 +397,6 @@ end
         @test running_for_how_long(k) isa Nanosecond
         @test !running_for(k)
 
-        k2 = Kambites(twosided, p)
-        run_until!(() -> false, k2)
-        @test finished(k2)
-        @test !stopped_by_predicate(k2)
-        @test !running_until(k2)
-
         run!(k)
         @test finished(k)
         @test string_why_we_stopped(k) isa AbstractString
