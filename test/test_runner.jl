@@ -98,9 +98,18 @@ end
     run_until!(() -> false, tc)       # never stops early, so runs to the end
     @test finished(tc)
 
+    # do-block form, with a predicate that becomes true after its first check
     tc2 = _test_runner_todd_coxeter()
-    run_until!(tc2) do                # do-block form
-        true
+    calls = Ref(0)
+    run_until!(tc2) do
+        calls[] += 1
+        calls[] > 1
     end
-    @test finished(tc2) || stopped_by_predicate(tc2)
+    @test calls[] > 1
+    @test stopped_by_predicate(tc2) || finished(tc2)
+
+    # A predicate that is already true means the runner never starts.
+    tc3 = _test_runner_todd_coxeter()
+    run_until!(() -> true, tc3)
+    @test !started(tc3)
 end
