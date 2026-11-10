@@ -20,8 +20,9 @@ The result represents the trivial congruence over the semigroup defined by
 - [`LibsemigroupsError`](@ref Semigroups.LibsemigroupsError) if `wg` is not
     the left or right Cayley graph of `fp`.
 """
-to(::Type{Congruence}, kind::congruence_kind, fp::FroidurePin, wg) =
+to(::Type{Congruence}, kind::congruence_kind, fp::FroidurePin, wg) = _wrap_congruence(
     @wrap_libsemigroups_call LibSemigroups.to_congruence_from_fpb(kind, fp.cxx_obj, wg)
+)
 
 """
     to(::Type{Congruence}, kind::congruence_kind, wg::WordGraph) -> Congruence
@@ -37,7 +38,7 @@ The graph is added to the constructed congruence as-is; no checks are made
 that the resulting Todd-Coxeter or Congruence object is valid.
 """
 @cxxdereference to(::Type{Congruence}, kind::congruence_kind, wg::WordGraph) =
-    @wrap_libsemigroups_call LibSemigroups.to_congruence_from_wg(kind, wg)
+    _wrap_congruence(@wrap_libsemigroups_call LibSemigroups.to_congruence_from_wg(kind, wg))
 
 # ============================================================================
 # Conversions to ToddCoxeter
@@ -60,8 +61,9 @@ The result represents the trivial congruence over the semigroup defined by
 - [`LibsemigroupsError`](@ref Semigroups.LibsemigroupsError) if `wg` is not
     the left or right Cayley graph of `fp`.
 """
-to(::Type{ToddCoxeter}, kind::congruence_kind, fp::FroidurePin, wg) =
+to(::Type{ToddCoxeter}, kind::congruence_kind, fp::FroidurePin, wg) = _wrap_todd_coxeter(
     @wrap_libsemigroups_call LibSemigroups.to_todd_coxeter_from_fpb(kind, fp.cxx_obj, wg)
+)
 
 """
     to(::Type{ToddCoxeter}, kind::congruence_kind, kb::KnuthBendix) -> ToddCoxeter
@@ -79,8 +81,9 @@ conversion. It uses the right Cayley graph of the semigroup represented by
     represent a two-sided congruence or has infinitely many classes. In the
     infinite case, use `ToddCoxeter(kind, presentation(kb))` instead.
 """
-to(::Type{ToddCoxeter}, kind::congruence_kind, kb::KnuthBendix) =
-    @wrap_libsemigroups_call LibSemigroups.to_todd_coxeter_from_kb(kind, kb)
+to(::Type{ToddCoxeter}, kind::congruence_kind, kb::KnuthBendix) = _wrap_todd_coxeter(
+    @wrap_libsemigroups_call LibSemigroups.to_todd_coxeter_from_kb(kind, _cxx(kb))
+)
 
 # ============================================================================
 # Conversions to Presentation
@@ -105,7 +108,7 @@ Congruence-generating pairs are not added to the returned presentation by
 running `c`.
 """
 to(::Type{Presentation}, c::Congruence) =
-    _wrap_presentation(LibSemigroups.to_presentation_word(c))
+    _wrap_presentation(LibSemigroups.to_presentation_word(_cxx(c)))
 
 """
     to(::Type{Presentation}, k::Kambites) -> Presentation
@@ -117,7 +120,7 @@ initialise `k`.
 This conversion does not enumerate `k`.
 """
 to(::Type{Presentation}, k::Kambites) =
-    _wrap_presentation(LibSemigroups.to_presentation_word(k))
+    _wrap_presentation(LibSemigroups.to_presentation_word(_cxx(k)))
 
 """
     to(::Type{Presentation}, tc::ToddCoxeter) -> Presentation
@@ -128,7 +131,7 @@ Return the presentation used to construct or initialise `tc`.
 This conversion does not enumerate `tc`.
 """
 to(::Type{Presentation}, tc::ToddCoxeter) =
-    _wrap_presentation(LibSemigroups.to_presentation_word(tc))
+    _wrap_presentation(LibSemigroups.to_presentation_word(_cxx(tc)))
 
 """
     to(::Type{Presentation}, kb::KnuthBendix) -> Presentation
@@ -141,7 +144,7 @@ yet describe the completed semigroup or monoid. Run `kb` first if a fully
 processed presentation is required.
 """
 to(::Type{Presentation}, kb::KnuthBendix) =
-    _wrap_presentation(LibSemigroups.to_presentation_word(kb))
+    _wrap_presentation(LibSemigroups.to_presentation_word(_cxx(kb)))
 
 """
     to(::Type{Presentation}, fp::FroidurePin) -> Presentation
@@ -169,7 +172,7 @@ obtained from `fp` and represents the trivial congruence over that semigroup.
 This conversion enumerates `fp` before obtaining its presentation.
 """
 to(::Type{KnuthBendix}, kind::congruence_kind, fp::FroidurePin) =
-    LibSemigroups.to_knuth_bendix_from_fpb(kind, fp.cxx_obj)
+    _wrap_knuth_bendix(LibSemigroups.to_knuth_bendix_from_fpb(kind, fp.cxx_obj))
 
 """
     to(::Type{KnuthBendix}, kind::congruence_kind, tc::ToddCoxeter) -> KnuthBendix
@@ -180,7 +183,7 @@ and represents the trivial congruence over the semigroup defined by `tc`.
 `kind` selects whether the resulting congruence is one-sided or two-sided.
 """
 to(::Type{KnuthBendix}, kind::congruence_kind, tc::ToddCoxeter) =
-    LibSemigroups.to_knuth_bendix_from_tc(kind, tc)
+    _wrap_knuth_bendix(LibSemigroups.to_knuth_bendix_from_tc(kind, _cxx(tc)))
 
 # ============================================================================
 # Conversions to FroidurePin
