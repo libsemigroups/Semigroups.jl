@@ -27,17 +27,6 @@ algorithm.
 """
 abstract type CongruenceCommon{W} <: Runner end
 
-const Congruence = LibSemigroups.CongruenceWord
-
-# The C++ binding takes the congruence kind as an Integer and a raw
-# `PresentationWord`; adapt the public Julia types to that.
-function Congruence(kind::congruence_kind, p::Presentation)
-    return @wrap_libsemigroups_call LibSemigroups.CongruenceWord(
-        _kind_to_cpp(kind),
-        _cxx_word(p),
-    )
-end
-
 """
   number_of_classes(cong::CongruenceCommon) -> UInt64
 
@@ -476,6 +465,9 @@ A `Vector` of non-trivial classes; each class is a `Vector` of 1-based
 
 # Throws
 
+- `ArgumentError` if `cong1` and `cong2` are not of the same type
+  (libsemigroups only provides this for two `KnuthBendix` or two
+  `ToddCoxeter` instances).
 - `LibsemigroupsError` if `cong1` has infinitely many classes and
   `cong2` has finitely many classes (so that there is at least one
   infinite non-trivial class).
@@ -494,6 +486,14 @@ A `Vector` of non-trivial classes; each class is a `Vector` of 1-based
 [`normal_forms`](@ref Semigroups.normal_forms(::CongruenceCommon))
 """
 function non_trivial_classes(cong1::CongruenceCommon, cong2::CongruenceCommon)
+    # libsemigroups only provides this for two congruences of the same
+    # algorithm and word type (e.g. two KnuthBendix, or two ToddCoxeter).
+    typeof(cong1) === typeof(cong2) || throw(
+        ArgumentError(
+            "non_trivial_classes requires two congruences of the same type, " *
+            "got $(typeof(cong1)) and $(typeof(cong2))",
+        ),
+    )
     classes = @wrap_libsemigroups_call LibSemigroups.cong_common_non_trivial_classes(
         _cxx(cong1),
         _cxx(cong2),
