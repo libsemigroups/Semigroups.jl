@@ -139,9 +139,32 @@ end
 
         q = Semigroups.to(Presentation, k)
 
+        @test q isa Presentation{Vector{Int}}
         @test q == presentation(k)
         @test alphabet(q) == alphabet(presentation(k))
         @test rules(q) == rules(presentation(k))
+
+        # String Kambites conversion
+        p_str = Presentation{String}()
+        set_alphabet!(p_str, 2)
+        add_rule_no_checks!(p_str, "aa", "b")
+        k_str = Kambites(twosided, p_str)
+
+        q_str = Semigroups.to(Presentation, k_str)
+        @test q_str isa Presentation{String}
+        @test q_str == presentation(k_str)
+        @test alphabet(q_str) == alphabet(presentation(k_str))
+        @test rules(q_str) == rules(presentation(k_str))
+
+        # Explicit target type
+        @test Semigroups.to(Presentation{String}, k_str) isa Presentation{String}
+        @test Semigroups.to(Presentation{Vector{Int}}, k) isa Presentation{Vector{Int}}
+
+        # Cross-conversions
+        q_cross1 = Semigroups.to(Presentation{String}, k)
+        @test q_cross1 isa Presentation{String}
+        q_cross2 = Semigroups.to(Presentation{Vector{Int}}, k_str)
+        @test q_cross2 isa Presentation{Vector{Int}}
     end
 
     @testset "ToddCoxeter conversion" begin
