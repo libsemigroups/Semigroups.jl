@@ -134,15 +134,26 @@ to(::Type{Presentation{String}}, k::Kambites) =
     _wrap_presentation(LibSemigroups.to_presentation_string(_cxx(k)))
 
 """
-    to(::Type{Presentation}, tc::ToddCoxeter) -> Presentation
+    to(::Type{Presentation}, tc::ToddCoxeter{W}) -> Presentation{W}
+    to(::Type{Presentation{V}}, tc::ToddCoxeter) -> Presentation{V}
 
 Julia implementation of libsemigroups' `to<Presentation>(tc)` conversion.
 Return the presentation used to construct or initialise `tc`.
 
+With an unparameterised `Presentation` target, the returned presentation has
+the same word type `W` as `tc`. With an explicit target `Presentation{V}`
+(`V` is `Vector{Int}` or `String`), the presentation is converted to that
+word type.
+
 This conversion does not enumerate `tc`.
 """
-to(::Type{Presentation}, tc::ToddCoxeter) =
+to(::Type{Presentation}, tc::ToddCoxeter{W}) where {W} = to(Presentation{W}, tc)
+
+to(::Type{Presentation{Vector{Int}}}, tc::ToddCoxeter) =
     _wrap_presentation(LibSemigroups.to_presentation_word(_cxx(tc)))
+
+to(::Type{Presentation{String}}, tc::ToddCoxeter) =
+    _wrap_presentation(LibSemigroups.to_presentation_string(_cxx(tc)))
 
 """
     to(::Type{Presentation}, kb::KnuthBendix) -> Presentation
@@ -193,8 +204,17 @@ conversion. It constructs a Knuth-Bendix instance from `tc.presentation()`
 and represents the trivial congruence over the semigroup defined by `tc`.
 `kind` selects whether the resulting congruence is one-sided or two-sided.
 """
-to(::Type{KnuthBendix}, kind::congruence_kind, tc::ToddCoxeter) =
+to(::Type{KnuthBendix}, kind::congruence_kind, tc::ToddCoxeter{Vector{Int}}) =
     _wrap_knuth_bendix(LibSemigroups.to_knuth_bendix_from_tc(kind, _cxx(tc)))
+
+function to(::Type{KnuthBendix}, ::congruence_kind, ::ToddCoxeter{W}) where {W}
+    throw(
+        ArgumentError(
+            "converting a ToddCoxeter{$W} to KnuthBendix is not yet supported; " *
+            "KnuthBendix currently supports Vector{Int} words only",
+        ),
+    )
+end
 
 # ============================================================================
 # Conversions to FroidurePin

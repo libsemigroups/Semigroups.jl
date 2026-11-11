@@ -83,8 +83,25 @@ ToddCoxeter(kind::congruence_kind, other::ToddCoxeter{W}) where {W} =
 @cxxdereference ToddCoxeter(kind::congruence_kind, wg::WordGraph) =
     ToddCoxeter{Vector{Int}}(kind, wg)
 
-@cxxdereference ToddCoxeter{W}(kind::congruence_kind, wg::WordGraph) where {W} =
-    _wrap_todd_coxeter(_cxx_todd_coxeter_type(W)(kind, wg))
+# A ToddCoxeter built from a word graph has one letter per edge label. For
+# String words these letters are ASCII characters, so at most 128 labels fit;
+# libsemigroups would otherwise silently create non-ASCII letters.
+_check_word_graph_fits(::Type{Vector{Int}}, wg) = nothing
+
+function _check_word_graph_fits(::Type{String}, wg)
+    out_degree(wg) <= 128 || throw(
+        ArgumentError(
+            "a ToddCoxeter{String} supports at most 128 edge labels (one ASCII " *
+            "letter each), but the word graph has $(out_degree(wg))",
+        ),
+    )
+    return nothing
+end
+
+@cxxdereference function ToddCoxeter{W}(kind::congruence_kind, wg::WordGraph) where {W}
+    _check_word_graph_fits(W, wg)
+    return _wrap_todd_coxeter(_cxx_todd_coxeter_type(W)(kind, wg))
+end
 
 ToddCoxeter(other::ToddCoxeter{W}) where {W} =
     _wrap_todd_coxeter(_cxx_todd_coxeter_type(W)(_cxx(other)))
@@ -337,6 +354,7 @@ function init!(
 end
 
 @cxxdereference function init!(tc::ToddCoxeter, kind::congruence_kind, wg::WordGraph)
+    _check_word_graph_fits(_cong_word_type(tc), wg)
     @wrap_libsemigroups_call LibSemigroups.init!(_cxx(tc), kind, wg)
     return tc
 end

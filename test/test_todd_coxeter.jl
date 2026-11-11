@@ -536,3 +536,33 @@ end
     add_rule!(q, "ba", "ab")
     @test tc_redundant_rule(q, Dates.Millisecond(100)) isa Int
 end
+
+@testset "ToddCoxeter{String} - conversions" begin
+    ps = _tc_string_presentation()
+    tc = ToddCoxeter(twosided, ps)
+    # to(Presentation, tc) keeps the word type; an explicit target converts.
+    q = Semigroups.to(Presentation, tc)
+    @test q isa Presentation{String}
+    @test q == ps
+    qw = Semigroups.to(Presentation{Vector{Int}}, tc)
+    @test qw isa Presentation{Vector{Int}}
+    @test qw == _tc_word_presentation()
+    tcw = ToddCoxeter(twosided, _tc_word_presentation())
+    @test Semigroups.to(Presentation{String}, tcw) == ps
+
+    # KnuthBendix does not support String words yet: a clear error, not an
+    # opaque method error.
+    @test_throws ArgumentError Semigroups.to(KnuthBendix, twosided, tc)
+    @test Semigroups.to(KnuthBendix, twosided, tcw) isa KnuthBendix{Vector{Int}}
+end
+
+@testset "ToddCoxeter{String} - word graphs need at most 128 labels" begin
+    # One ASCII letter per edge label: 128 fit, 129 do not.
+    tc = ToddCoxeter{String}(twosided, WordGraph(2, 128))
+    @test all(isascii, alphabet(presentation(tc)))
+    @test length(alphabet(presentation(tc))) == 128
+    @test_throws ArgumentError ToddCoxeter{String}(twosided, WordGraph(2, 129))
+    @test_throws ArgumentError init!(tc, twosided, WordGraph(2, 129))
+    # Integer words have no such limit.
+    @test ToddCoxeter(twosided, WordGraph(2, 129)) isa ToddCoxeter{Vector{Int}}
+end
