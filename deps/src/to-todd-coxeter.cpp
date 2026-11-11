@@ -20,6 +20,7 @@
 #include "libsemigroups_julia.hpp"
 
 #include <cstdint>
+#include <string>
 
 #include <libsemigroups/froidure-pin-base.hpp>
 #include <libsemigroups/knuth-bendix-class.hpp>
@@ -44,6 +45,13 @@ namespace libsemigroups_julia {
     m.method("to_todd_coxeter_from_kb",
              [](libsemigroups::congruence_kind                        knd,
                 libsemigroups::KnuthBendix<libsemigroups::word_type>& kb) {
+               return libsemigroups::to<libsemigroups::ToddCoxeter>(knd, kb);
+             });
+
+    // KnuthBendix<std::string> and congruence kind to ToddCoxeter<std::string>.
+    m.method("to_todd_coxeter_from_kb",
+             [](libsemigroups::congruence_kind           knd,
+                libsemigroups::KnuthBendix<std::string>& kb) {
                return libsemigroups::to<libsemigroups::ToddCoxeter>(knd, kb);
              });
   }

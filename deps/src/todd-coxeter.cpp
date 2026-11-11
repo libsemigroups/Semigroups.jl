@@ -57,9 +57,232 @@ namespace jlcxx {
   struct SuperType<libsemigroups::ToddCoxeter<libsemigroups::word_type>> {
     using type = libsemigroups::detail::ToddCoxeterImpl;
   };
+
+  template <>
+  struct IsMirroredType<libsemigroups::ToddCoxeter<std::string>>
+      : std::false_type {};
+
+  template <>
+  struct SuperType<libsemigroups::ToddCoxeter<std::string>> {
+    using type = libsemigroups::detail::ToddCoxeterImpl;
+  };
 }  // namespace jlcxx
 
 namespace libsemigroups_julia {
+
+  namespace {
+
+    // Register ToddCoxeter<Word> as the Julia type `name`, with every
+    // per-instance method and the common congruence helpers.
+    template <typename Word>
+    void bind_todd_coxeter(jl::Module& m, std::string const& name) {
+      using libsemigroups::congruence_kind;
+      using libsemigroups::Order;
+      using libsemigroups::WordGraph;
+
+      using TCImpl = libsemigroups::detail::ToddCoxeterImpl;
+      using TC     = libsemigroups::ToddCoxeter<Word>;
+      using P      = libsemigroups::Presentation<Word>;
+      using JW     = JuliaWord<Word>;
+
+      auto type = m.add_type<TC>(name, jlcxx::julia_base_type<TCImpl>());
+
+      // Constructors
+      type.template constructor<congruence_kind, P const&>();
+      type.template constructor<congruence_kind, TC const&>();
+      type.template constructor<congruence_kind, WordGraph<uint32_t> const&>();
+      type.template constructor<TC const&>();  // copy ctor
+
+      // init! overloads (mirror constructors)
+      type.method("init!", [](TC& self) -> TC& { return self.init(); });
+      type.method("init!",
+                  [](TC& self, congruence_kind knd, P const& p) -> TC& {
+                    return self.init(knd, p);
+                  });
+      type.method("init!",
+                  [](TC& self, congruence_kind knd, TC const& other) -> TC& {
+                    return self.init(knd, other);
+                  });
+      type.method("init!",
+                  [](TC&                        self,
+                     congruence_kind            knd,
+                     WordGraph<uint32_t> const& wg) -> TC& {
+                    return self.init(knd, wg);
+                  });
+
+      // strategy
+      type.method("strategy", [](TC const& self) -> TCImpl::options::strategy {
+        return self.strategy();
+      });
+      type.method("set_strategy!", [](TC& self, TCImpl::options::strategy val) {
+        self.strategy(val);
+      });
+
+      // lookahead_extent
+      type.method("lookahead_extent",
+                  [](TC const& self) -> TCImpl::options::lookahead_extent {
+                    return self.lookahead_extent();
+                  });
+      type.method("set_lookahead_extent!",
+                  [](TC& self, TCImpl::options::lookahead_extent val) {
+                    self.lookahead_extent(val);
+                  });
+
+      // lookahead_style
+      type.method("lookahead_style",
+                  [](TC const& self) -> TCImpl::options::lookahead_style {
+                    return self.lookahead_style();
+                  });
+      type.method("set_lookahead_style!",
+                  [](TC& self, TCImpl::options::lookahead_style val) {
+                    self.lookahead_style(val);
+                  });
+
+      // save
+      type.method("save", [](TC const& self) -> bool { return self.save(); });
+      type.method("set_save!", [](TC& self, bool val) { self.save(val); });
+
+      // use_relations_in_extra
+      type.method("use_relations_in_extra", [](TC const& self) -> bool {
+        return self.use_relations_in_extra();
+      });
+      type.method("set_use_relations_in_extra!",
+                  [](TC& self, bool val) { self.use_relations_in_extra(val); });
+
+      // lower_bound
+      type.method("lower_bound",
+                  [](TC const& self) -> size_t { return self.lower_bound(); });
+      type.method("set_lower_bound!",
+                  [](TC& self, size_t val) { self.lower_bound(val); });
+
+      // def_version
+      type.method("def_version",
+                  [](TC const& self) -> TCImpl::options::def_version {
+                    return self.def_version();
+                  });
+      type.method("set_def_version!",
+                  [](TC& self, TCImpl::options::def_version val) {
+                    self.def_version(val);
+                  });
+
+      // def_policy
+      type.method("def_policy",
+                  [](TC const& self) -> TCImpl::options::def_policy {
+                    return self.def_policy();
+                  });
+      type.method("set_def_policy!",
+                  [](TC& self, TCImpl::options::def_policy val) {
+                    self.def_policy(val);
+                  });
+
+      type.method("standardize!", [](TC& self, Order ord) -> bool {
+        return self.standardize(ord);
+      });
+
+      // is_standardized: route through current_word_graph(). The wrappers
+      // self.is_standardized(...) on TC/TCImpl are [[deprecated]] in
+      // libsemigroups, with this exact replacement recommended.
+      type.method("is_standardized", [](TC const& self) -> bool {
+        return self.current_word_graph().is_standardized();
+      });
+
+      type.method("is_standardized", [](TC const& self, Order ord) -> bool {
+        return self.current_word_graph().is_standardized(ord);
+      });
+
+      // current_word_graph: large stable data, return by const reference.
+      type.method("current_word_graph",
+                  [](TC const& self) -> WordGraph<uint32_t> const& {
+                    return self.current_word_graph();
+                  });
+
+      // word_graph: triggers run; non-const this.
+      type.method("word_graph", [](TC& self) -> WordGraph<uint32_t> const& {
+        return self.word_graph();
+      });
+
+      type.method("current_index_of",
+                  [](TC const& self, typename JW::arg_type w) -> size_t {
+                    auto const& ww = JW::to_cpp(w);
+                    return self.current_index_of(ww.begin(), ww.end());
+                  });
+
+      type.method("index_of", [](TC& self, typename JW::arg_type w) -> size_t {
+        auto const& ww = JW::to_cpp(w);
+        return self.index_of(ww.begin(), ww.end());
+      });
+
+      type.method("current_word_of", [](TC const& self, size_t i) -> Word {
+        Word out;
+        self.current_word_of(std::back_inserter(out), i);
+        return out;
+      });
+
+      type.method("throw_if_letter_not_in_alphabet",
+                  [](TC const& self, typename JW::arg_type w) {
+                    auto const& ww = JW::to_cpp(w);
+                    self.throw_if_letter_not_in_alphabet(ww.begin(), ww.end());
+                  });
+
+      type.method("word_of", [](TC& self, size_t i) -> Word {
+        Word out;
+        self.word_of(std::back_inserter(out), i);
+        return out;
+      });
+
+      type.method("number_of_classes", [](TC& self) -> uint64_t {
+        return self.number_of_classes();
+      });
+
+      type.method("kind", [](TC const& self) -> congruence_kind {
+        return self.kind();
+      });
+
+      type.method("number_of_generating_pairs", [](TC const& self) -> size_t {
+        return self.number_of_generating_pairs();
+      });
+
+      type.method("generating_pairs", [](TC const& self) -> std::vector<Word> {
+        auto const& pairs = self.generating_pairs();
+        return std::vector<Word>(pairs.begin(), pairs.end());
+      });
+
+      // presentation - return by copy
+      type.method("presentation",
+                  [](TC const& self) -> P { return self.presentation(); });
+
+      type.method("to_human_readable_repr", [](TC const& self) -> std::string {
+        return libsemigroups::to_human_readable_repr(self);
+      });
+
+      // is_non_trivial - takes nanoseconds at the boundary, converts to
+      // milliseconds (the helper takes std::chrono::milliseconds).
+      m.method("tc_is_non_trivial",
+               [](TC& self, size_t tries, int64_t try_for_ns, float threshold)
+                   -> libsemigroups::tril {
+                 auto try_for
+                     = std::chrono::duration_cast<std::chrono::milliseconds>(
+                         std::chrono::nanoseconds(try_for_ns));
+                 return libsemigroups::todd_coxeter::is_non_trivial(
+                     self, tries, try_for, threshold);
+               });
+
+      define_cong_common_helpers<TC>(m);
+    }
+
+    template <typename Word>
+    void bind_tc_redundant_rule(jl::Module& m) {
+      using P = libsemigroups::Presentation<Word>;
+      // redundant_rule - returns a 0-based index into p.rules (lhs position),
+      // or p.rules.size() if no redundant rule was found.
+      m.method("tc_redundant_rule", [](P const& p, int64_t ns) -> size_t {
+        auto it = libsemigroups::todd_coxeter::redundant_rule(
+            p, std::chrono::nanoseconds(ns));
+        return static_cast<size_t>(std::distance(p.rules.cbegin(), it));
+      });
+    }
+
+  }  // namespace
 
   void define_todd_coxeter(jl::Module& m) {
     using libsemigroups::congruence_kind;
@@ -70,7 +293,6 @@ namespace libsemigroups_julia {
 
     using CongruenceCommon = libsemigroups::detail::CongruenceCommon;
     using TCImpl           = libsemigroups::detail::ToddCoxeterImpl;
-    using TC               = libsemigroups::ToddCoxeter<word_type>;
 
     // strategy: TCImpl::options::strategy has 8 values; we only expose the
     // 6 that appear on the user-facing ToddCoxeter::options::strategy.
@@ -120,198 +342,10 @@ namespace libsemigroups_julia {
     // Type registration
     m.add_type<TCImpl>("ToddCoxeterImpl",
                        jlcxx::julia_base_type<CongruenceCommon>());
-    auto type
-        = m.add_type<TC>("ToddCoxeterWord", jlcxx::julia_base_type<TCImpl>());
-
-    // Constructors
-    type.constructor<congruence_kind, Presentation<word_type> const&>();
-    type.constructor<congruence_kind, TC const&>();
-    type.constructor<congruence_kind, WordGraph<uint32_t> const&>();
-    type.constructor<TC const&>();  // copy ctor
-
-    // init! overloads (mirror constructors)
-    type.method("init!", [](TC& self) -> TC& { return self.init(); });
-    type.method("init!",
-                [](TC&                            self,
-                   congruence_kind                knd,
-                   Presentation<word_type> const& p) -> TC& {
-                  return self.init(knd, p);
-                });
-    type.method("init!",
-                [](TC& self, congruence_kind knd, TC const& other) -> TC& {
-                  return self.init(knd, other);
-                });
-    type.method("init!",
-                [](TC& self, congruence_kind knd, WordGraph<uint32_t> const& wg)
-                    -> TC& { return self.init(knd, wg); });
-
-    // strategy
-    type.method("strategy", [](TC const& self) -> TCImpl::options::strategy {
-      return self.strategy();
-    });
-    type.method("set_strategy!", [](TC& self, TCImpl::options::strategy val) {
-      self.strategy(val);
-    });
-
-    // lookahead_extent
-    type.method("lookahead_extent",
-                [](TC const& self) -> TCImpl::options::lookahead_extent {
-                  return self.lookahead_extent();
-                });
-    type.method("set_lookahead_extent!",
-                [](TC& self, TCImpl::options::lookahead_extent val) {
-                  self.lookahead_extent(val);
-                });
-
-    // lookahead_style
-    type.method("lookahead_style",
-                [](TC const& self) -> TCImpl::options::lookahead_style {
-                  return self.lookahead_style();
-                });
-    type.method("set_lookahead_style!",
-                [](TC& self, TCImpl::options::lookahead_style val) {
-                  self.lookahead_style(val);
-                });
-
-    // save
-    type.method("save", [](TC const& self) -> bool { return self.save(); });
-    type.method("set_save!", [](TC& self, bool val) { self.save(val); });
-
-    // use_relations_in_extra
-    type.method("use_relations_in_extra", [](TC const& self) -> bool {
-      return self.use_relations_in_extra();
-    });
-    type.method("set_use_relations_in_extra!",
-                [](TC& self, bool val) { self.use_relations_in_extra(val); });
-
-    // lower_bound
-    type.method("lower_bound",
-                [](TC const& self) -> size_t { return self.lower_bound(); });
-    type.method("set_lower_bound!",
-                [](TC& self, size_t val) { self.lower_bound(val); });
-
-    // def_version
-    type.method("def_version",
-                [](TC const& self) -> TCImpl::options::def_version {
-                  return self.def_version();
-                });
-    type.method("set_def_version!",
-                [](TC& self, TCImpl::options::def_version val) {
-                  self.def_version(val);
-                });
-
-    // def_policy
-    type.method("def_policy",
-                [](TC const& self) -> TCImpl::options::def_policy {
-                  return self.def_policy();
-                });
-    type.method("set_def_policy!",
-                [](TC& self, TCImpl::options::def_policy val) {
-                  self.def_policy(val);
-                });
-
-    type.method("standardize!", [](TC& self, Order ord) -> bool {
-      return self.standardize(ord);
-    });
-
-    // is_standardized: route through current_word_graph(). The wrappers
-    // self.is_standardized(...) on TC/TCImpl are [[deprecated]] in
-    // libsemigroups, with this exact replacement recommended.
-    type.method("is_standardized", [](TC const& self) -> bool {
-      return self.current_word_graph().is_standardized();
-    });
-
-    type.method("is_standardized", [](TC const& self, Order ord) -> bool {
-      return self.current_word_graph().is_standardized(ord);
-    });
-
-    // current_word_graph: large stable data, return by const reference.
-    type.method("current_word_graph",
-                [](TC const& self) -> WordGraph<uint32_t> const& {
-                  return self.current_word_graph();
-                });
-
-    // word_graph: triggers run; non-const this.
-    type.method("word_graph", [](TC& self) -> WordGraph<uint32_t> const& {
-      return self.word_graph();
-    });
-
-    type.method("current_index_of",
-                [](TC const& self, jlcxx::ArrayRef<size_t> w) -> size_t {
-                  word_type ww(w.begin(), w.end());
-                  return self.current_index_of(ww.begin(), ww.end());
-                });
-
-    type.method("index_of", [](TC& self, jlcxx::ArrayRef<size_t> w) -> size_t {
-      word_type ww(w.begin(), w.end());
-      return self.index_of(ww.begin(), ww.end());
-    });
-
-    type.method("current_word_of", [](TC const& self, size_t i) -> word_type {
-      word_type out;
-      self.current_word_of(std::back_inserter(out), i);
-      return out;
-    });
-
-    type.method("throw_if_letter_not_in_alphabet",
-                [](TC const& self, jlcxx::ArrayRef<size_t> w) {
-                  word_type ww(w.begin(), w.end());
-                  self.throw_if_letter_not_in_alphabet(ww.begin(), ww.end());
-                });
-
-    type.method("word_of", [](TC& self, size_t i) -> word_type {
-      word_type out;
-      self.word_of(std::back_inserter(out), i);
-      return out;
-    });
-
-    type.method("number_of_classes",
-                [](TC& self) -> uint64_t { return self.number_of_classes(); });
-
-    type.method("kind",
-                [](TC const& self) -> congruence_kind { return self.kind(); });
-
-    type.method("number_of_generating_pairs", [](TC const& self) -> size_t {
-      return self.number_of_generating_pairs();
-    });
-
-    type.method("generating_pairs",
-                [](TC const& self) -> std::vector<word_type> {
-                  auto const& pairs = self.generating_pairs();
-                  return std::vector<word_type>(pairs.begin(), pairs.end());
-                });
-
-    // presentation - return by copy
-    type.method("presentation", [](TC const& self) -> Presentation<word_type> {
-      return self.presentation();
-    });
-
-    type.method("to_human_readable_repr", [](TC const& self) -> std::string {
-      return libsemigroups::to_human_readable_repr(self);
-    });
-
-    // is_non_trivial - takes nanoseconds at the boundary, converts to
-    // milliseconds (the helper takes std::chrono::milliseconds).
-    m.method("tc_is_non_trivial",
-             [](TC& self, size_t tries, int64_t try_for_ns, float threshold)
-                 -> libsemigroups::tril {
-               auto try_for
-                   = std::chrono::duration_cast<std::chrono::milliseconds>(
-                       std::chrono::nanoseconds(try_for_ns));
-               return libsemigroups::todd_coxeter::is_non_trivial(
-                   self, tries, try_for, threshold);
-             });
-
-    // redundant_rule - returns a 0-based index into p.rules (lhs position),
-    // or p.rules.size() if no redundant rule was found.
-    m.method("tc_redundant_rule",
-             [](Presentation<word_type> const& p, int64_t ns) -> size_t {
-               auto it = libsemigroups::todd_coxeter::redundant_rule(
-                   p, std::chrono::nanoseconds(ns));
-               return static_cast<size_t>(std::distance(p.rules.cbegin(), it));
-             });
-
-    define_cong_common_helpers<TC>(m);
+    bind_todd_coxeter<word_type>(m, "ToddCoxeterWord");
+    bind_todd_coxeter<std::string>(m, "ToddCoxeterString");
+    bind_tc_redundant_rule<word_type>(m);
+    bind_tc_redundant_rule<std::string>(m);
   }
 
 }  // namespace libsemigroups_julia

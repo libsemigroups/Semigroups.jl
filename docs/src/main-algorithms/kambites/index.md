@@ -14,7 +14,5 @@ page. There are currently no helper functions specific to `Kambites`
 beyond those that apply to every
 [`CongruenceCommon`](@ref Semigroups.CongruenceCommon) subtype.
 
-!!! warning "v1 limitation"
-    Semigroups.jl v1 binds `Kambites{word_type}` only. String-alphabet
-    presentations are deferred to a later release. Letter indices are
-    1-based `Int` values throughout the Julia API.
+`Kambites{W}` supports presentations parameterized over either 1-based integer
+words (`W = Vector{Int}`) or ASCII strings (`W = String`).
