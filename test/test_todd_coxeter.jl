@@ -550,9 +550,8 @@ end
     tcw = ToddCoxeter(twosided, _tc_word_presentation())
     @test Semigroups.to(Presentation{String}, tcw) == ps
 
-    # KnuthBendix does not support String words yet: a clear error, not an
-    # opaque method error.
-    @test_throws ArgumentError Semigroups.to(KnuthBendix, twosided, tc)
+    # Converting to KnuthBendix keeps the word type.
+    @test Semigroups.to(KnuthBendix, twosided, tc) isa KnuthBendix{String}
     @test Semigroups.to(KnuthBendix, twosided, tcw) isa KnuthBendix{Vector{Int}}
 end
 

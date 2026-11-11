@@ -93,6 +93,23 @@ namespace libsemigroups_julia {
                return libsemigroups::to<
                    libsemigroups::Presentation<libsemigroups::word_type>>(kb);
              });
+    m.method(
+        "to_presentation_string",
+        [](libsemigroups::KnuthBendix<std::string>& kb) {
+          return libsemigroups::to<libsemigroups::Presentation<std::string>>(
+              kb);
+        });
+    m.method("to_presentation_word",
+             [](libsemigroups::KnuthBendix<std::string>& kb) {
+               return libsemigroups::to<
+                   libsemigroups::Presentation<libsemigroups::word_type>>(kb);
+             });
+    m.method(
+        "to_presentation_string",
+        [](libsemigroups::KnuthBendix<libsemigroups::word_type>& kb) {
+          return libsemigroups::to<libsemigroups::Presentation<std::string>>(
+              kb);
+        });
 
     // FroidurePin<E> to Presentation<word_type> for all 10 E instantiations.
     define_froidure_pin_to_presentation<libsemigroups::Transf<0, uint8_t>>(m);

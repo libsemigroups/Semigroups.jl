@@ -14,6 +14,7 @@ word API and avoid direct `LibSemigroups` calls.
 
 using Test
 using Semigroups
+using Dates: Millisecond
 
 _kb6_cword(xs::Integer...) = [Int(x) + 1 for x in xs]
 _kb6_cword(xs::AbstractVector{<:Integer}) = [Int(x) + 1 for x in xs]
@@ -401,4 +402,144 @@ end
     @testset "144: process pending rules x3" begin
         @test_skip "upstream [extreme] test and process_pending_rules is not exposed"
     end
+end
+
+# ============================================================================
+# KnuthBendix{String} (not a port of upstream tests)
+# ============================================================================
+
+# Finite monoid: a^2 = a, b^2 = b, ab = ba. Classes of nonempty words:
+# {a}, {b}, {ab}.
+function _kb_string_presentation()
+    p = Presentation{String}()
+    set_alphabet!(p, "ab")
+    add_rule!(p, "aa", "a")
+    add_rule!(p, "bb", "b")
+    add_rule!(p, "ab", "ba")
+    return p
+end
+
+function _kb_word_presentation()
+    p = Presentation()
+    set_alphabet!(p, 2)
+    add_rule!(p, [1, 1], [1])
+    add_rule!(p, [2, 2], [2])
+    add_rule!(p, [1, 2], [2, 1])
+    return p
+end
+
+@testset "KnuthBendix{String} - construction and rules" begin
+    ReportGuard(false)
+    p = _kb_string_presentation()
+    kb = KnuthBendix(twosided, p)
+    @test kb isa KnuthBendix{String}
+    @test kb isa Semigroups.CongruenceCommon{String}
+    @test presentation(kb) == p
+    @test number_of_classes(kb) == 3
+    @test confluent(kb)
+
+    rules = active_rules(kb)
+    @test rules isa Vector{Tuple{String,String}}
+    @test !isempty(rules)
+    @test all(r -> Semigroups.contains(kb, r[1], r[2]), rules)
+
+    labels = gilman_graph_node_labels(kb)
+    @test labels isa Vector{String}
+    @test "" in labels    # the initial node is the empty word
+
+    @test sort(normal_forms(kb)) == ["a", "ab", "b"]
+
+    @test copy(kb) isa KnuthBendix{String}
+    @test KnuthBendix(kb) isa KnuthBendix{String}
+end
+
+@testset "KnuthBendix{String} - word operations" begin
+    ReportGuard(false)
+    kb = KnuthBendix(twosided, _kb_string_presentation())
+    @test Semigroups.contains(kb, "ab", "ba")
+    @test !Semigroups.contains(kb, "a", "b")
+    @test Semigroups.reduce(kb, "baa") isa String
+    @test Semigroups.contains(kb, Semigroups.reduce(kb, "baa"), "baa")
+    classes = partition(kb, ["a", "aa", "b", "ab", "ba"])
+    @test sort(sort.(classes)) == [["a", "aa"], ["ab", "ba"], ["b"]]
+
+    kb2 = KnuthBendix(twosided, _kb_string_presentation())
+    add_generating_pair!(kb2, "a", "b")
+    @test generating_pairs(kb2) == [("a", "b")]
+    @test generating_pairs(kb2) isa Vector{Tuple{String,String}}
+    @test Semigroups.contains(kb2, "a", "b")
+    @test !Semigroups.contains(kb, "a", "b")    # the original is unaffected
+end
+
+@testset "KnuthBendix{String} - errors" begin
+    ReportGuard(false)
+    kb = KnuthBendix(twosided, _kb_string_presentation())
+    @test_throws ArgumentError Semigroups.contains(kb, [1], [2])
+    @test_throws ArgumentError Semigroups.reduce(kb, "café")
+
+    # init! needs a presentation of the same word type.
+    kbw = KnuthBendix(twosided, _kb_word_presentation())
+    @test_throws ArgumentError init!(kbw, twosided, _kb_string_presentation())
+    @test_throws ArgumentError init!(kb, twosided, _kb_word_presentation())
+    @test init!(kb, twosided, _kb_string_presentation()) === kb
+
+    # A rule-free KnuthBendix still rejects letters outside the alphabet.
+    q = Presentation{String}()
+    set_alphabet!(q, "ab")
+    kfree = KnuthBendix(twosided, q)
+    @test Semigroups.contains(kfree, "ab", "ab")
+    @test_throws LibsemigroupsError Semigroups.contains(kfree, "z", "z")
+end
+
+@testset "KnuthBendix{String} - agrees with Vector{Int} words" begin
+    ReportGuard(false)
+    kbs = KnuthBendix(twosided, _kb_string_presentation())
+    kbw = KnuthBendix(twosided, _kb_word_presentation())
+    to_str(w) = String([Char('a' + i - 1) for i in w])
+    @test number_of_classes(kbs) == number_of_classes(kbw)
+    @test sort(normal_forms(kbs)) == sort(map(to_str, normal_forms(kbw)))
+    @test sort(active_rules(kbs)) ==
+          sort([(to_str(l), to_str(r)) for (l, r) in active_rules(kbw)])
+    for w in ([1], [2, 1, 1], [1, 2, 1, 2])
+        @test to_str(Semigroups.reduce(kbw, w)) == Semigroups.reduce(kbs, to_str(w))
+    end
+end
+
+@testset "KnuthBendix{String} - conversions" begin
+    ReportGuard(false)
+    ps = _kb_string_presentation()
+    kb = KnuthBendix(twosided, ps)
+    run!(kb)
+
+    q = Semigroups.to(Presentation, kb)
+    @test q isa Presentation{String}
+    @test alphabet(q) == "ab"
+    @test Semigroups.to(Presentation{Vector{Int}}, kb) isa Presentation{Vector{Int}}
+    kbw = KnuthBendix(twosided, _kb_word_presentation())
+    @test Semigroups.to(Presentation{String}, kbw) isa Presentation{String}
+
+    tc = Semigroups.to(ToddCoxeter, twosided, kb)
+    @test tc isa ToddCoxeter{String}
+    @test number_of_classes(tc) == 3
+    kb2 = Semigroups.to(KnuthBendix, twosided, ToddCoxeter(twosided, ps))
+    @test kb2 isa KnuthBendix{String}
+    @test number_of_classes(kb2) == 3
+end
+
+@testset "KnuthBendix{String} - one-sided with generating pairs" begin
+    # libsemigroups adds an extra letter to the presentation of a one-sided
+    # KnuthBendix with generating pairs; for String words it must be ASCII.
+    ReportGuard(false)
+    kb = KnuthBendix(onesided, _kb_string_presentation())
+    add_generating_pair!(kb, "a", "b")
+    @test Semigroups.contains(kb, "a", "b")
+    @test all(isascii, alphabet(presentation(kb)))
+end
+
+@testset "KnuthBendix{String} - redundant_rule" begin
+    # The added rule "ba" = "ab" duplicates "ab" = "ba", so some rule is
+    # redundant.
+    q = _kb_string_presentation()
+    add_rule!(q, "ba", "ab")
+    @test redundant_rule(q, Millisecond(100)) isa Int
 end

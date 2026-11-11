@@ -47,9 +47,13 @@ presentation. The second form copies an existing `KnuthBendix`.
 - `LibsemigroupsError` if `p` has more than 256 letters in its alphabet
   (the internal rewriting trie uses 1-byte letter indices).
 
-!!! warning "Limitation"
-    Currently only `KnuthBendix{Vector{Int}}` with the `RewriteTrie` rewriter
-    is bound; `String` words are not yet supported.
+# Word types
+
+`KnuthBendix{W}` supports both word types: `W = Vector{Int}` (1-based letter
+indices) and `W = String` (ASCII characters). The word type is taken from the
+presentation, so `KnuthBendix(twosided, p::Presentation{String})` is a
+`KnuthBendix{String}`, and all words passed to or returned from it are
+`String`s. Only the `RewriteTrie` rewriter is bound.
 
 # Example
 
@@ -81,25 +85,27 @@ number_of_classes(kb)                   # POSITIVE_INFINITY
 ```
 """
 struct KnuthBendix{W} <: CongruenceCommon{W}
-    cxx_obj::LibSemigroups.KnuthBendixRewriteTrie
+    cxx_obj::Union{
+        LibSemigroups.KnuthBendixRewriteTrie,
+        LibSemigroups.KnuthBendixStringRewriteTrie,
+    }
 end
 
 # The C++ type backing KnuthBendix{W}, and wrapping a C++ object in the
 # matching KnuthBendix{W}. Supporting a new word type means adding a method
 # to each of these (and widening the `cxx_obj` field type to a Union).
 _cxx_knuth_bendix_type(::Type{Vector{Int}}) = LibSemigroups.KnuthBendixRewriteTrie
+_cxx_knuth_bendix_type(::Type{String}) = LibSemigroups.KnuthBendixStringRewriteTrie
 
 _wrap_knuth_bendix(x::LibSemigroups.KnuthBendixRewriteTrie) = KnuthBendix{Vector{Int}}(x)
+_wrap_knuth_bendix(x::LibSemigroups.KnuthBendixStringRewriteTrie) = KnuthBendix{String}(x)
 
 # The C++ binding takes the congruence kind as an Integer and a raw
 # `PresentationWord`; adapt the public Julia types to that.
 _kind_to_cpp(kind) = Int(kind)
 
-function KnuthBendix(kind::congruence_kind, p::Presentation)
-    cxx = @wrap_libsemigroups_call LibSemigroups.KnuthBendixRewriteTrie(
-        _kind_to_cpp(kind),
-        _cxx_word(p),
-    )
+function KnuthBendix(kind::congruence_kind, p::Presentation{W}) where {W}
+    cxx = @wrap_libsemigroups_call _cxx_knuth_bendix_type(W)(_kind_to_cpp(kind), _cxx(p))
     return _wrap_knuth_bendix(cxx)
 end
 
@@ -172,9 +178,18 @@ function init!(kb::KnuthBendix)
     return kb
 end
 
-function init!(kb::KnuthBendix, kind::congruence_kind, p::Presentation{Vector{Int}})
-    @wrap_libsemigroups_call LibSemigroups.init!(_cxx(kb), _kind_to_cpp(kind), p.cxx_obj)
+function init!(kb::KnuthBendix{W}, kind::congruence_kind, p::Presentation{W}) where {W}
+    @wrap_libsemigroups_call LibSemigroups.init!(_cxx(kb), _kind_to_cpp(kind), _cxx(p))
     return kb
+end
+
+function init!(kb::KnuthBendix{W}, ::congruence_kind, ::Presentation{V}) where {W,V}
+    throw(
+        ArgumentError(
+            "the word type of the presentation ($V) must match that of the " *
+            "KnuthBendix ($W); convert the presentation first",
+        ),
+    )
 end
 
 # ============================================================================
@@ -497,13 +512,13 @@ number_of_generating_pairs(kb::KnuthBendix) =
     Int(LibSemigroups.number_of_generating_pairs(_cxx(kb)))
 
 """
-    generating_pairs(kb::KnuthBendix) -> Vector{Tuple{Vector{Int}, Vector{Int}}}
+    generating_pairs(kb::KnuthBendix{W}) -> Vector{Tuple{W, W}}
 
-Return the generating pairs of `kb` as 1-based word pairs.
+Return the generating pairs of `kb` as word pairs.
 
 These are the pairs added via [`add_generating_pair!`](@ref
-Semigroups.add_generating_pair!). Words are returned as 1-based `Vector{Int}`
-letter indices.
+Semigroups.add_generating_pair!). Words are returned with the word type `W`
+of `kb`.
 
 !!! warning
     If `kb` represents a one-sided congruence ([`kind`](@ref Semigroups.kind)
@@ -512,10 +527,14 @@ letter indices.
     letter may appear in the returned words.
 """
 function generating_pairs(kb::KnuthBendix)
+    W = _cong_word_type(kb)
     flat = LibSemigroups.generating_pairs(_cxx(kb))
-    result = Tuple{Vector{Int},Vector{Int}}[]
+    result = Tuple{W,W}[]
     for i = 1:2:length(flat)
-        push!(result, (_word_from_cpp(flat[i]), _word_from_cpp(flat[i+1])))
+        push!(
+            result,
+            (_cong_word_from_cpp(kb, flat[i]), _cong_word_from_cpp(kb, flat[i+1])),
+        )
     end
     return result
 end
@@ -540,17 +559,21 @@ presentation(kb::KnuthBendix) = _wrap_presentation(LibSemigroups.presentation(_c
 # ============================================================================
 
 """
-    active_rules(kb::KnuthBendix) -> Vector{Tuple{Vector{Int}, Vector{Int}}}
+    active_rules(kb::KnuthBendix{W}) -> Vector{Tuple{W, W}}
 
 Return all active rules as a vector of `(lhs, rhs)` tuples.
 
-Words are returned as 1-based `Vector{Int}` letter indices.
+Words are returned with the word type `W` of `kb`.
 """
 function active_rules(kb::KnuthBendix)
+    W = _cong_word_type(kb)
     flat = @wrap_libsemigroups_call LibSemigroups.kb_active_rules(_cxx(kb))
-    result = Tuple{Vector{Int},Vector{Int}}[]
+    result = Tuple{W,W}[]
     for i = 1:2:length(flat)
-        push!(result, (_word_from_cpp(flat[i]), _word_from_cpp(flat[i+1])))
+        push!(
+            result,
+            (_cong_word_from_cpp(kb, flat[i]), _cong_word_from_cpp(kb, flat[i+1])),
+        )
     end
     return result
 end
@@ -582,13 +605,12 @@ acyclic.
 gilman_graph(kb::KnuthBendix) = LibSemigroups.gilman_graph(_cxx(kb))
 
 """
-    gilman_graph_node_labels(kb::KnuthBendix) -> Vector{Vector{Int}}
+    gilman_graph_node_labels(kb::KnuthBendix{W}) -> Vector{W}
 
-Return the node labels of the Gilman graph as 1-based words.
+Return the node labels of the Gilman graph as words.
 
 Each label corresponds to a unique prefix of the left-hand sides of the rules
-in the rewriting system. Words are returned as 1-based `Vector{Int}` letter
-indices.
+in the rewriting system. Words are returned with the word type `W` of `kb`.
 
 # See also
 
@@ -596,7 +618,7 @@ indices.
 """
 function gilman_graph_node_labels(kb::KnuthBendix)
     labels = LibSemigroups.gilman_graph_node_labels(_cxx(kb))
-    return [_word_from_cpp(w) for w in labels]
+    return [_cong_word_from_cpp(kb, w) for w in labels]
 end
 
 # ============================================================================
@@ -692,7 +714,7 @@ no redundant rule is identified within the timeout.
 function redundant_rule(p::Presentation, timeout::TimePeriod)
     ns = convert(Nanosecond, timeout)
     idx = @wrap_libsemigroups_call LibSemigroups.kb_redundant_rule(
-        _cxx_word(p),
+        _cxx(p),
         Int64(Dates.value(ns)),
     )
     n_flat = 2 * number_of_rules(p)

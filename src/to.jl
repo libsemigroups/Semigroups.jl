@@ -156,17 +156,28 @@ to(::Type{Presentation{String}}, tc::ToddCoxeter) =
     _wrap_presentation(LibSemigroups.to_presentation_string(_cxx(tc)))
 
 """
-    to(::Type{Presentation}, kb::KnuthBendix) -> Presentation
+    to(::Type{Presentation}, kb::KnuthBendix{W}) -> Presentation{W}
+    to(::Type{Presentation{V}}, kb::KnuthBendix) -> Presentation{V}
 
 Julia implementation of libsemigroups' `to<Presentation>(kb)` conversion.
 Return a presentation using the currently active rules of `kb`.
+
+With an unparameterised `Presentation` target, the returned presentation has
+the same word type `W` as `kb`. With an explicit target `Presentation{V}`
+(`V` is `Vector{Int}` or `String`), the presentation is converted to that
+word type.
 
 This conversion does not enumerate `kb`, so the returned presentation may not
 yet describe the completed semigroup or monoid. Run `kb` first if a fully
 processed presentation is required.
 """
-to(::Type{Presentation}, kb::KnuthBendix) =
+to(::Type{Presentation}, kb::KnuthBendix{W}) where {W} = to(Presentation{W}, kb)
+
+to(::Type{Presentation{Vector{Int}}}, kb::KnuthBendix) =
     _wrap_presentation(LibSemigroups.to_presentation_word(_cxx(kb)))
+
+to(::Type{Presentation{String}}, kb::KnuthBendix) =
+    _wrap_presentation(LibSemigroups.to_presentation_string(_cxx(kb)))
 
 """
     to(::Type{Presentation}, fp::FroidurePin) -> Presentation
@@ -203,18 +214,10 @@ Julia implementation of libsemigroups' `to<KnuthBendix>(kind, tc)`
 conversion. It constructs a Knuth-Bendix instance from `tc.presentation()`
 and represents the trivial congruence over the semigroup defined by `tc`.
 `kind` selects whether the resulting congruence is one-sided or two-sided.
+The result has the same word type as `tc`.
 """
-to(::Type{KnuthBendix}, kind::congruence_kind, tc::ToddCoxeter{Vector{Int}}) =
+to(::Type{KnuthBendix}, kind::congruence_kind, tc::ToddCoxeter) =
     _wrap_knuth_bendix(LibSemigroups.to_knuth_bendix_from_tc(kind, _cxx(tc)))
-
-function to(::Type{KnuthBendix}, ::congruence_kind, ::ToddCoxeter{W}) where {W}
-    throw(
-        ArgumentError(
-            "converting a ToddCoxeter{$W} to KnuthBendix is not yet supported; " *
-            "KnuthBendix currently supports Vector{Int} words only",
-        ),
-    )
-end
 
 # ============================================================================
 # Conversions to FroidurePin
