@@ -28,5 +28,7 @@ using Semigroups
     include("test_knuth_bendix_6.jl")
     include("test_todd_coxeter.jl")
     include("test_kambites.jl")
+    include("test_congruence.jl")
+    include("test_cong_common.jl")
     include("test_to.jl")
 end

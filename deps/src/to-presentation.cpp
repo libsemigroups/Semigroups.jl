@@ -47,21 +47,84 @@ namespace libsemigroups_julia {
                return libsemigroups::to<
                    libsemigroups::Presentation<libsemigroups::word_type>>(c);
              });
+    m.method(
+        "to_presentation_string",
+        [](libsemigroups::Congruence<std::string>& c) {
+          return libsemigroups::to<libsemigroups::Presentation<std::string>>(c);
+        });
+    m.method("to_presentation_word",
+             [](libsemigroups::Congruence<std::string>& c) {
+               return libsemigroups::to<
+                   libsemigroups::Presentation<libsemigroups::word_type>>(c);
+             });
+    m.method(
+        "to_presentation_string",
+        [](libsemigroups::Congruence<libsemigroups::word_type>& c) {
+          return libsemigroups::to<libsemigroups::Presentation<std::string>>(c);
+        });
     m.method("to_presentation_word",
              [](libsemigroups::Kambites<libsemigroups::word_type>& k) {
                return libsemigroups::to<
                    libsemigroups::Presentation<libsemigroups::word_type>>(k);
              });
+    m.method(
+        "to_presentation_string", [](libsemigroups::Kambites<std::string>& k) {
+          return libsemigroups::to<libsemigroups::Presentation<std::string>>(k);
+        });
+    m.method("to_presentation_word",
+             [](libsemigroups::Kambites<std::string>& k) {
+               return libsemigroups::to<
+                   libsemigroups::Presentation<libsemigroups::word_type>>(k);
+             });
+    m.method(
+        "to_presentation_string",
+        [](libsemigroups::Kambites<libsemigroups::word_type>& k) {
+          return libsemigroups::to<libsemigroups::Presentation<std::string>>(k);
+        });
     m.method("to_presentation_word",
              [](libsemigroups::ToddCoxeter<libsemigroups::word_type>& tc) {
                return libsemigroups::to<
                    libsemigroups::Presentation<libsemigroups::word_type>>(tc);
              });
+    m.method(
+        "to_presentation_string",
+        [](libsemigroups::ToddCoxeter<std::string>& tc) {
+          return libsemigroups::to<libsemigroups::Presentation<std::string>>(
+              tc);
+        });
+    m.method("to_presentation_word",
+             [](libsemigroups::ToddCoxeter<std::string>& tc) {
+               return libsemigroups::to<
+                   libsemigroups::Presentation<libsemigroups::word_type>>(tc);
+             });
+    m.method(
+        "to_presentation_string",
+        [](libsemigroups::ToddCoxeter<libsemigroups::word_type>& tc) {
+          return libsemigroups::to<libsemigroups::Presentation<std::string>>(
+              tc);
+        });
     m.method("to_presentation_word",
              [](libsemigroups::KnuthBendix<libsemigroups::word_type>& kb) {
                return libsemigroups::to<
                    libsemigroups::Presentation<libsemigroups::word_type>>(kb);
              });
+    m.method(
+        "to_presentation_string",
+        [](libsemigroups::KnuthBendix<std::string>& kb) {
+          return libsemigroups::to<libsemigroups::Presentation<std::string>>(
+              kb);
+        });
+    m.method("to_presentation_word",
+             [](libsemigroups::KnuthBendix<std::string>& kb) {
+               return libsemigroups::to<
+                   libsemigroups::Presentation<libsemigroups::word_type>>(kb);
+             });
+    m.method(
+        "to_presentation_string",
+        [](libsemigroups::KnuthBendix<libsemigroups::word_type>& kb) {
+          return libsemigroups::to<libsemigroups::Presentation<std::string>>(
+              kb);
+        });
 
     // FroidurePin<E> to Presentation<word_type> for all 10 E instantiations.
     define_froidure_pin_to_presentation<libsemigroups::Transf<0, uint8_t>>(m);

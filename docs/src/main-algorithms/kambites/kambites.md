@@ -5,6 +5,22 @@ which implements Kambites's algorithm for the word problem in small
 overlap monoids -- finitely presented monoids whose presentation
 satisfies the small overlap condition `C(n)` for some `n >= 4`.
 
+`Kambites{W}` is parameterised by its word type `W`, which is either
+`Vector{Int}` (the default; 1-based letter indices) or `String` (ASCII
+characters). The word type is determined by the
+[`Presentation`](@ref Semigroups.Presentation) used to construct it:
+`Kambites(twosided, p::Presentation{W})` returns a `Kambites{W}`, and
+all words passed to or returned from it have type `W`.
+
+```julia
+p = Presentation{String}()
+set_alphabet!(p, "abcdefg")
+add_rule!(p, "abcd", "aaaeaa")
+add_rule!(p, "ef", "dg")
+k = Kambites(twosided, p)                 # Kambites{String}
+Semigroups.contains(k, "efabc", "dgabc")  # true
+```
+
 `Kambites` is a subtype of
 [`CongruenceCommon`](@ref Semigroups.CongruenceCommon) (and hence of
 [`Runner`](@ref Semigroups.Runner)), so all runner methods
@@ -14,7 +30,7 @@ shared word-operation helpers ([`reduce`](@ref Semigroups.reduce(::CongruenceCom
 [`currently_contains`](@ref Semigroups.currently_contains(::CongruenceCommon, ::AbstractVector{<:Integer}, ::AbstractVector{<:Integer})),
 [`add_generating_pair!`](@ref Semigroups.add_generating_pair!(::CongruenceCommon, ::AbstractVector{<:Integer}, ::AbstractVector{<:Integer})),
 [`partition`](@ref Semigroups.partition(::CongruenceCommon, ::AbstractVector{<:AbstractVector{<:Integer}})))
-are available.
+are available, for both word types.
 
 ## Table of contents
 
@@ -64,7 +80,7 @@ Semigroups.number_of_generating_pairs(::Kambites)
 | -------- | ----------- |
 | [`kind(k)`](@ref Semigroups.kind(::Kambites)) | Congruence kind (always `twosided`). |
 | [`presentation(k)`](@ref Semigroups.presentation(::Kambites)) | Copy of the underlying presentation. |
-| [`generating_pairs(k)`](@ref Semigroups.generating_pairs(::Kambites)) | Extra generating pairs as 1-based word-tuple pairs. |
+| [`generating_pairs(k)`](@ref Semigroups.generating_pairs(::Kambites)) | Extra generating pairs as tuples of words of type `W`. |
 
 ```@docs
 Semigroups.kind(::Kambites)
@@ -93,11 +109,11 @@ Semigroups.current_small_overlap_class(::Kambites)
 | Function | Description |
 | -------- | ----------- |
 | [`throw_if_not_C4(k)`](@ref Semigroups.throw_if_not_C4(::Kambites)) | Throw if the small overlap class is less than `4`. |
-| [`throw_if_letter_not_in_alphabet(k, w)`](@ref Semigroups.throw_if_letter_not_in_alphabet(::Kambites, ::AbstractVector{<:Integer})) | Throw if `w` contains any letter that is not in the alphabet of `k`'s presentation. |
+| [`throw_if_letter_not_in_alphabet(k, w)`](@ref Semigroups.throw_if_letter_not_in_alphabet(::Kambites, ::Any)) | Throw if `w` contains any letter that is not in the alphabet of `k`'s presentation. |
 
 ```@docs
 Semigroups.throw_if_not_C4(::Kambites)
-Semigroups.throw_if_letter_not_in_alphabet(::Kambites, ::AbstractVector{<:Integer})
+Semigroups.throw_if_letter_not_in_alphabet(::Kambites, ::Any)
 ```
 
 ## Normal forms
@@ -109,7 +125,7 @@ bounded form `normal_forms(k, n)` is provided. The no-argument form
 
 | Function | Description |
 | -------- | ----------- |
-| [`normal_forms(k, n)`](@ref Semigroups.normal_forms(::Kambites, ::Integer)) | Return the first `n` normal forms as 1-based `Vector{Int}` words. |
+| [`normal_forms(k, n)`](@ref Semigroups.normal_forms(::Kambites, ::Integer)) | Return the first `n` normal forms as words of type `W`. |
 | [`normal_forms(k)`](@ref Semigroups.normal_forms(::Kambites)) | Always throws `ArgumentError`. |
 
 ```@docs
@@ -128,7 +144,8 @@ Semigroups.non_trivial_classes(::Kambites, ::Kambites)
 These functions are defined on
 [`CongruenceCommon`](@ref Semigroups.CongruenceCommon) and work on all
 congruence types, including `Kambites`. Words are given and returned
-as 1-based `Vector{Int}` letter indices. See the
+with the word type `W` of the `Kambites{W}` instance: 1-based
+`Vector{Int}` letter indices, or ASCII `String`s. See the
 [Common congruence helpers](../cong-common-helpers.md) page for the
 full API.
 

@@ -25,6 +25,8 @@
 #include <libsemigroups/todd-coxeter-class.hpp>
 #include <libsemigroups/types.hpp>
 
+#include <string>
+
 namespace libsemigroups_julia {
 
   void define_to_knuth_bendix(jl::Module& m) {
@@ -44,6 +46,18 @@ namespace libsemigroups_julia {
              [](libsemigroups::congruence_kind                        knd,
                 libsemigroups::ToddCoxeter<libsemigroups::word_type>& tc) {
                return libsemigroups::to<KB>(knd, tc);
+             });
+
+    // ToddCoxeter<std::string> and congruence kind to
+    // KnuthBendix<std::string>.
+    using KBString
+        = libsemigroups::KnuthBendix<std::string,
+                                     libsemigroups::detail::RewriteTrie,
+                                     libsemigroups::ShortLexCompare>;
+    m.method("to_knuth_bendix_from_tc",
+             [](libsemigroups::congruence_kind           knd,
+                libsemigroups::ToddCoxeter<std::string>& tc) {
+               return libsemigroups::to<KBString>(knd, tc);
              });
   }
 

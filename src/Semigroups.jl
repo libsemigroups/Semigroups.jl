@@ -80,6 +80,7 @@ include("cong-common.jl")
 include("knuth-bendix.jl")
 include("todd-coxeter.jl")
 include("kambites.jl")
+include("congruence.jl")
 
 # High-level element types
 include("bmat8.jl")
