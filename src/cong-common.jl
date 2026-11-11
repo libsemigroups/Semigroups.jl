@@ -69,15 +69,25 @@ _cong_word_to_cpp(::Type{W}, w) where {W} = throw(
 _cong_word_to_cpp(cong::CongruenceCommon, w) = _cong_word_to_cpp(_cong_word_type(cong), w)
 
 # A collection of words is passed to C++ as a `std::vector<Word>`, built here
-# as a CxxWrap `StdVector`. (`word_type` is `std::vector<size_t>`, matching
-# the `Vector{UInt}` produced by `_word_to_cpp`.)
+# as a CxxWrap `StdVector`.
 _cong_words_to_cpp(cong::CongruenceCommon, words) =
     _cong_words_to_cpp(_cong_word_type(cong), words)
 
+# The Julia type CxxWrap uses for C++ `size_t`, the letter type of
+# `word_type`. It has the same width as `UInt`, but is not always the same
+# type: on macOS `size_t` is `unsigned long` while `UInt64` is
+# `unsigned long long`, so CxxWrap maps them to different Julia types and a
+# `StdVector{StdVector{UInt}}` does not match `std::vector<word_type>`. Take
+# the type from a word returned by C++ instead (an empty presentation's
+# alphabet), which is correct on every platform.
+_cxx_letter_type() = eltype(LibSemigroups.alphabet(LibSemigroups.PresentationWord()))
+
 function _cong_words_to_cpp(::Type{Vector{Int}}, words)
+    T = _cxx_letter_type()
     return CxxWrap.StdLib.StdVector(
-        CxxWrap.StdLib.StdVector{UInt}[
-            CxxWrap.StdLib.StdVector{UInt}(_cong_word_to_cpp(Vector{Int}, w)) for w in words
+        CxxWrap.StdLib.StdVector{T}[
+            CxxWrap.StdLib.StdVector{T}(T.(_cong_word_to_cpp(Vector{Int}, w))) for
+            w in words
         ],
     )
 end
