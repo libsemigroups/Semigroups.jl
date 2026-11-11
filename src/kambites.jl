@@ -73,20 +73,34 @@ helpers ([`reduce`](@ref Semigroups.reduce),
 - [`LibsemigroupsError`](@ref Semigroups.LibsemigroupsError) if `kind`
   is not [`twosided`](@ref Semigroups.twosided).
 
-!!! warning "Limitation"
-    Currently only `Kambites{Vector{Int}}` is bound; `String` words are not
-    yet supported.
+# Word types
+
+`Kambites{W}` supports both word types: `W = Vector{Int}` (1-based letter
+indices) and `W = String` (ASCII characters). The word type is taken from the
+presentation, so `Kambites(twosided, p::Presentation{String})` is a
+`Kambites{String}`, and all words passed to or returned from it are `String`s.
+
+```julia
+p = Presentation{String}()
+set_alphabet!(p, "abcdefg")
+add_rule!(p, "abcd", "aaaeaa")
+add_rule!(p, "ef", "dg")
+k = Kambites(twosided, p)                 # Kambites{String}
+Semigroups.contains(k, "efabc", "dgabc")  # true
+```
 """
 struct Kambites{W} <: CongruenceCommon{W}
-    cxx_obj::LibSemigroups.KambitesWord
+    cxx_obj::Union{LibSemigroups.KambitesWord,LibSemigroups.KambitesString}
 end
 
 # The C++ type backing Kambites{W}, and wrapping a C++ object in the matching
 # Kambites{W}. Supporting a new word type means adding a method to each of
-# these (and widening the `cxx_obj` field type to a Union).
+# these (and widening the `cxx_obj` field type).
 _cxx_kambites_type(::Type{Vector{Int}}) = LibSemigroups.KambitesWord
+_cxx_kambites_type(::Type{String}) = LibSemigroups.KambitesString
 
 _wrap_kambites(x::LibSemigroups.KambitesWord) = Kambites{Vector{Int}}(x)
+_wrap_kambites(x::LibSemigroups.KambitesString) = Kambites{String}(x)
 
 Kambites{W}() where {W} = _wrap_kambites(_cxx_kambites_type(W)())
 
@@ -124,8 +138,8 @@ CxxWrap-bound constructor would surface them as `Base.ErrorException`).
 - [`LibsemigroupsError`](@ref Semigroups.LibsemigroupsError) if `kind`
   is not [`twosided`](@ref Semigroups.twosided).
 """
-function Kambites(kind::congruence_kind, p::Presentation)
-    k = Kambites()
+function Kambites(kind::congruence_kind, p::Presentation{W}) where {W}
+    k = Kambites{W}()
     init!(k, kind, p)
     return k
 end
@@ -163,9 +177,18 @@ function init!(k::Kambites)
     return k
 end
 
-function init!(k::Kambites, kind::congruence_kind, p::Presentation)
-    @wrap_libsemigroups_call LibSemigroups.init!(_cxx(k), kind, _cxx_word(p))
+function init!(k::Kambites{W}, kind::congruence_kind, p::Presentation{W}) where {W}
+    @wrap_libsemigroups_call LibSemigroups.init!(_cxx(k), kind, _cxx(p))
     return k
+end
+
+function init!(k::Kambites{W}, ::congruence_kind, p::Presentation{V}) where {W,V}
+    throw(
+        ArgumentError(
+            "the word type of the presentation ($V) must match that of the " *
+            "Kambites ($W); convert the presentation first",
+        ),
+    )
 end
 
 # ============================================================================
@@ -186,21 +209,22 @@ object does not affect `k`.
 presentation(k::Kambites) = _wrap_presentation(LibSemigroups.presentation(_cxx(k)))
 
 """
-    generating_pairs(k::Kambites) -> Vector{Tuple{Vector{Int}, Vector{Int}}}
+    generating_pairs(k::Kambites{W}) -> Vector{Tuple{W, W}}
 
-Return the generating pairs of `k` as a vector of 1-based word pairs.
+Return the generating pairs of `k` as a vector of word pairs.
 
 These are the pairs added via
 [`add_generating_pair!`](@ref Semigroups.add_generating_pair!). Each pair
-`(u, v)` is returned as a 2-tuple of 1-based `Vector{Int}` letter
-indices. The length of the returned vector equals
+`(u, v)` is returned as a 2-tuple of words of the word type `W` of `k`.
+The length of the returned vector equals
 [`number_of_generating_pairs`](@ref Semigroups.number_of_generating_pairs).
 """
 function generating_pairs(k::Kambites)
+    W = _cong_word_type(k)
     flat = LibSemigroups.generating_pairs(_cxx(k))
-    result = Tuple{Vector{Int},Vector{Int}}[]
+    result = Tuple{W,W}[]
     for i = 1:2:length(flat)
-        push!(result, (_word_from_cpp(flat[i]), _word_from_cpp(flat[i+1])))
+        push!(result, (_cong_word_from_cpp(k, flat[i]), _cong_word_from_cpp(k, flat[i+1])))
     end
     return result
 end
@@ -327,7 +351,7 @@ end
 # ============================================================================
 
 """
-    throw_if_letter_not_in_alphabet(k::Kambites, w::AbstractVector{<:Integer})
+    throw_if_letter_not_in_alphabet(k::Kambites, w)
 
 Throw if any letter in `w` is out of bounds.
 
@@ -335,20 +359,22 @@ This function throws a
 [`LibsemigroupsError`](@ref Semigroups.LibsemigroupsError) if any
 letter of `w` is out of bounds -- i.e. does not belong to the alphabet
 of the [`Presentation`](@ref Semigroups.Presentation) used to
-construct `k`. Letters in `w` are 1-based indices.
+construct `k`.
 
 # Arguments
 
 - `k::Kambites`: the [`Kambites`](@ref Semigroups.Kambites) instance.
-- `w::AbstractVector{<:Integer}`: the word to check.
+- `w`: the word to check, of the word type of `k` (a 1-based
+  `Vector{Int}` or an ASCII `String`).
 
 # Throws
 
 - [`LibsemigroupsError`](@ref Semigroups.LibsemigroupsError) if any
   letter in `w` is not in the alphabet.
+- `ArgumentError` if `w` is not of the word type of `k`.
 """
-function throw_if_letter_not_in_alphabet(k::Kambites, w::AbstractVector{<:Integer})
-    cpp_w = _word_to_cpp(w)
+function throw_if_letter_not_in_alphabet(k::Kambites, w)
+    cpp_w = _cong_word_to_cpp(k, w)
     @wrap_libsemigroups_call LibSemigroups.throw_if_letter_not_in_alphabet(_cxx(k), cpp_w)
     return nothing
 end
@@ -426,10 +452,10 @@ end
 # ============================================================================
 
 """
-    normal_forms(k::Kambites, n::Integer) -> Vector{Vector{Int}}
+    normal_forms(k::Kambites{W}, n::Integer) -> Vector{W}
 
 Return the first `n` short-lex normal forms of the classes of the
-congruence represented by `k`, as 1-based `Vector{Int}` words.
+congruence represented by `k`, as words of the word type `W` of `k`.
 
 The underlying range of normal forms is always infinite (one per
 congruence class, and a `C(>=4)` presentation has infinitely many
@@ -445,7 +471,7 @@ materializes only the first `n` words and is safe to call.
 function normal_forms(k::Kambites, n::Integer)
     cpp_n = UInt(n)
     nf = @wrap_libsemigroups_call LibSemigroups.kambites_normal_forms_take(_cxx(k), cpp_n)
-    return [_word_from_cpp(w) for w in nf]
+    return [_cong_word_from_cpp(k, w) for w in nf]
 end
 
 """
