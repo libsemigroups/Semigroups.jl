@@ -53,140 +53,160 @@ namespace jlcxx {
   struct SuperType<libsemigroups::Congruence<libsemigroups::word_type>> {
     using type = libsemigroups::detail::CongruenceCommon;
   };
+
+  template <>
+  struct IsMirroredType<libsemigroups::Congruence<std::string>>
+      : std::false_type {};
+
+  template <>
+  struct SuperType<libsemigroups::Congruence<std::string>> {
+    using type = libsemigroups::detail::CongruenceCommon;
+  };
 }  // namespace jlcxx
 
 namespace libsemigroups_julia {
 
   // Templated helper that binds the `has<Thing>()` / `get<Thing>()` member
-  // templates of `Congruence<word_type>` as named module methods. CxxWrap
+  // templates of `Congruence<Word>` as named module methods. CxxWrap
   // cannot bind C++ template member functions directly; we instantiate a
   // separate pair of named methods per `Thing` and dispatch from the Julia
   // side on `::Type{T}`.
-  template <typename Thing>
+  template <typename Word, typename Thing>
   inline void define_cong_has_get(jl::Module& m, std::string const& suffix) {
-    using Cong = libsemigroups::Congruence<libsemigroups::word_type>;
+    using Cong = libsemigroups::Congruence<Word>;
     m.method("cong_has_" + suffix,
              [](Cong const& c) -> bool { return c.template has<Thing>(); });
     m.method("cong_get_" + suffix,
              [](Cong const& c) -> Thing { return *c.template get<Thing>(); });
   }
 
+  namespace {
+
+    // Register Congruence<Word> as the Julia type `name`, with every
+    // per-instance method, the has/get accessors for the algorithms it runs,
+    // and the common congruence helpers.
+    template <typename Word>
+    void bind_congruence(jl::Module& m, std::string const& name) {
+      using libsemigroups::Congruence;
+      using libsemigroups::congruence_kind;
+      using libsemigroups::Kambites;
+      using libsemigroups::KnuthBendix;
+      using libsemigroups::Presentation;
+      using libsemigroups::ToddCoxeter;
+
+      using CongruenceCommon = libsemigroups::detail::CongruenceCommon;
+      using C                = Congruence<Word>;
+      using JW               = JuliaWord<Word>;
+
+      ////////////////////////////////////////////////////////////////////////
+      // Type registration
+      ////////////////////////////////////////////////////////////////////////
+
+      auto type
+          = m.add_type<C>(name, jlcxx::julia_base_type<CongruenceCommon>());
+
+      ////////////////////////////////////////////////////////////////////////
+      // Constructors. Direct registration; the (kind, p) form throws
+      // LibsemigroupsException, but CxxWrap's direct-constructor path
+      // surfaces it as Base.ErrorException - the Julia wrapper layer
+      // (src/congruence.jl) preempts this by routing through init!.
+      ////////////////////////////////////////////////////////////////////////
+
+      type.template constructor<>();
+      type.template constructor<congruence_kind, Presentation<Word> const&>();
+      type.template constructor<C const&>();  // copy ctor
+
+      ////////////////////////////////////////////////////////////////////////
+      // init! overloads (mirror constructors)
+      ////////////////////////////////////////////////////////////////////////
+
+      type.method("init!", [](C& self) -> C& { return self.init(); });
+      type.method(
+          "init!",
+          [](C& self, congruence_kind knd, Presentation<Word> const& p) -> C& {
+            return self.init(knd, p);
+          });
+
+      ////////////////////////////////////////////////////////////////////////
+      // Accessors
+      ////////////////////////////////////////////////////////////////////////
+
+      // presentation - return by copy (storage may relocate)
+      type.method("presentation", [](C const& self) -> Presentation<Word> {
+        return self.presentation();
+      });
+
+      // generating_pairs - return by copy (flat vector; pairs concatenated)
+      type.method("generating_pairs", [](C const& self) -> std::vector<Word> {
+        auto const& pairs = self.generating_pairs();
+        return std::vector<Word>(pairs.begin(), pairs.end());
+      });
+
+      // kind / number_of_generating_pairs -- inherited inline accessors
+      type.method("kind",
+                  [](C const& self) -> congruence_kind { return self.kind(); });
+
+      type.method("number_of_generating_pairs", [](C const& self) -> size_t {
+        return self.number_of_generating_pairs();
+      });
+
+      // number_of_classes - non-const (may run the race)
+      type.method("number_of_classes",
+                  [](C& self) -> uint64_t { return self.number_of_classes(); });
+
+      // throw_if_letter_not_in_alphabet - the word arrives in the Julia form
+      // for Word (see JuliaWord in cong-common.hpp)
+      type.method("throw_if_letter_not_in_alphabet",
+                  [](C const& self, typename JW::arg_type w) {
+                    auto const& ww = JW::to_cpp(w);
+                    self.throw_if_letter_not_in_alphabet(ww.begin(), ww.end());
+                  });
+
+      ////////////////////////////////////////////////////////////////////////
+      // Race-state queries
+      // (max_threads getter/setter intentionally NOT bound)
+      ////////////////////////////////////////////////////////////////////////
+
+      type.method("number_of_runners", [](C const& self) -> size_t {
+        return self.number_of_runners();
+      });
+
+      ////////////////////////////////////////////////////////////////////////
+      // Race introspection: has<Thing>() / get<Thing>()
+      ////////////////////////////////////////////////////////////////////////
+
+      define_cong_has_get<Word, Kambites<Word>>(m, "kambites");
+      define_cong_has_get<Word, KnuthBendix<Word>>(m, "knuth_bendix");
+      define_cong_has_get<Word, ToddCoxeter<Word>>(m, "todd_coxeter");
+
+      ////////////////////////////////////////////////////////////////////////
+      // Free function: is_obviously_infinite
+      ////////////////////////////////////////////////////////////////////////
+
+      m.method("is_obviously_infinite", [](C const& c) -> bool {
+        return libsemigroups::is_obviously_infinite(c);
+      });
+
+      ////////////////////////////////////////////////////////////////////////
+      // Display
+      ////////////////////////////////////////////////////////////////////////
+
+      type.method("to_human_readable_repr", [](C const& self) -> std::string {
+        return libsemigroups::to_human_readable_repr(self);
+      });
+
+      ////////////////////////////////////////////////////////////////////////
+      // Cong-common helpers (word-helpers subset only).
+      ////////////////////////////////////////////////////////////////////////
+
+      define_cong_common_word_helpers<C>(m);
+    }
+
+  }  // namespace
+
   void define_congruence(jl::Module& m) {
-    using libsemigroups::Congruence;
-    using libsemigroups::congruence_kind;
-    using libsemigroups::Kambites;
-    using libsemigroups::KnuthBendix;
-    using libsemigroups::Presentation;
-    using libsemigroups::ToddCoxeter;
-    using libsemigroups::word_type;
-
-    using CongruenceCommon = libsemigroups::detail::CongruenceCommon;
-    using C                = Congruence<word_type>;
-
-    ////////////////////////////////////////////////////////////////////////
-    // Type registration
-    ////////////////////////////////////////////////////////////////////////
-
-    auto type = m.add_type<C>("CongruenceWord",
-                              jlcxx::julia_base_type<CongruenceCommon>());
-
-    ////////////////////////////////////////////////////////////////////////
-    // Constructors. Direct registration; the (kind, p) form throws
-    // LibsemigroupsException, but CxxWrap's direct-constructor path
-    // surfaces it as Base.ErrorException - the Julia wrapper layer
-    // (src/congruence.jl) preempts this by routing through init!.
-    ////////////////////////////////////////////////////////////////////////
-
-    type.constructor<>();
-    type.constructor<congruence_kind, Presentation<word_type> const&>();
-    type.constructor<C const&>();  // copy ctor
-
-    ////////////////////////////////////////////////////////////////////////
-    // init! overloads (mirror constructors)
-    ////////////////////////////////////////////////////////////////////////
-
-    type.method("init!", [](C& self) -> C& { return self.init(); });
-    type.method("init!",
-                [](C&                             self,
-                   congruence_kind                knd,
-                   Presentation<word_type> const& p) -> C& {
-                  return self.init(knd, p);
-                });
-
-    ////////////////////////////////////////////////////////////////////////
-    // Accessors
-    ////////////////////////////////////////////////////////////////////////
-
-    // presentation - return by copy (storage may relocate)
-    type.method("presentation", [](C const& self) -> Presentation<word_type> {
-      return self.presentation();
-    });
-
-    // generating_pairs - return by copy (flat vector; pairs concatenated)
-    type.method("generating_pairs",
-                [](C const& self) -> std::vector<word_type> {
-                  auto const& pairs = self.generating_pairs();
-                  return std::vector<word_type>(pairs.begin(), pairs.end());
-                });
-
-    // kind / number_of_generating_pairs -- inherited inline accessors
-    type.method("kind",
-                [](C const& self) -> congruence_kind { return self.kind(); });
-
-    type.method("number_of_generating_pairs", [](C const& self) -> size_t {
-      return self.number_of_generating_pairs();
-    });
-
-    // number_of_classes - non-const (may run the race)
-    type.method("number_of_classes",
-                [](C& self) -> uint64_t { return self.number_of_classes(); });
-
-    // throw_if_letter_not_in_alphabet - accept ArrayRef<size_t>, build a
-    // word_type inside the lambda
-    type.method("throw_if_letter_not_in_alphabet",
-                [](C const& self, jlcxx::ArrayRef<size_t> w) {
-                  word_type ww(w.begin(), w.end());
-                  self.throw_if_letter_not_in_alphabet(ww.begin(), ww.end());
-                });
-
-    ////////////////////////////////////////////////////////////////////////
-    // Race-state queries
-    // (max_threads getter/setter intentionally NOT bound)
-    ////////////////////////////////////////////////////////////////////////
-
-    type.method("number_of_runners", [](C const& self) -> size_t {
-      return self.number_of_runners();
-    });
-
-    ////////////////////////////////////////////////////////////////////////
-    // Race introspection: has<Thing>() / get<Thing>()
-    ////////////////////////////////////////////////////////////////////////
-
-    define_cong_has_get<Kambites<word_type>>(m, "kambites");
-    define_cong_has_get<KnuthBendix<word_type>>(m, "knuth_bendix");
-    define_cong_has_get<ToddCoxeter<word_type>>(m, "todd_coxeter");
-
-    ////////////////////////////////////////////////////////////////////////
-    // Free function: is_obviously_infinite
-    ////////////////////////////////////////////////////////////////////////
-
-    m.method("is_obviously_infinite", [](C const& c) -> bool {
-      return libsemigroups::is_obviously_infinite(c);
-    });
-
-    ////////////////////////////////////////////////////////////////////////
-    // Display
-    ////////////////////////////////////////////////////////////////////////
-
-    type.method("to_human_readable_repr", [](C const& self) -> std::string {
-      return libsemigroups::to_human_readable_repr(self);
-    });
-
-    ////////////////////////////////////////////////////////////////////////
-    // Cong-common helpers (word-helpers subset only).
-    ////////////////////////////////////////////////////////////////////////
-
-    define_cong_common_word_helpers<C>(m);
+    bind_congruence<libsemigroups::word_type>(m, "CongruenceWord");
+    bind_congruence<std::string>(m, "CongruenceString");
   }
 
 }  // namespace libsemigroups_julia

@@ -40,32 +40,35 @@ libsemigroups does not provide for `Congruence`.
 
 - `LibsemigroupsError` if `p` is not valid.
 
-!!! warning "Limitation"
-    Currently only `Congruence{Vector{Int}}` is bound; `String` words are not
-    yet supported.
+# Word types
+
+`Congruence{W}` supports both word types: `W = Vector{Int}` (1-based letter
+indices) and `W = String` (ASCII characters). The word type is taken from the
+presentation, so `Congruence(twosided, p::Presentation{String})` is a
+`Congruence{String}`, and all words passed to or returned from it are
+`String`s.
 """
 struct Congruence{W} <: CongruenceCommon{W}
-    cxx_obj::LibSemigroups.CongruenceWord
+    cxx_obj::Union{LibSemigroups.CongruenceWord,LibSemigroups.CongruenceString}
 end
 
 # The C++ type backing Congruence{W}, and wrapping a C++ object in the
 # matching Congruence{W}. Supporting a new word type means adding a method to
 # each of these (and widening the `cxx_obj` field type to a Union).
 _cxx_congruence_type(::Type{Vector{Int}}) = LibSemigroups.CongruenceWord
+_cxx_congruence_type(::Type{String}) = LibSemigroups.CongruenceString
 
 _wrap_congruence(x::LibSemigroups.CongruenceWord) = Congruence{Vector{Int}}(x)
+_wrap_congruence(x::LibSemigroups.CongruenceString) = Congruence{String}(x)
 
 # ============================================================================
 # Constructors
 # ============================================================================
 
-# The C++ binding takes the congruence kind as an Integer and a raw
-# `PresentationWord`; adapt the public Julia types to that.
-function Congruence(kind::congruence_kind, p::Presentation)
-    cxx = @wrap_libsemigroups_call LibSemigroups.CongruenceWord(
-        _kind_to_cpp(kind),
-        _cxx_word(p),
-    )
+# The C++ binding takes the congruence kind as an Integer and the raw C++
+# presentation; adapt the public Julia types to that.
+function Congruence(kind::congruence_kind, p::Presentation{W}) where {W}
+    cxx = @wrap_libsemigroups_call _cxx_congruence_type(W)(_kind_to_cpp(kind), _cxx(p))
     return _wrap_congruence(cxx)
 end
 

@@ -98,17 +98,27 @@ returned presentation is a copy of `p`.
 to(::Type{Presentation}, p::Presentation) = Presentation(p)
 
 """
-    to(::Type{Presentation}, c::Congruence) -> Presentation
+    to(::Type{Presentation}, c::Congruence{W}) -> Presentation{W}
+    to(::Type{Presentation{V}}, c::Congruence) -> Presentation{V}
 
 Julia implementation of libsemigroups' `to<Presentation>(c)` conversion.
 Return the presentation used to construct or initialise `c`.
 
-This conversion returns the presentation used to construct or initialise `c`.
+With an unparameterised `Presentation` target, the returned presentation has
+the same word type `W` as `c`. With an explicit target `Presentation{V}`
+(`V` is `Vector{Int}` or `String`), the presentation is converted to that
+word type.
+
 Congruence-generating pairs are not added to the returned presentation by
 running `c`.
 """
-to(::Type{Presentation}, c::Congruence) =
+to(::Type{Presentation}, c::Congruence{W}) where {W} = to(Presentation{W}, c)
+
+to(::Type{Presentation{Vector{Int}}}, c::Congruence) =
     _wrap_presentation(LibSemigroups.to_presentation_word(_cxx(c)))
+
+to(::Type{Presentation{String}}, c::Congruence) =
+    _wrap_presentation(LibSemigroups.to_presentation_string(_cxx(c)))
 
 """
     to(::Type{Presentation}, k::Kambites{W}) -> Presentation{W}

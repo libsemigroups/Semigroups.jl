@@ -47,6 +47,21 @@ namespace libsemigroups_julia {
                return libsemigroups::to<
                    libsemigroups::Presentation<libsemigroups::word_type>>(c);
              });
+    m.method(
+        "to_presentation_string",
+        [](libsemigroups::Congruence<std::string>& c) {
+          return libsemigroups::to<libsemigroups::Presentation<std::string>>(c);
+        });
+    m.method("to_presentation_word",
+             [](libsemigroups::Congruence<std::string>& c) {
+               return libsemigroups::to<
+                   libsemigroups::Presentation<libsemigroups::word_type>>(c);
+             });
+    m.method(
+        "to_presentation_string",
+        [](libsemigroups::Congruence<libsemigroups::word_type>& c) {
+          return libsemigroups::to<libsemigroups::Presentation<std::string>>(c);
+        });
     m.method("to_presentation_word",
              [](libsemigroups::Kambites<libsemigroups::word_type>& k) {
                return libsemigroups::to<
