@@ -239,6 +239,35 @@ end
     @test def_policy(tc) == def_policy_purge_all
 end
 
+@testset "TC init! overloads coverage" begin
+    p1 = Presentation()
+    set_alphabet!(p1, 2)
+    add_rule_no_checks!(p1, _tc_word(0, 0, 0), _tc_word(0))
+    add_rule_no_checks!(p1, _tc_word(0), _tc_word(1, 1))
+
+    p2 = Presentation()
+    set_alphabet!(p2, 1)
+    add_rule_no_checks!(p2, _tc_word(0, 0), _tc_word(0))
+
+    tc = ToddCoxeter(twosided, p1)
+    run!(tc)
+    @test number_of_classes(tc) == 5
+
+    # Re-initialize with presentation
+    init!(tc, twosided, p2)
+    run!(tc)
+    @test number_of_classes(tc) == 1
+
+    # Re-initialize with another ToddCoxeter
+    tc_other = ToddCoxeter(twosided, p1)
+    init!(tc, onesided, tc_other)
+    @test tc isa ToddCoxeter
+
+    # Re-initialize with WordGraph
+    wg = WordGraph(1, 2)
+    init!(tc, twosided, wg)
+    @test tc isa ToddCoxeter
+end
 @testset "TC - current_word_graph after run!" begin
     # After run!, current_word_graph may include inactive allocation slots,
     # so it has at least number_of_classes(tc) + 1 nodes (the +1 accounts for
@@ -365,3 +394,175 @@ end
 # ============================================================================
 # TODO - port full test-todd-coxeter.cpp test cases
 # ============================================================================
+
+@testset "ToddCoxeter - construct and re-initialise from a WordGraph reference" begin
+    # word_graph(tc) returns a reference into tc's own graph; constructing a
+    # new ToddCoxeter from it, or re-initialising one with it, must work.
+    p = Presentation()
+    set_alphabet!(p, 2)
+    add_rule!(p, [1, 1], [1])
+    add_rule!(p, [2, 2], [2])
+    add_rule!(p, [1, 2], [2, 1])
+    tc = ToddCoxeter(twosided, p)
+    wg = word_graph(tc)
+
+    tc2 = ToddCoxeter(twosided, wg)
+    @test tc2 isa ToddCoxeter{Vector{Int}}
+    @test number_of_classes(tc2) == number_of_classes(tc)
+
+    tc3 = ToddCoxeter(twosided, p)
+    @test init!(tc3, twosided, wg) === tc3
+    @test number_of_classes(tc3) == number_of_classes(tc)
+end
+
+# ============================================================================
+# ToddCoxeter{String}
+# ============================================================================
+
+# Finite monoid: a^2 = a, b^2 = b, ab = ba. Classes of nonempty words:
+# {a}, {b}, {ab}.
+function _tc_string_presentation()
+    p = Presentation{String}()
+    set_alphabet!(p, "ab")
+    add_rule!(p, "aa", "a")
+    add_rule!(p, "bb", "b")
+    add_rule!(p, "ab", "ba")
+    return p
+end
+
+function _tc_word_presentation()
+    p = Presentation()
+    set_alphabet!(p, 2)
+    add_rule!(p, [1, 1], [1])
+    add_rule!(p, [2, 2], [2])
+    add_rule!(p, [1, 2], [2, 1])
+    return p
+end
+
+@testset "ToddCoxeter{String} - construction" begin
+    p = _tc_string_presentation()
+    tc = ToddCoxeter(twosided, p)
+    @test tc isa ToddCoxeter{String}
+    @test tc isa Semigroups.CongruenceCommon{String}
+    @test presentation(tc) == p
+    @test presentation(tc) isa Presentation{String}
+    @test number_of_classes(tc) == 3
+
+    # Quotient, copy, and construction from a word graph keep the word type.
+    @test ToddCoxeter(onesided, tc) isa ToddCoxeter{String}
+    @test copy(tc) isa ToddCoxeter{String}
+    tc2 = ToddCoxeter{String}(twosided, word_graph(tc))
+    @test tc2 isa ToddCoxeter{String}
+    @test number_of_classes(tc2) == 3
+    # Without a word type, a word graph gives Vector{Int} words.
+    @test ToddCoxeter(twosided, word_graph(tc)) isa ToddCoxeter{Vector{Int}}
+end
+
+@testset "ToddCoxeter{String} - word operations" begin
+    tc = ToddCoxeter(twosided, _tc_string_presentation())
+    @test Semigroups.contains(tc, "ab", "ba")
+    @test !Semigroups.contains(tc, "a", "b")
+    @test Semigroups.reduce(tc, "baa") isa String
+    @test Semigroups.contains(tc, Semigroups.reduce(tc, "baa"), "baa")
+    @test currently_contains(tc, "ab", "ba") == tril_TRUE
+
+    nfs = normal_forms(tc)
+    @test nfs isa Vector{String}
+    @test sort(nfs) == ["a", "ab", "b"]
+
+    classes = partition(tc, ["a", "aa", "b", "ab", "ba"])
+    @test classes isa Vector{Vector{String}}
+    @test sort(sort.(classes)) == [["a", "aa"], ["ab", "ba"], ["b"]]
+
+    # index_of / word_of round-trip through class indices.
+    for w in ["a", "b", "ab", "bab"]
+        i = index_of(tc, w)
+        @test i isa Int
+        @test word_of(tc, i) isa String
+        @test Semigroups.contains(tc, word_of(tc, i), w)
+        @test current_index_of(tc, w) == i
+        @test current_word_of(tc, i) isa String
+    end
+end
+
+@testset "ToddCoxeter{String} - generating pairs" begin
+    tc = ToddCoxeter(twosided, _tc_string_presentation())
+    @test isempty(generating_pairs(tc))
+    add_generating_pair!(tc, "a", "b")
+    @test generating_pairs(tc) == [("a", "b")]
+    @test generating_pairs(tc) isa Vector{Tuple{String,String}}
+    @test Semigroups.contains(tc, "a", "b")
+end
+
+@testset "ToddCoxeter{String} - errors" begin
+    tc = ToddCoxeter(twosided, _tc_string_presentation())
+    @test throw_if_letter_not_in_alphabet(tc, "ab") === nothing
+    @test_throws LibsemigroupsError throw_if_letter_not_in_alphabet(tc, "z")
+    @test_throws ArgumentError throw_if_letter_not_in_alphabet(tc, "café")
+    @test_throws ArgumentError index_of(tc, [1, 2])
+    @test_throws ArgumentError Semigroups.contains(tc, [1], [2])
+
+    # init! needs a presentation / ToddCoxeter of the same word type.
+    tcw = ToddCoxeter(twosided, _tc_word_presentation())
+    @test_throws ArgumentError init!(tcw, twosided, _tc_string_presentation())
+    @test_throws ArgumentError init!(tcw, twosided, tc)
+    @test init!(tc, twosided, _tc_string_presentation()) === tc
+end
+
+@testset "ToddCoxeter{String} - agrees with Vector{Int} words" begin
+    tcs = ToddCoxeter(twosided, _tc_string_presentation())
+    tcw = ToddCoxeter(twosided, _tc_word_presentation())
+    to_str(w) = String([Char('a' + i - 1) for i in w])
+    @test number_of_classes(tcs) == number_of_classes(tcw)
+    @test sort(normal_forms(tcs)) == sort(map(to_str, normal_forms(tcw)))
+    for w in ([1], [2, 1, 1], [1, 2, 1, 2])
+        @test to_str(Semigroups.reduce(tcw, w)) == Semigroups.reduce(tcs, to_str(w))
+    end
+end
+
+@testset "ToddCoxeter{String} - helpers" begin
+    p = _tc_string_presentation()
+    coarse = ToddCoxeter(twosided, p)
+    add_generating_pair!(coarse, "a", "b")
+    classes = non_trivial_classes(coarse, ToddCoxeter(twosided, p))
+    @test classes isa Vector{Vector{String}}
+    @test sort(sort.(classes)) == [["a", "ab", "b"]]
+
+    @test is_non_trivial(ToddCoxeter(twosided, p)) isa tril
+
+    # The added rule "ba" = "ab" duplicates "ab" = "ba", so some rule is
+    # redundant.
+    q = _tc_string_presentation()
+    add_rule!(q, "ba", "ab")
+    @test tc_redundant_rule(q, Dates.Millisecond(100)) isa Int
+end
+
+@testset "ToddCoxeter{String} - conversions" begin
+    ps = _tc_string_presentation()
+    tc = ToddCoxeter(twosided, ps)
+    # to(Presentation, tc) keeps the word type; an explicit target converts.
+    q = Semigroups.to(Presentation, tc)
+    @test q isa Presentation{String}
+    @test q == ps
+    qw = Semigroups.to(Presentation{Vector{Int}}, tc)
+    @test qw isa Presentation{Vector{Int}}
+    @test qw == _tc_word_presentation()
+    tcw = ToddCoxeter(twosided, _tc_word_presentation())
+    @test Semigroups.to(Presentation{String}, tcw) == ps
+
+    # KnuthBendix does not support String words yet: a clear error, not an
+    # opaque method error.
+    @test_throws ArgumentError Semigroups.to(KnuthBendix, twosided, tc)
+    @test Semigroups.to(KnuthBendix, twosided, tcw) isa KnuthBendix{Vector{Int}}
+end
+
+@testset "ToddCoxeter{String} - word graphs need at most 128 labels" begin
+    # One ASCII letter per edge label: 128 fit, 129 do not.
+    tc = ToddCoxeter{String}(twosided, WordGraph(2, 128))
+    @test all(isascii, alphabet(presentation(tc)))
+    @test length(alphabet(presentation(tc))) == 128
+    @test_throws ArgumentError ToddCoxeter{String}(twosided, WordGraph(2, 129))
+    @test_throws ArgumentError init!(tc, twosided, WordGraph(2, 129))
+    # Integer words have no such limit.
+    @test ToddCoxeter(twosided, WordGraph(2, 129)) isa ToddCoxeter{Vector{Int}}
+end

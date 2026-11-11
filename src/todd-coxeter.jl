@@ -3,15 +3,15 @@
 # Distributed under the terms of the GPL license version 3.
 
 """
-todd-coxeter.jl - ToddCoxeter wrapper (Layer 2 + 3)
+todd-coxeter.jl - ToddCoxeter{W} wrapper (Layer 2 + 3)
 """
 
 # ============================================================================
-# Type alias and enum constants
+# Type and enum constants
 # ============================================================================
 
 """
-    ToddCoxeter
+    ToddCoxeter{W}
 
 Type implementing the Todd-Coxeter algorithm for computing 1- and 2-sided
 congruences on finitely presented semigroups and monoids.
@@ -22,6 +22,10 @@ to the congruence classes. It is constructed from a
 [`congruence_kind`](@ref Semigroups.congruence_kind) and a
 [`Presentation`](@ref Semigroups.Presentation), or from another
 `ToddCoxeter` (a quotient construction), or from a `WordGraph`.
+
+The type parameter `W` is the word type of the congruence; see
+[`CongruenceCommon`](@ref Semigroups.CongruenceCommon). It is determined by
+the presentation used to construct the `ToddCoxeter`.
 
 `ToddCoxeter` is a subtype of [`CongruenceCommon`](@ref
 Semigroups.CongruenceCommon) (and hence of [`Runner`](@ref Semigroups.Runner)),
@@ -45,11 +49,62 @@ objects.
   (ToddCoxeter form). Compatible pairs `(tc.kind(), kind)` are
   `(onesided, onesided)`, `(twosided, onesided)`, and `(twosided, twosided)`.
 
-!!! warning "v1 limitation"
-    v1 of Semigroups.jl binds `ToddCoxeter{word_type}` only. String-alphabet
-    presentations are deferred to v1.1.
+# Word types
+
+`ToddCoxeter{W}` supports both word types: `W = Vector{Int}` (1-based letter
+indices) and `W = String` (ASCII characters). The word type is taken from the
+presentation, so `ToddCoxeter(twosided, p::Presentation{String})` is a
+`ToddCoxeter{String}`, and all words passed to or returned from it are
+`String`s. A `ToddCoxeter` constructed from a [`WordGraph`](@ref
+Semigroups.WordGraph) uses `Vector{Int}` words unless the word type is given
+explicitly, as in `ToddCoxeter{String}(kind, wg)`.
 """
-const ToddCoxeter = LibSemigroups.ToddCoxeterWord
+struct ToddCoxeter{W} <: CongruenceCommon{W}
+    cxx_obj::Union{LibSemigroups.ToddCoxeterWord,LibSemigroups.ToddCoxeterString}
+end
+
+# The C++ type backing ToddCoxeter{W}, and wrapping a C++ object in the
+# matching ToddCoxeter{W}. Supporting a new word type means adding a method
+# to each of these (and widening the `cxx_obj` field type).
+_cxx_todd_coxeter_type(::Type{Vector{Int}}) = LibSemigroups.ToddCoxeterWord
+_cxx_todd_coxeter_type(::Type{String}) = LibSemigroups.ToddCoxeterString
+
+_wrap_todd_coxeter(x::LibSemigroups.ToddCoxeterWord) = ToddCoxeter{Vector{Int}}(x)
+_wrap_todd_coxeter(x::LibSemigroups.ToddCoxeterString) = ToddCoxeter{String}(x)
+
+ToddCoxeter(kind::congruence_kind, p::Presentation{W}) where {W} =
+    _wrap_todd_coxeter(_cxx_todd_coxeter_type(W)(kind, _cxx(p)))
+
+ToddCoxeter(kind::congruence_kind, other::ToddCoxeter{W}) where {W} =
+    _wrap_todd_coxeter(_cxx_todd_coxeter_type(W)(kind, _cxx(other)))
+
+# `@cxxdereference` lets `wg` also be a reference to a WordGraph, such as the
+# result of `word_graph(tc)`.
+@cxxdereference ToddCoxeter(kind::congruence_kind, wg::WordGraph) =
+    ToddCoxeter{Vector{Int}}(kind, wg)
+
+# A ToddCoxeter built from a word graph has one letter per edge label. For
+# String words these letters are ASCII characters, so at most 128 labels fit;
+# libsemigroups would otherwise silently create non-ASCII letters.
+_check_word_graph_fits(::Type{Vector{Int}}, wg) = nothing
+
+function _check_word_graph_fits(::Type{String}, wg)
+    out_degree(wg) <= 128 || throw(
+        ArgumentError(
+            "a ToddCoxeter{String} supports at most 128 edge labels (one ASCII " *
+            "letter each), but the word graph has $(out_degree(wg))",
+        ),
+    )
+    return nothing
+end
+
+@cxxdereference function ToddCoxeter{W}(kind::congruence_kind, wg::WordGraph) where {W}
+    _check_word_graph_fits(W, wg)
+    return _wrap_todd_coxeter(_cxx_todd_coxeter_type(W)(kind, wg))
+end
+
+ToddCoxeter(other::ToddCoxeter{W}) where {W} =
+    _wrap_todd_coxeter(_cxx_todd_coxeter_type(W)(_cxx(other)))
 
 # --- strategy ---------------------------------------------------------------
 
@@ -269,22 +324,38 @@ Returns `tc` for chaining.
   `(onesided, onesided)`, `(twosided, onesided)`, and `(twosided, twosided)`.
 """
 function init!(tc::ToddCoxeter)
-    @wrap_libsemigroups_call LibSemigroups.init!(tc)
+    @wrap_libsemigroups_call LibSemigroups.init!(_cxx(tc))
     return tc
 end
 
-function init!(tc::ToddCoxeter, kind::congruence_kind, p::Presentation)
-    @wrap_libsemigroups_call LibSemigroups.init!(tc, kind, p)
+
+function init!(tc::ToddCoxeter{W}, kind::congruence_kind, p::Presentation{W}) where {W}
+    @wrap_libsemigroups_call LibSemigroups.init!(_cxx(tc), kind, _cxx(p))
     return tc
 end
 
-function init!(tc::ToddCoxeter, kind::congruence_kind, other::ToddCoxeter)
-    @wrap_libsemigroups_call LibSemigroups.init!(tc, kind, other)
+function init!(tc::ToddCoxeter{W}, kind::congruence_kind, other::ToddCoxeter{W}) where {W}
+    @wrap_libsemigroups_call LibSemigroups.init!(_cxx(tc), kind, _cxx(other))
     return tc
 end
 
-function init!(tc::ToddCoxeter, kind::congruence_kind, wg::WordGraph)
-    @wrap_libsemigroups_call LibSemigroups.init!(tc, kind, wg)
+# A presentation or ToddCoxeter of a different word type cannot be used.
+function init!(
+    tc::ToddCoxeter{W},
+    ::congruence_kind,
+    x::Union{Presentation{V},ToddCoxeter{V}},
+) where {W,V}
+    throw(
+        ArgumentError(
+            "the word type of the argument ($V) must match that of the " *
+            "ToddCoxeter ($W); convert it first",
+        ),
+    )
+end
+
+@cxxdereference function init!(tc::ToddCoxeter, kind::congruence_kind, wg::WordGraph)
+    _check_word_graph_fits(_cong_word_type(tc), wg)
+    @wrap_libsemigroups_call LibSemigroups.init!(_cxx(tc), kind, wg)
     return tc
 end
 
@@ -308,7 +379,7 @@ The returned value is one of [`strategy_hlt`](@ref Semigroups.strategy_hlt)
 
 [`strategy!`](@ref Semigroups.strategy!)
 """
-strategy(tc::ToddCoxeter) = LibSemigroups.strategy(tc)
+strategy(tc::ToddCoxeter) = LibSemigroups.strategy(_cxx(tc))
 
 """
     strategy!(tc::ToddCoxeter, val) -> ToddCoxeter
@@ -321,7 +392,7 @@ chaining. `val` must be one of the `strategy_*` enum constants.
 [`strategy`](@ref Semigroups.strategy)
 """
 function strategy!(tc::ToddCoxeter, val)
-    LibSemigroups.set_strategy!(tc, val)
+    LibSemigroups.set_strategy!(_cxx(tc), val)
     return tc
 end
 
@@ -339,7 +410,7 @@ The returned value is one of
 
 [`lookahead_extent!`](@ref Semigroups.lookahead_extent!)
 """
-lookahead_extent(tc::ToddCoxeter) = LibSemigroups.lookahead_extent(tc)
+lookahead_extent(tc::ToddCoxeter) = LibSemigroups.lookahead_extent(_cxx(tc))
 
 """
     lookahead_extent!(tc::ToddCoxeter, val) -> ToddCoxeter
@@ -351,7 +422,7 @@ Set the lookahead extent of `tc` to `val`. Returns `tc` for chaining.
 [`lookahead_extent`](@ref Semigroups.lookahead_extent)
 """
 function lookahead_extent!(tc::ToddCoxeter, val)
-    LibSemigroups.set_lookahead_extent!(tc, val)
+    LibSemigroups.set_lookahead_extent!(_cxx(tc), val)
     return tc
 end
 
@@ -369,7 +440,7 @@ The returned value is one of
 
 [`lookahead_style!`](@ref Semigroups.lookahead_style!)
 """
-lookahead_style(tc::ToddCoxeter) = LibSemigroups.lookahead_style(tc)
+lookahead_style(tc::ToddCoxeter) = LibSemigroups.lookahead_style(_cxx(tc))
 
 """
     lookahead_style!(tc::ToddCoxeter, val) -> ToddCoxeter
@@ -381,7 +452,7 @@ Set the lookahead style of `tc` to `val`. Returns `tc` for chaining.
 [`lookahead_style`](@ref Semigroups.lookahead_style)
 """
 function lookahead_style!(tc::ToddCoxeter, val)
-    LibSemigroups.set_lookahead_style!(tc, val)
+    LibSemigroups.set_lookahead_style!(_cxx(tc), val)
     return tc
 end
 
@@ -395,7 +466,7 @@ default is `false`.
 
 [`save!`](@ref Semigroups.save!)
 """
-save(tc::ToddCoxeter) = LibSemigroups.save(tc)
+save(tc::ToddCoxeter) = LibSemigroups.save(_cxx(tc))
 
 """
     save!(tc::ToddCoxeter, val::Bool) -> ToddCoxeter
@@ -412,7 +483,7 @@ the underlying word graph.
 [`save`](@ref Semigroups.save)
 """
 function save!(tc::ToddCoxeter, val::Bool)
-    LibSemigroups.set_save!(tc, val)
+    LibSemigroups.set_save!(_cxx(tc), val)
     return tc
 end
 
@@ -427,7 +498,7 @@ relations at the identity. The default is `false`.
 
 [`use_relations_in_extra!`](@ref Semigroups.use_relations_in_extra!)
 """
-use_relations_in_extra(tc::ToddCoxeter) = LibSemigroups.use_relations_in_extra(tc)
+use_relations_in_extra(tc::ToddCoxeter) = LibSemigroups.use_relations_in_extra(_cxx(tc))
 
 """
     use_relations_in_extra!(tc::ToddCoxeter, val::Bool) -> ToddCoxeter
@@ -442,7 +513,7 @@ is `false`.
 [`use_relations_in_extra`](@ref Semigroups.use_relations_in_extra)
 """
 function use_relations_in_extra!(tc::ToddCoxeter, val::Bool)
-    LibSemigroups.set_use_relations_in_extra!(tc, val)
+    LibSemigroups.set_use_relations_in_extra!(_cxx(tc), val)
     return tc
 end
 
@@ -458,7 +529,7 @@ represented by `tc`. The default is [`UNDEFINED`](@ref Semigroups.UNDEFINED)
 [`lower_bound!`](@ref Semigroups.lower_bound!)
 """
 function lower_bound(tc::ToddCoxeter)
-    val = LibSemigroups.lower_bound(tc)
+    val = LibSemigroups.lower_bound(_cxx(tc))
     return val == typemax(UInt) ? UNDEFINED : Int(val)
 end
 
@@ -480,12 +551,12 @@ nodes once no further coincidences are possible. Pass
 [`lower_bound`](@ref Semigroups.lower_bound)
 """
 function lower_bound!(tc::ToddCoxeter, val::Integer)
-    LibSemigroups.set_lower_bound!(tc, UInt(val))
+    LibSemigroups.set_lower_bound!(_cxx(tc), UInt(val))
     return tc
 end
 
 lower_bound!(tc::ToddCoxeter, ::UndefinedType) =
-    (LibSemigroups.set_lower_bound!(tc, typemax(UInt)); tc)
+    (LibSemigroups.set_lower_bound!(_cxx(tc), typemax(UInt)); tc)
 
 """
     def_version(tc::ToddCoxeter)
@@ -501,7 +572,7 @@ The returned value is one of
 
 [`def_version!`](@ref Semigroups.def_version!)
 """
-def_version(tc::ToddCoxeter) = LibSemigroups.def_version(tc)
+def_version(tc::ToddCoxeter) = LibSemigroups.def_version(_cxx(tc))
 
 """
     def_version!(tc::ToddCoxeter, val) -> ToddCoxeter
@@ -514,7 +585,7 @@ chaining.
 [`def_version`](@ref Semigroups.def_version)
 """
 function def_version!(tc::ToddCoxeter, val)
-    LibSemigroups.set_def_version!(tc, val)
+    LibSemigroups.set_def_version!(_cxx(tc), val)
     return tc
 end
 
@@ -537,7 +608,7 @@ or [`def_policy_unlimited`](@ref Semigroups.def_policy_unlimited).
 
 [`def_policy!`](@ref Semigroups.def_policy!)
 """
-def_policy(tc::ToddCoxeter) = LibSemigroups.def_policy(tc)
+def_policy(tc::ToddCoxeter) = LibSemigroups.def_policy(_cxx(tc))
 
 """
     def_policy!(tc::ToddCoxeter, val) -> ToddCoxeter
@@ -550,7 +621,7 @@ chaining.
 [`def_policy`](@ref Semigroups.def_policy)
 """
 function def_policy!(tc::ToddCoxeter, val)
-    LibSemigroups.set_def_policy!(tc, val)
+    LibSemigroups.set_def_policy!(_cxx(tc), val)
     return tc
 end
 
@@ -580,7 +651,7 @@ already standardized with respect to `ord` - and `false` otherwise.
 [`is_standardized`](@ref Semigroups.is_standardized)
 """
 function standardize!(tc::ToddCoxeter, ord::Order)
-    return @wrap_libsemigroups_call LibSemigroups.standardize!(tc, ord)
+    return @wrap_libsemigroups_call LibSemigroups.standardize!(_cxx(tc), ord)
 end
 
 """
@@ -605,9 +676,9 @@ with respect to any [`Order`](@ref Semigroups.Order) other than
 
 [`standardize!`](@ref Semigroups.standardize!)
 """
-is_standardized(tc::ToddCoxeter) = LibSemigroups.is_standardized(tc)
+is_standardized(tc::ToddCoxeter) = LibSemigroups.is_standardized(_cxx(tc))
 
-is_standardized(tc::ToddCoxeter, ord::Order) = LibSemigroups.is_standardized(tc, ord)
+is_standardized(tc::ToddCoxeter, ord::Order) = LibSemigroups.is_standardized(_cxx(tc), ord)
 
 """
     current_word_graph(tc::ToddCoxeter) -> WordGraph
@@ -628,7 +699,7 @@ bound) to put it into a more reasonable state.
 
 [`word_graph`](@ref Semigroups.word_graph)
 """
-@cxxdereference current_word_graph(tc::ToddCoxeter) = LibSemigroups.current_word_graph(tc)
+current_word_graph(tc::ToddCoxeter) = LibSemigroups.current_word_graph(_cxx(tc))
 
 """
     word_graph(tc::ToddCoxeter) -> WordGraph
@@ -650,14 +721,14 @@ combinations of settings (e.g. an aggressive
 
 [`current_word_graph`](@ref Semigroups.current_word_graph)
 """
-@cxxdereference word_graph(tc::ToddCoxeter) = LibSemigroups.word_graph(tc)
+word_graph(tc::ToddCoxeter) = LibSemigroups.word_graph(_cxx(tc))
 
 # ============================================================================
 # Word <-> class index conversions
 # ============================================================================
 
 """
-    index_of(tc::ToddCoxeter, w::AbstractVector{<:Integer}) -> Int
+    index_of(tc::ToddCoxeter, w) -> Int
 
 Return the 1-based index of the congruence class containing `w`, triggering
 a full enumeration of `tc`.
@@ -671,8 +742,8 @@ enumeration completes, the result is never
 # Arguments
 
 - `tc::ToddCoxeter`: the `ToddCoxeter` instance.
-- `w::AbstractVector{<:Integer}`: a 1-based `Vector{Int}` of letter
-  indices.
+- `w`: a word of the word type `W` of `tc` (a 1-based `Vector{Int}` or
+  an ASCII `String`).
 
 # Throws
 
@@ -687,14 +758,14 @@ enumeration completes, the result is never
 [`current_index_of`](@ref Semigroups.current_index_of),
 [`word_of`](@ref Semigroups.word_of)
 """
-function index_of(tc::ToddCoxeter, w::AbstractVector{<:Integer})
-    cpp_w = _word_to_cpp(w)
-    cpp_i = @wrap_libsemigroups_call LibSemigroups.index_of(tc, cpp_w)
+function index_of(tc::ToddCoxeter, w)
+    cpp_w = _cong_word_to_cpp(tc, w)
+    cpp_i = @wrap_libsemigroups_call LibSemigroups.index_of(_cxx(tc), cpp_w)
     return _index_from_cpp(cpp_i)
 end
 
 """
-    current_index_of(tc::ToddCoxeter, w::AbstractVector{<:Integer}) -> Union{Int, UndefinedType}
+    current_index_of(tc::ToddCoxeter, w) -> Union{Int, UndefinedType}
 
 Return the 1-based index of the congruence class containing `w` if it is
 already known, without triggering a run.
@@ -708,8 +779,8 @@ its own singleton type.
 # Arguments
 
 - `tc::ToddCoxeter`: the `ToddCoxeter` instance.
-- `w::AbstractVector{<:Integer}`: a 1-based `Vector{Int}` of letter
-  indices.
+- `w`: a word of the word type `W` of `tc` (a 1-based `Vector{Int}` or
+  an ASCII `String`).
 
 # Throws
 
@@ -721,14 +792,14 @@ its own singleton type.
 [`index_of`](@ref Semigroups.index_of),
 [`current_word_of`](@ref Semigroups.current_word_of)
 """
-function current_index_of(tc::ToddCoxeter, w::AbstractVector{<:Integer})
-    cpp_w = _word_to_cpp(w)
-    cpp_i = @wrap_libsemigroups_call LibSemigroups.current_index_of(tc, cpp_w)
+function current_index_of(tc::ToddCoxeter, w)
+    cpp_w = _cong_word_to_cpp(tc, w)
+    cpp_i = @wrap_libsemigroups_call LibSemigroups.current_index_of(_cxx(tc), cpp_w)
     return _index_from_cpp(cpp_i)
 end
 
 """
-    word_of(tc::ToddCoxeter, i::Integer) -> Vector{Int}
+    word_of(tc::ToddCoxeter{W}, i::Integer) -> W
 
 Return a representative word for the `i`-th congruence class of `tc`
 (1-based).
@@ -752,12 +823,12 @@ terminate.
 """
 function word_of(tc::ToddCoxeter, i::Integer)
     cpp_i = _index_to_cpp(i)
-    out = @wrap_libsemigroups_call LibSemigroups.word_of(tc, cpp_i)
-    return _word_from_cpp(out)
+    out = @wrap_libsemigroups_call LibSemigroups.word_of(_cxx(tc), cpp_i)
+    return _cong_word_from_cpp(tc, out)
 end
 
 """
-    current_word_of(tc::ToddCoxeter, i::Integer) -> Vector{Int}
+    current_word_of(tc::ToddCoxeter{W}, i::Integer) -> W
 
 Return a representative word for the `i`-th congruence class of `tc`
 (1-based), without triggering an enumeration.
@@ -785,12 +856,12 @@ the root.
 """
 function current_word_of(tc::ToddCoxeter, i::Integer)
     cpp_i = _index_to_cpp(i)
-    out = @wrap_libsemigroups_call LibSemigroups.current_word_of(tc, cpp_i)
-    return _word_from_cpp(out)
+    out = @wrap_libsemigroups_call LibSemigroups.current_word_of(_cxx(tc), cpp_i)
+    return _cong_word_from_cpp(tc, out)
 end
 
 """
-    throw_if_letter_not_in_alphabet(tc::ToddCoxeter, w::AbstractVector{<:Integer})
+    throw_if_letter_not_in_alphabet(tc::ToddCoxeter, w)
 
 Check that every letter in `w` belongs to the alphabet of the underlying
 presentation of `tc`.
@@ -798,16 +869,17 @@ presentation of `tc`.
 # Arguments
 
 - `tc::ToddCoxeter`: the `ToddCoxeter` instance.
-- `w::AbstractVector{<:Integer}`: a 1-based `Vector{Int}` of letter indices.
+- `w`: a word of the word type `W` of `tc` (a 1-based `Vector{Int}` or
+  an ASCII `String`).
 
 # Throws
 
 - `LibsemigroupsError` if any letter in `w` is not in the alphabet of the
   underlying presentation.
 """
-function throw_if_letter_not_in_alphabet(tc::ToddCoxeter, w::AbstractVector{<:Integer})
-    cpp_w = _word_to_cpp(w)
-    @wrap_libsemigroups_call LibSemigroups.throw_if_letter_not_in_alphabet(tc, cpp_w)
+function throw_if_letter_not_in_alphabet(tc::ToddCoxeter, w)
+    cpp_w = _cong_word_to_cpp(tc, w)
+    @wrap_libsemigroups_call LibSemigroups.throw_if_letter_not_in_alphabet(_cxx(tc), cpp_w)
     return nothing
 end
 
@@ -834,7 +906,7 @@ detect the infinite case.
     This function may not terminate if the congruence has infinitely many
     classes and the algorithm cannot detect this.
 """
-number_of_classes(tc::ToddCoxeter) = LibSemigroups.number_of_classes(tc)
+number_of_classes(tc::ToddCoxeter) = LibSemigroups.number_of_classes(_cxx(tc))
 
 """
     kind(tc::ToddCoxeter) -> congruence_kind
@@ -844,7 +916,7 @@ The result is either [`twosided`](@ref Semigroups.twosided) or
 [`onesided`](@ref Semigroups.onesided); see
 [`congruence_kind`](@ref Semigroups.congruence_kind).
 """
-kind(tc::ToddCoxeter) = LibSemigroups.kind(tc)
+kind(tc::ToddCoxeter) = LibSemigroups.kind(_cxx(tc))
 
 """
     number_of_generating_pairs(tc::ToddCoxeter) -> Int
@@ -855,24 +927,28 @@ This equals the length of [`generating_pairs`](@ref
 Semigroups.generating_pairs).
 """
 number_of_generating_pairs(tc::ToddCoxeter) =
-    Int(LibSemigroups.number_of_generating_pairs(tc))
+    Int(LibSemigroups.number_of_generating_pairs(_cxx(tc)))
 
 """
-    generating_pairs(tc::ToddCoxeter) -> Vector{Tuple{Vector{Int}, Vector{Int}}}
+    generating_pairs(tc::ToddCoxeter{W}) -> Vector{Tuple{W, W}}
 
-Return the generating pairs of `tc` as a vector of 1-based word pairs.
+Return the generating pairs of `tc` as a vector of word pairs.
 
 These are the pairs added via
 [`add_generating_pair!`](@ref Semigroups.add_generating_pair!). Words are
-returned as 1-based `Vector{Int}` letter indices. The length of the returned
-vector equals
+returned with the word type `W` of `tc`. The length of the returned vector
+equals
 [`number_of_generating_pairs`](@ref Semigroups.number_of_generating_pairs).
 """
 function generating_pairs(tc::ToddCoxeter)
-    flat = LibSemigroups.generating_pairs(tc)
-    result = Tuple{Vector{Int},Vector{Int}}[]
+    W = _cong_word_type(tc)
+    flat = LibSemigroups.generating_pairs(_cxx(tc))
+    result = Tuple{W,W}[]
     for i = 1:2:length(flat)
-        push!(result, (_word_from_cpp(flat[i]), _word_from_cpp(flat[i+1])))
+        push!(
+            result,
+            (_cong_word_from_cpp(tc, flat[i]), _cong_word_from_cpp(tc, flat[i+1])),
+        )
     end
     return result
 end
@@ -887,7 +963,7 @@ If `tc` was constructed or initialised from a
 [`Presentation`](@ref Semigroups.Presentation), the returned presentation is
 empty.
 """
-presentation(tc::ToddCoxeter) = LibSemigroups.presentation(tc)
+presentation(tc::ToddCoxeter) = _wrap_presentation(LibSemigroups.presentation(_cxx(tc)))
 
 # ============================================================================
 # Base.* overloads
@@ -907,7 +983,7 @@ Base.length(tc::ToddCoxeter) = number_of_classes(tc)
 Print a human-readable representation of `tc`.
 """
 function Base.show(io::IO, tc::ToddCoxeter)
-    print(io, LibSemigroups.to_human_readable_repr(tc))
+    print(io, LibSemigroups.to_human_readable_repr(_cxx(tc)))
 end
 
 """
@@ -915,9 +991,9 @@ end
 
 Create an independent copy of `tc`.
 """
-Base.copy(tc::ToddCoxeter) = LibSemigroups.ToddCoxeterWord(tc)
+Base.copy(tc::ToddCoxeter) = ToddCoxeter(tc)
 
-Base.deepcopy_internal(tc::ToddCoxeter, ::IdDict) = LibSemigroups.ToddCoxeterWord(tc)
+Base.deepcopy_internal(tc::ToddCoxeter, ::IdDict) = ToddCoxeter(tc)
 
 # ============================================================================
 # Free functions (todd_coxeter:: namespace)
@@ -968,7 +1044,7 @@ function is_non_trivial(
     ut = UInt(tries)
     ns = Int64(Dates.value(convert(Nanosecond, try_for)))
     th = Float32(threshold)
-    return @wrap_libsemigroups_call LibSemigroups.tc_is_non_trivial(tc, ut, ns, th)
+    return @wrap_libsemigroups_call LibSemigroups.tc_is_non_trivial(_cxx(tc), ut, ns, th)
 end
 
 """
@@ -1002,7 +1078,7 @@ Knuth-Bendix-based helper.
 function tc_redundant_rule(p::Presentation, timeout::TimePeriod)
     # See note on is_non_trivial: keep coercions out of the macro arglist.
     ns = Int64(Dates.value(convert(Nanosecond, timeout)))
-    idx = @wrap_libsemigroups_call LibSemigroups.tc_redundant_rule(p, ns)
+    idx = @wrap_libsemigroups_call LibSemigroups.tc_redundant_rule(_cxx(p), ns)
     n_flat = 2 * number_of_rules(p)
     if idx >= n_flat
         return nothing
