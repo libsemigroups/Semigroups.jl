@@ -4,18 +4,22 @@ This page documents the helper functions that are shared by every
 congruence-style algorithm in Semigroups.jl. They mirror the
 `libsemigroups::congruence_common::*` namespace and are dispatched on
 [`CongruenceCommon`](@ref Semigroups.CongruenceCommon), so the same
-function names work uniformly across [`KnuthBendix`](@ref
-Semigroups.KnuthBendix) (and, in later phases, `ToddCoxeter`,
-`Kambites`, and `Congruence`).
+function names work uniformly across
+[`KnuthBendix`](@ref Semigroups.KnuthBendix),
+`ToddCoxeter`, [`Kambites`](@ref Semigroups.Kambites), and
+`Congruence`.
 
-Words are accepted and returned as 1-based `Vector{Int}` letter indices
-throughout.
+Words are accepted and returned in the word type `W` of the congruence
+(`CongruenceCommon{W}`), as in libsemigroups, where every helper takes and
+returns `Thing::native_word_type`. Currently every bound congruence uses
+1-based `Vector{Int}` letter indices; passing a word of the wrong type
+throws an `ArgumentError`.
 
-!!! warning "v1 limitation"
-    [`KnuthBendix`](@ref Semigroups.KnuthBendix) is the only concrete
-    subtype of [`CongruenceCommon`](@ref Semigroups.CongruenceCommon)
-    bound in v1. The same helpers will apply to `ToddCoxeter`,
-    `Kambites`, and `Congruence` once those types land.
+A few helpers are not provided by libsemigroups for every algorithm and
+throw an `ArgumentError` instead: `normal_forms` for `Kambites` (whose
+normal forms are infinite; use the bounded `normal_forms(k, n)`) and for
+`Congruence`, and the two-congruence `non_trivial_classes` for `Kambites`
+and `Congruence` and for arguments of different types.
 
 !!! note
     `Semigroups.reduce` and `Semigroups.contains` are not exported, to
