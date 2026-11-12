@@ -110,10 +110,18 @@ to(::Type{Presentation}, c::Congruence) = LibSemigroups.to_presentation_word(c)
     to(::Type{Presentation}, k::Kambites) -> Presentation
 
 Julia implementation of libsemigroups' `to<Presentation>(k)` conversion.
-Return a presentation equivalent to the presentation used to construct or
-initialise `k`.
+Return a copy of the presentation currently stored in `k`.
 
-This conversion does not enumerate `k`.
+The returned presentation is independent of `k`: mutating it does not
+affect `k`, and later changes to `k` are not reflected in it. (The
+underlying C++ function returns a const reference to the presentation
+stored in `k`; the Julia binding copies it.)
+
+This conversion does not run `k`. However, if `k` has already been run, its
+stored presentation may include additional generating pairs added via
+[`add_generating_pair!`](@ref Semigroups.add_generating_pair!(::CongruenceCommon, ::AbstractVector{<:Integer}, ::AbstractVector{<:Integer})).
+Consequently, the result need not be equivalent to the presentation
+originally used to construct or initialise `k`.
 """
 to(::Type{Presentation}, k::Kambites) = LibSemigroups.to_presentation_word(k)
 
