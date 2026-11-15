@@ -113,9 +113,7 @@ Julia implementation of libsemigroups' `to<Presentation>(k)` conversion.
 Return a copy of the presentation currently stored in `k`.
 
 The returned presentation is independent of `k`: mutating it does not
-affect `k`, and later changes to `k` are not reflected in it. (The
-underlying C++ function returns a const reference to the presentation
-stored in `k`; the Julia binding copies it.)
+affect `k`, and later changes to `k` are not reflected in it.
 
 This conversion does not run `k`. However, if `k` has already been run, its
 stored presentation may include additional generating pairs added via
