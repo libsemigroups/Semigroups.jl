@@ -443,7 +443,7 @@ ReportGuard(false) do
             GC.gc()
             @test all(T[i] == xs[i] for i = 1:100)
         end
-        
+
         @testset "regression: BMat8 collections own their elements" begin
             x = BMat8([[0, 1], [1, 0]])
             expected = sort([to_int(x), to_int(x * x)])
