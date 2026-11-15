@@ -443,6 +443,40 @@ ReportGuard(false) do
             GC.gc()
             @test all(T[i] == xs[i] for i = 1:100)
         end
+        
+        @testset "regression: BMat8 collections own their elements" begin
+            x = BMat8([[0, 1], [1, 0]])
+            expected = sort([to_int(x), to_int(x * x)])
+
+            elements, ids = let S = FroidurePin(x)
+                for get_raw in (
+                    Semigroups.LibSemigroups.sorted_elements,
+                    Semigroups.LibSemigroups.idempotents,
+                )
+                    raw = get_raw(S.cxx_obj)
+
+                    # Keep the vector alive throughout all borrowed accesses.
+                    GC.@preserve raw begin
+                        borrowed = raw[1]
+                        owned = Semigroups._copy_cxx_element(borrowed)
+                        original = to_int(owned)
+
+                        borrowed[1, 1] = !borrowed[1, 1]
+
+                        @test to_int(borrowed) != original
+                        @test to_int(owned) == original
+                    end
+                end
+
+                sorted_elements(S), idempotents(S)
+            end
+
+            # Only the public results escape the scope of their native owners.
+            GC.gc()
+
+            @test to_int.(elements) == expected
+            @test to_int.(ids) == [to_int(x * x)]
+        end
 
     end  # @testset "FroidurePin<BMat8>"
 
