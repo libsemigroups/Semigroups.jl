@@ -50,7 +50,7 @@ resolve the registered dependencies and check the published binaries:
 
 ```shell
 julia --startup-file=no --project=. -e 'using Pkg; Pkg.Registry.update(); Pkg.instantiate()'
-julia --startup-file=no --project=. test/check_jll.jl
+julia --startup-file=no --project=. test/loader/check_jll.jl
 ```
 
 The second command checks that the published wrapper loads its expected core
@@ -112,7 +112,11 @@ loading Semigroups. Cached bindings are not silently reused against a
 different library. `Semigroups.versioninfo()` reports the selected source, and
 `Semigroups.libsemigroups_julia()` returns its path without loading another JLL.
 
-Run `julia --startup-file=no --project=. test/check_loading.jl` to test normal
+The loader checks live in `test/loader/`. The inexpensive selection checks
+remain part of `Pkg.test()`, and CI checks the published JLLs on the full
+supported matrix.
+
+Run `julia --startup-file=no --project=. test/loader/check_loading.jl` to test normal
 and cached loading, both override mechanisms, and rejection of a conflicting
 preloaded wrapper. It always exercises automatic local selection in an isolated
 source copy, even when the checkout matches the published JLL. That selection
@@ -122,17 +126,25 @@ binary; it tests selection, not compilation.
 Run the more expensive native-source transition check with:
 
 ```shell
-CMAKE_BUILD_PARALLEL_LEVEL=2 julia --startup-file=no --project=. test/check_loading_transitions.jl
+CMAKE_BUILD_PARALLEL_LEVEL=2 julia --startup-file=no --project=. test/loader/check_loading_transitions.jl
 ```
 
 This builds a real wrapper in a temporary source copy, warms the Julia bindings,
 adds a new C++ method, and checks that a fresh process sees it without manual
-cache regeneration. It also checks loading with `--compiled-modules=no`. CI runs
-it on current stable Julia on Ubuntu and macOS, and minimum supported Julia on
-Ubuntu; run the same command on each release target during full release
-validation. Both loading scripts expect a checkout without wrapper overrides.
-Keep `test/check_jll.jl` in a separate process: it deliberately imports and tests
-the published wrapper.
+cache regeneration. It also checks loading with `--compiled-modules=no`.
+
+The separate loader integration job runs both scripts on minimum and current
+stable Julia across the same platforms as the package tests, including Intel
+macOS. The `min` selector reads the Julia requirement from `Project.toml`.
+Integration runs for changes to package metadata, source, native code, tests,
+CI configuration, or the Makefile, and for every manual workflow run.
+PRs confined to README files or `docs/` skip it, but the fixed-name
+`Loader integration` check still reports success; failed or cancelled
+integration jobs make that check fail. Run the commands on each release target
+during full release validation.
+Both loading scripts expect a checkout without wrapper overrides. Keep
+`test/loader/check_jll.jl` in a separate process: it deliberately imports and
+tests the published wrapper.
 
 ## Updating just the C++ wrappers
 

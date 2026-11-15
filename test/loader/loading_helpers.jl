@@ -7,7 +7,7 @@
 # Shared by the fresh-process loading and native-source transition checks.
 using Test, Semigroups, Libdl, Pkg, TOML
 
-const root = dirname(@__DIR__)
+const root = dirname(dirname(@__DIR__))
 const wrapper_uuid = string(Semigroups.Setup.WRAPPER_ID.uuid)
 const selected = realpath(Semigroups.libsemigroups_julia())
 const artifact = Semigroups.Setup.jll_artifact().directory
