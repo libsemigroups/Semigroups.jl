@@ -17,8 +17,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        julia-version: ["1.10", "lts", "1", "pre"]
-        system:
+        julia-version: ["min", "lts", "1", "pre"]
+        system: &platforms
           # TODO: test with x86
           - {
               os: ubuntu-latest,
@@ -44,6 +44,7 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
           arch: ${{ matrix.system.arch }}
+          project: .
       - uses: julia-actions/cache@v3
 
         # Build Semigroups.jl
@@ -52,7 +53,7 @@ jobs:
           precompile: yes
 
       - name: Check registered JLL binaries
-        run: julia --startup-file=no --project=. test/check_jll.jl
+        run: julia --startup-file=no --project=. test/loader/check_jll.jl
 
       # Run the tests
       - uses: julia-actions/julia-runtest@v1
@@ -65,3 +66,83 @@ jobs:
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  loader-changes:
+    name: Check loader integration scope
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.changes.outputs.run }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: changes
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [[ "$EVENT_NAME" != pull_request ]]; then
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          elif git diff --quiet "$BASE_SHA...$HEAD_SHA" -- \
+              Project.toml 'Manifest*.toml' src/ deps/ test/ .github/ Makefile; then
+            echo 'run=false' >> "$GITHUB_OUTPUT"
+          else
+            diff_status=$?
+            if [[ "$diff_status" != 1 ]]; then
+              exit "$diff_status"
+            fi
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          fi
+
+  loader-tests:
+    name: "Loader: ${{ matrix.system.os }}, Julia ${{ matrix.julia-version }}"
+    needs: loader-changes
+    if: needs.loader-changes.outputs.run == 'true'
+    runs-on: ${{ matrix.system.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # 'min' follows Project.toml; every platform runs the same integration checks.
+        julia-version: ["min", "1"]
+        system: *platforms
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: ${{ matrix.julia-version }}
+          arch: ${{ matrix.system.arch }}
+          project: .
+      - uses: julia-actions/cache@v3
+      - uses: julia-actions/julia-buildpkg@v1
+        with:
+          precompile: yes
+      - name: Check wrapper loading in fresh processes
+        timeout-minutes: 15
+        run: julia --startup-file=no --project=. test/loader/check_loading.jl
+      - name: Check native source changes and loading without precompilation
+        timeout-minutes: 30
+        run: julia --startup-file=no --project=. test/loader/check_loading_transitions.jl
+
+  loader:
+    # A stable check for branch protection, including documentation-only skips.
+    name: Loader integration
+    needs: [loader-changes, loader-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check integration result
+        env:
+          SCOPE_RESULT: ${{ needs.loader-changes.result }}
+          REQUIRED: ${{ needs.loader-changes.outputs.run }}
+          TEST_RESULT: ${{ needs.loader-tests.result }}
+        run: |
+          test "$SCOPE_RESULT" = success
+          if [[ "$REQUIRED" == true ]]; then
+            test "$TEST_RESULT" = success
+          else
+            test "$REQUIRED" = false
+            test "$TEST_RESULT" = skipped
+          fi

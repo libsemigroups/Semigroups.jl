@@ -50,7 +50,7 @@ resolve the registered dependencies and check the published binaries:
 
 ```shell
 julia --startup-file=no --project=. -e 'using Pkg; Pkg.Registry.update(); Pkg.instantiate()'
-julia --startup-file=no --project=. test/check_jll.jl
+julia --startup-file=no --project=. test/loader/check_jll.jl
 ```
 
 The second command checks that the published wrapper loads its expected core
@@ -63,12 +63,88 @@ wrapper, then run the full suite in the same Julia process:
 
 ```shell
 julia --startup-file=no --project=. -e '
-    using Semigroups, libsemigroups_julia_jll
-    @assert realpath(Semigroups.libsemigroups_julia()) ==
-            realpath(libsemigroups_julia_jll.libsemigroups_julia)
+    using Semigroups
+    @assert Semigroups._libsemigroups_julia_source() == "JLL"
     include("test/runtests.jl")
 '
 ```
+
+## Wrapper selection and local development
+
+Semigroups inspects the wrapper package's artifact metadata before loading any
+wrapper binary. Registered installations use the published artifact. A checkout
+also uses it when its C++ source tree matches the artifact's recorded tree hash;
+otherwise it builds the bundled sources. CxxWrap loads only the selected binary.
+Importing `libsemigroups_julia_jll` first in a development session can load an
+incompatible published wrapper; Semigroups rejects that combination and asks for
+a fresh Julia process.
+
+Local builds live in `deps/build-<Julia version>`. Their build record includes
+the source hash, Julia version and revision, platform, and native dependency
+locations. A change to the native configuration triggers a clean build;
+source-only changes can reuse CMake's incremental build. Builds are protected by
+a process lock. C++ source changes also invalidate Julia's precompiled bindings.
+
+Standard JLL overrides take precedence over automatic source selection. To use
+an installation prefix containing `lib/libsemigroups_julia.so` (or `.dylib` on
+macOS), add this to a depot's `artifacts/Overrides.toml`:
+
+```toml
+[49785210-2e0e-5fa7-bc86-ac158b29c4ea]
+libsemigroups_julia = "/absolute/path/to/prefix"
+```
+
+Alternatively, the JLL's standard `libsemigroups_julia_path` preference can
+select a specific library without importing the JLL:
+
+```julia
+using Preferences
+set_preferences!(
+    Base.UUID("49785210-2e0e-5fa7-bc86-ac158b29c4ea"),
+    "libsemigroups_julia_path" => "/absolute/path/to/libsemigroups_julia.so",
+)
+```
+
+Use a fresh Julia process after changing a wrapper or override. After changing
+an override, regenerate bindings with
+`Base.compilecache(Base.identify_package("Semigroups"))` before
+loading Semigroups. Cached bindings are not silently reused against a
+different library. `Semigroups.versioninfo()` reports the selected source, and
+`Semigroups.libsemigroups_julia()` returns its path without loading another JLL.
+
+The loader checks live in `test/loader/`. The inexpensive selection checks
+remain part of `Pkg.test()`, and CI checks the published JLLs on the full
+supported matrix.
+
+Run `julia --startup-file=no --project=. test/loader/check_loading.jl` to test normal
+and cached loading, both override mechanisms, and rejection of a conflicting
+preloaded wrapper. It always exercises automatic local selection in an isolated
+source copy, even when the checkout matches the published JLL. That selection
+fixture adds only a C++ comment and seeds its build cache with the selected
+binary; it tests selection, not compilation.
+
+Run the more expensive native-source transition check with:
+
+```shell
+CMAKE_BUILD_PARALLEL_LEVEL=2 julia --startup-file=no --project=. test/loader/check_loading_transitions.jl
+```
+
+This builds a real wrapper in a temporary source copy, warms the Julia bindings,
+adds a new C++ method, and checks that a fresh process sees it without manual
+cache regeneration. It also checks loading with `--compiled-modules=no`.
+
+The separate loader integration job runs both scripts on minimum and current
+stable Julia across the same platforms as the package tests, including Intel
+macOS. The `min` selector reads the Julia requirement from `Project.toml`.
+Integration runs for changes to package metadata, source, native code, tests,
+CI configuration, or the Makefile, and for every manual workflow run.
+PRs confined to README files or `docs/` skip it, but the fixed-name
+`Loader integration` check still reports success; failed or cancelled
+integration jobs make that check fail. Run the commands on each release target
+during full release validation.
+Both loading scripts expect a checkout without wrapper overrides. Keep
+`test/loader/check_jll.jl` in a separate process: it deliberately imports and
+tests the published wrapper.
 
 ## Updating just the C++ wrappers
 
