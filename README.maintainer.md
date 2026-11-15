@@ -114,8 +114,25 @@ different library. `Semigroups.versioninfo()` reports the selected source, and
 
 Run `julia --startup-file=no --project=. test/check_loading.jl` to test normal
 and cached loading, both override mechanisms, and rejection of a conflicting
-preloaded wrapper. Keep `test/check_jll.jl` in a separate process: it deliberately
-imports and tests the published wrapper.
+preloaded wrapper. It always exercises automatic local selection in an isolated
+source copy, even when the checkout matches the published JLL. That selection
+fixture adds only a C++ comment and seeds its build cache with the selected
+binary; it tests selection, not compilation.
+
+Run the more expensive native-source transition check with:
+
+```shell
+CMAKE_BUILD_PARALLEL_LEVEL=2 julia --startup-file=no --project=. test/check_loading_transitions.jl
+```
+
+This builds a real wrapper in a temporary source copy, warms the Julia bindings,
+adds a new C++ method, and checks that a fresh process sees it without manual
+cache regeneration. It also checks loading with `--compiled-modules=no`. CI runs
+it on current stable Julia on Ubuntu and macOS, and minimum supported Julia on
+Ubuntu; run the same command on each release target during full release
+validation. Both loading scripts expect a checkout without wrapper overrides.
+Keep `test/check_jll.jl` in a separate process: it deliberately imports and tests
+the published wrapper.
 
 ## Updating just the C++ wrappers
 

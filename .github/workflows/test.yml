@@ -58,6 +58,15 @@ jobs:
         timeout-minutes: 15
         run: julia --startup-file=no --project=. test/check_loading.jl
 
+      - name: Check native source changes and loading without precompilation
+        if: >-
+          (matrix.julia-version == '1' && matrix.system.os != 'macOS-15-intel') ||
+          (matrix.julia-version == '1.10' && matrix.system.os == 'ubuntu-latest')
+        timeout-minutes: 30
+        env:
+          CMAKE_BUILD_PARALLEL_LEVEL: 2
+        run: julia --startup-file=no --project=. test/check_loading_transitions.jl
+
       # Run the tests
       - uses: julia-actions/julia-runtest@v1
 
