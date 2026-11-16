@@ -30,7 +30,7 @@ against. Preserve this policy for future releases by setting both the build
 dependency and its `compat` in the wrapper's Yggdrasil recipe, for example:
 
 ```julia
-Dependency("libsemigroups_jll", v"3.6.1"; compat="=3.6.1")
+Dependency("libsemigroups_jll", v"3.6.2"; compat="=3.6.2")
 ```
 
 The build version alone does not constrain runtime resolution. Every kernel
@@ -38,8 +38,8 @@ upgrade requires a new wrapper release, even if `deps/src/` has not changed.
 Wrapper versions are independent of `Semigroups.jl` versions; Julia-only
 changes may reuse the existing wrapper.
 
-For example, `Semigroups.jl` 0.1.3 requires wrapper 0.1.2 or later in the 0.1
-series and core 3.6.1. Wrapper 0.1.2 enforces core 3.6.1. A new recipe does not
+For example, `Semigroups.jl` 0.1.4 requires wrapper 0.1.4 or later in the 0.1
+series and core 3.6.2. Wrapper 0.1.4 enforces core 3.6.2. A new recipe does not
 retroactively constrain older wrapper releases; corrections to their
 compatibility metadata require a separate General registry change.
 
@@ -204,8 +204,8 @@ build scripts because `libsemigroups_julia_jll` will need to point to the new
    example:
 
    ```toml
-   libsemigroups_jll = "=3.6.1"
-   libsemigroups_julia_jll = "0.1.2"
+   libsemigroups_jll = "=3.6.2"
+   libsemigroups_julia_jll = "0.1.4"
    ```
 
 6. Resolve dependencies in a fresh environment and run the tests against
