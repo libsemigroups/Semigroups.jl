@@ -15,8 +15,12 @@ are available.
 
 using Dates: TimePeriod
 
-@testset "Runner type aliases" begin
-    @test Runner === Semigroups.LibSemigroups.Runner
+@testset "Runner types" begin
+    # Runner is a Julia abstract type; the algorithms are wrapper structs
+    # subtyping it, not the CxxWrap-generated Runner type.
+    @test isabstracttype(Runner)
+    @test Runner !== Semigroups.LibSemigroups.Runner
+    @test Semigroups.CongruenceCommon <: Runner
     @test RunnerState === Semigroups.LibSemigroups.state
 end
 

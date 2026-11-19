@@ -239,6 +239,35 @@ end
     @test def_policy(tc) == def_policy_purge_all
 end
 
+@testset "TC init! overloads coverage" begin
+    p1 = Presentation()
+    set_alphabet!(p1, 2)
+    add_rule_no_checks!(p1, _tc_word(0, 0, 0), _tc_word(0))
+    add_rule_no_checks!(p1, _tc_word(0), _tc_word(1, 1))
+
+    p2 = Presentation()
+    set_alphabet!(p2, 1)
+    add_rule_no_checks!(p2, _tc_word(0, 0), _tc_word(0))
+
+    tc = ToddCoxeter(twosided, p1)
+    run!(tc)
+    @test number_of_classes(tc) == 5
+
+    # Re-initialize with presentation
+    init!(tc, twosided, p2)
+    run!(tc)
+    @test number_of_classes(tc) == 1
+
+    # Re-initialize with another ToddCoxeter
+    tc_other = ToddCoxeter(twosided, p1)
+    init!(tc, onesided, tc_other)
+    @test tc isa ToddCoxeter
+
+    # Re-initialize with WordGraph
+    wg = WordGraph(1, 2)
+    init!(tc, twosided, wg)
+    @test tc isa ToddCoxeter
+end
 @testset "TC - current_word_graph after run!" begin
     # After run!, current_word_graph may include inactive allocation slots,
     # so it has at least number_of_classes(tc) + 1 nodes (the +1 accounts for
