@@ -10,6 +10,7 @@
 #include <libsemigroups/todd-coxeter-class.hpp>
 #include <libsemigroups/transf.hpp>
 #include <libsemigroups/types.hpp>
+#include <string>
 
 namespace libsemigroups_julia {
 
@@ -23,11 +24,30 @@ namespace libsemigroups_julia {
         return libsemigroups::to<
             libsemigroups::Presentation<libsemigroups::word_type>>(self);
       });
+      m.method("to_presentation_string", [](FP& self) {
+        return libsemigroups::to<libsemigroups::Presentation<std::string>>(
+            self);
+      });
     }
 
   }  // namespace
 
   void define_to_presentation(jl::Module& m) {
+    // Presentation<word_type> <-> Presentation<std::string>, relabelling the
+    // letters by alphabet position (libsemigroups::v4::to; the libsemigroups
+    // namespace-level versions are deprecated).
+    m.method(
+        "to_presentation_string",
+        [](libsemigroups::Presentation<libsemigroups::word_type> const& p) {
+          return libsemigroups::v4::to<
+              libsemigroups::Presentation<std::string>>(p);
+        });
+    m.method("to_presentation_word",
+             [](libsemigroups::Presentation<std::string> const& p) {
+               return libsemigroups::v4::to<
+                   libsemigroups::Presentation<libsemigroups::word_type>>(p);
+             });
+
     // Presentation<word_type> to InversePresentation<word_type>.
     m.method(
         "to_inverse_presentation_word",

@@ -26,6 +26,7 @@
 #include <libsemigroups/to-cong.hpp>            // for to<Congruence<Word>>
 #include <libsemigroups/types.hpp>       // for congruence_kind, word_type
 #include <libsemigroups/word-graph.hpp>  // for WordGraph
+#include <string>
 
 namespace libsemigroups_julia {
 
@@ -52,6 +53,24 @@ namespace libsemigroups_julia {
                return libsemigroups::to<
                    libsemigroups::Congruence<libsemigroups::word_type>>(knd,
                                                                         wg);
+             });
+
+    // The same two conversions, to Congruence<std::string>.
+    m.method("to_congruence_string_from_fpb",
+             [](libsemigroups::congruence_kind            knd,
+                libsemigroups::FroidurePinBase&           fpb,
+                libsemigroups::WordGraph<uint32_t> const& wg)
+                 -> libsemigroups::Congruence<std::string> {
+               return libsemigroups::to<libsemigroups::Congruence<std::string>>(
+                   knd, fpb, wg);
+             });
+
+    m.method("to_congruence_string_from_wg",
+             [](libsemigroups::congruence_kind            knd,
+                libsemigroups::WordGraph<uint32_t> const& wg)
+                 -> libsemigroups::Congruence<std::string> {
+               return libsemigroups::to<libsemigroups::Congruence<std::string>>(
+                   knd, wg);
              });
   }
 

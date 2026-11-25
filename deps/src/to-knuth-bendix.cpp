@@ -41,6 +41,15 @@ namespace libsemigroups_julia {
                return libsemigroups::to<KB>(knd, fpb);
              });
 
+    // FroidurePinBase and congruence kind to KnuthBendix<std::string>.
+    m.method(
+        "to_knuth_bendix_string_from_fpb",
+        [](libsemigroups::congruence_kind  knd,
+           libsemigroups::FroidurePinBase& fpb) {
+          return libsemigroups::to<libsemigroups::KnuthBendix<std::string>>(
+              knd, fpb);
+        });
+
     // ToddCoxeter and congruence kind to KnuthBendix<word_type>.
     m.method("to_knuth_bendix_from_tc",
              [](libsemigroups::congruence_kind                        knd,

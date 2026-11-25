@@ -1,10 +1,32 @@
 # ============================================================================
+# Limits on conversions to String words
+# ============================================================================
+# Converting to String words gives each letter (alphabet letter, generator or
+# edge label) an ASCII character. libsemigroups 3.6.1 uses different letter
+# schemes in different conversions, so the number of letters that stay ASCII
+# differs: 31 where the letters are 'a', 'b', ... (up to '\x7f'), and 128
+# where every ASCII character is used. Beyond that, libsemigroups silently
+# creates non-ASCII letters; check up front instead.
+#
+# For FroidurePin -> KnuthBendix{String} the limit is 26: beyond 'z',
+# libsemigroups 3.6.1's KnuthBendix and the presentation it builds from the
+# FroidurePin use different letters, and the conversion fails.
+function _check_string_letters(n::Integer, max::Integer, what::AbstractString)
+    n <= max || throw(
+        ArgumentError("converting to String words supports at most $max $what, got $n"),
+    )
+    return nothing
+end
+
+# ============================================================================
 # Conversions to Congruence
 # ============================================================================
 
 """
     to(::Type{Congruence}, kind::congruence_kind, fp::FroidurePin,
-       wg) -> Congruence
+       wg) -> Congruence{Vector{Int}}
+    to(::Type{Congruence{W}}, kind::congruence_kind, fp::FroidurePin,
+       wg) -> Congruence{W}
 
 Convert a Froidure-Pin graph to a Congruence.
 
@@ -15,17 +37,36 @@ The result represents the trivial congruence over the semigroup defined by
 
 `kind` selects whether the resulting congruence is one-sided or two-sided.
 
+With an unparameterised target the result uses `Vector{Int}` words; give the
+word type explicitly (e.g. `{String}`) for a result over `String` words.
+
 # Throws
 
 - [`LibsemigroupsError`](@ref Semigroups.LibsemigroupsError) if `wg` is not
     the left or right Cayley graph of `fp`.
 """
-to(::Type{Congruence}, kind::congruence_kind, fp::FroidurePin, wg) = _wrap_congruence(
-    @wrap_libsemigroups_call LibSemigroups.to_congruence_from_fpb(kind, fp.cxx_obj, wg)
-)
+to(::Type{Congruence}, kind::congruence_kind, fp::FroidurePin, wg) =
+    to(Congruence{Vector{Int}}, kind, fp, wg)
+
+to(::Type{Congruence{Vector{Int}}}, kind::congruence_kind, fp::FroidurePin, wg) =
+    _wrap_congruence(
+        @wrap_libsemigroups_call LibSemigroups.to_congruence_from_fpb(kind, fp.cxx_obj, wg)
+    )
+
+function to(::Type{Congruence{String}}, kind::congruence_kind, fp::FroidurePin, wg)
+    _check_string_letters(out_degree(wg), 31, "edge labels")
+    return _wrap_congruence(
+        @wrap_libsemigroups_call LibSemigroups.to_congruence_string_from_fpb(
+            kind,
+            fp.cxx_obj,
+            wg,
+        )
+    )
+end
 
 """
-    to(::Type{Congruence}, kind::congruence_kind, wg::WordGraph) -> Congruence
+    to(::Type{Congruence}, kind::congruence_kind, wg::WordGraph) -> Congruence{Vector{Int}}
+    to(::Type{Congruence{W}}, kind::congruence_kind, wg::WordGraph) -> Congruence{W}
 
 Convert a WordGraph to a Congruence.
 
@@ -36,9 +77,26 @@ conversion. The result represents the trivial congruence over `wg`.
 
 The graph is added to the constructed congruence as-is; no checks are made
 that the resulting Todd-Coxeter or Congruence object is valid.
+
+With an unparameterised target the result uses `Vector{Int}` words; give the
+word type explicitly (e.g. `{String}`) for a result over `String` words.
 """
 @cxxdereference to(::Type{Congruence}, kind::congruence_kind, wg::WordGraph) =
+    to(Congruence{Vector{Int}}, kind, wg)
+
+@cxxdereference to(::Type{Congruence{Vector{Int}}}, kind::congruence_kind, wg::WordGraph) =
     _wrap_congruence(@wrap_libsemigroups_call LibSemigroups.to_congruence_from_wg(kind, wg))
+
+@cxxdereference function to(
+    ::Type{Congruence{String}},
+    kind::congruence_kind,
+    wg::WordGraph,
+)
+    _check_string_letters(out_degree(wg), 31, "edge labels")
+    return _wrap_congruence(
+        @wrap_libsemigroups_call LibSemigroups.to_congruence_string_from_wg(kind, wg)
+    )
+end
 
 # ============================================================================
 # Conversions to ToddCoxeter
@@ -46,7 +104,9 @@ that the resulting Todd-Coxeter or Congruence object is valid.
 
 """
     to(::Type{ToddCoxeter}, kind::congruence_kind, fp::FroidurePin,
-       wg::WordGraph) -> ToddCoxeter
+       wg::WordGraph) -> ToddCoxeter{Vector{Int}}
+    to(::Type{ToddCoxeter{W}}, kind::congruence_kind, fp::FroidurePin,
+       wg::WordGraph) -> ToddCoxeter{W}
 
 Convert a Froidure-Pin graph to a Todd-Coxeter.
 
@@ -56,14 +116,36 @@ The result represents the trivial congruence over the semigroup defined by
 `fp`.
 `kind` selects whether the resulting congruence is one-sided or two-sided.
 
+With an unparameterised target the result uses `Vector{Int}` words; give the
+word type explicitly (e.g. `{String}`) for a result over `String` words.
+
 # Throws
 
 - [`LibsemigroupsError`](@ref Semigroups.LibsemigroupsError) if `wg` is not
     the left or right Cayley graph of `fp`.
 """
-to(::Type{ToddCoxeter}, kind::congruence_kind, fp::FroidurePin, wg) = _wrap_todd_coxeter(
-    @wrap_libsemigroups_call LibSemigroups.to_todd_coxeter_from_fpb(kind, fp.cxx_obj, wg)
-)
+to(::Type{ToddCoxeter}, kind::congruence_kind, fp::FroidurePin, wg) =
+    to(ToddCoxeter{Vector{Int}}, kind, fp, wg)
+
+to(::Type{ToddCoxeter{Vector{Int}}}, kind::congruence_kind, fp::FroidurePin, wg) =
+    _wrap_todd_coxeter(
+        @wrap_libsemigroups_call LibSemigroups.to_todd_coxeter_from_fpb(
+            kind,
+            fp.cxx_obj,
+            wg,
+        )
+    )
+
+function to(::Type{ToddCoxeter{String}}, kind::congruence_kind, fp::FroidurePin, wg)
+    _check_string_letters(out_degree(wg), 128, "edge labels")
+    return _wrap_todd_coxeter(
+        @wrap_libsemigroups_call LibSemigroups.to_todd_coxeter_string_from_fpb(
+            kind,
+            fp.cxx_obj,
+            wg,
+        )
+    )
+end
 
 """
     to(::Type{ToddCoxeter}, kind::congruence_kind, kb::KnuthBendix) -> ToddCoxeter
@@ -91,11 +173,30 @@ to(::Type{ToddCoxeter}, kind::congruence_kind, kb::KnuthBendix) = _wrap_todd_cox
 
 """
     to(::Type{Presentation}, p::Presentation) -> Presentation
+    to(::Type{Presentation{V}}, p::Presentation) -> Presentation{V}
 
-Julia implementation of the identity conversion for `Presentation`. The
-returned presentation is a copy of `p`.
+Julia implementation of libsemigroups' presentation conversions.
+
+With an unparameterised `Presentation` target, or a target of the same word
+type as `p`, the returned presentation is a copy of `p`. Converting to the
+other word type (`Vector{Int}` to `String`, or back) relabels the letters by
+alphabet position: the `i`-th letter of the alphabet of `p` becomes the
+`i`-th letter of the result, using libsemigroups' default letters (`1, 2, 3,
+...` for `Vector{Int}`, `'a', 'b', 'c', ...` for `String`).
 """
 to(::Type{Presentation}, p::Presentation) = Presentation(p)
+
+to(::Type{Presentation{W}}, p::Presentation{W}) where {W} = Presentation(p)
+
+function to(::Type{Presentation{String}}, p::Presentation{Vector{Int}})
+    _check_string_letters(length(alphabet(p)), 128, "letters")
+    return _wrap_presentation(
+        @wrap_libsemigroups_call LibSemigroups.to_presentation_string(_cxx(p))
+    )
+end
+
+to(::Type{Presentation{Vector{Int}}}, p::Presentation{String}) =
+    _wrap_presentation(@wrap_libsemigroups_call LibSemigroups.to_presentation_word(_cxx(p)))
 
 """
     to(::Type{Presentation}, c::Congruence{W}) -> Presentation{W}
@@ -190,22 +291,34 @@ to(::Type{Presentation{String}}, kb::KnuthBendix) =
     _wrap_presentation(LibSemigroups.to_presentation_string(_cxx(kb)))
 
 """
-    to(::Type{Presentation}, fp::FroidurePin) -> Presentation
+    to(::Type{Presentation}, fp::FroidurePin) -> Presentation{Vector{Int}}
+    to(::Type{Presentation{W}}, fp::FroidurePin) -> Presentation{W}
 
 Julia implementation of libsemigroups' `to<Presentation>(fp)` conversion.
 Return a presentation using the currently known rules of `fp`.
 
 This conversion enumerates `fp` before obtaining its presentation.
+
+With an unparameterised target the result uses `Vector{Int}` words; give the
+word type explicitly (e.g. `{String}`) for a result over `String` words.
 """
-to(::Type{Presentation}, fp::FroidurePin) =
+to(::Type{Presentation}, fp::FroidurePin) = to(Presentation{Vector{Int}}, fp)
+
+to(::Type{Presentation{Vector{Int}}}, fp::FroidurePin) =
     _wrap_presentation(LibSemigroups.to_presentation_word(fp.cxx_obj))
+
+function to(::Type{Presentation{String}}, fp::FroidurePin)
+    _check_string_letters(number_of_generators(fp), 31, "generators")
+    return _wrap_presentation(LibSemigroups.to_presentation_string(fp.cxx_obj))
+end
 
 # ============================================================================
 # Conversions to KnuthBendix
 # ============================================================================
 
 """
-    to(::Type{KnuthBendix}, kind::congruence_kind, fp::FroidurePin) -> KnuthBendix
+    to(::Type{KnuthBendix}, kind::congruence_kind, fp::FroidurePin) -> KnuthBendix{Vector{Int}}
+    to(::Type{KnuthBendix{W}}, kind::congruence_kind, fp::FroidurePin) -> KnuthBendix{W}
 
 Julia implementation of libsemigroups' `to<KnuthBendix>(kind, fp)`
 conversion. It constructs a Knuth-Bendix instance from the presentation
@@ -213,9 +326,22 @@ obtained from `fp` and represents the trivial congruence over that semigroup.
 `kind` selects whether the resulting congruence is one-sided or two-sided.
 
 This conversion enumerates `fp` before obtaining its presentation.
+
+With an unparameterised target the result uses `Vector{Int}` words; give the
+word type explicitly (e.g. `{String}`) for a result over `String` words.
 """
 to(::Type{KnuthBendix}, kind::congruence_kind, fp::FroidurePin) =
+    to(KnuthBendix{Vector{Int}}, kind, fp)
+
+to(::Type{KnuthBendix{Vector{Int}}}, kind::congruence_kind, fp::FroidurePin) =
     _wrap_knuth_bendix(LibSemigroups.to_knuth_bendix_from_fpb(kind, fp.cxx_obj))
+
+function to(::Type{KnuthBendix{String}}, kind::congruence_kind, fp::FroidurePin)
+    _check_string_letters(number_of_generators(fp), 26, "generators")
+    return _wrap_knuth_bendix(
+        LibSemigroups.to_knuth_bendix_string_from_fpb(kind, fp.cxx_obj),
+    )
+end
 
 """
     to(::Type{KnuthBendix}, kind::congruence_kind, tc::ToddCoxeter) -> KnuthBendix
